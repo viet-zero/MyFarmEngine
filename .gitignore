@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+
+# CMake build directories
+out/
+build/
+cmake-build-*/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Visual Studio generated
+*.VC.db
+*.VC.opendb
+
+# Build outputs
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.ilk
+
+# Temporary
+*.log
