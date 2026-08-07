@@ -1,9 +1,17 @@
-#include <iostream>
-using namespace std;
+#include "Core/Application.h"
+
 int main()
 {
-    int s = 0;
-    cout << "MyFarmEngine Started!" << std::endl;
-    cin>>s;
+    MyEngine::Application app;
+
+    if (!app.Initialize())
+    {
+        return -1;
+    }
+
+    app.Run();
+
+    app.Shutdown();
+
     return 0;
 }
