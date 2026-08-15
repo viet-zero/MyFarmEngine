@@ -19,7 +19,7 @@ add_subdirectory(ThirdParty/glfw)
 
 add_library(glad
     ThirdParty/glad/src/glad.c
-)
+ "Game/Systems/ToolComponent.h")
 
 target_include_directories(glad
     PUBLIC
@@ -31,6 +31,8 @@ target_include_directories(glad
 # ==============================
 add_executable(MyFarmEngine
     Game/main.cpp
+    Game/GameApp/Game.cpp
+
     Engine/Core/Application.cpp
     Engine/Core/Window.cpp
     Engine/Core/Engine.cpp
@@ -39,7 +41,7 @@ add_executable(MyFarmEngine
     Engine/Graphics/Renderer.cpp
 
     Engine/Input/Input.cpp
-)
+ "Game/Systems/ToolComponent.h")
 
 target_include_directories(MyFarmEngine
     PRIVATE
