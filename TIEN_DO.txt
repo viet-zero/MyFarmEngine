@@ -8,7 +8,8 @@ GIAI DOAN 2 - CAMERA VA SPRITE THE GIOI (DOT MOI)
 [x] Camera truc giao, bam player, zoom va chuyen doi toa do.
 [x] Canh 2D, WASD, doi nhan vat va hotbar vat pham.
 [x] Test camera/di chuyen: ti le, zoom, toa do, bam, gioi han va toc do cheo.
-[ ] Test logic/GPU, huong dan giai doan 2 va push cac commit nho.
+[x] Test logic/GPU: Debug 5/5, Release 5/5 dat; UV atlas tinh dung alpha anh.
+[ ] Huong dan giai doan 2 va push cac commit nho.
 
 DOT A - THU HOI TAI NGUYEN TU CAC CHAT
 [x] Doc chat: Giai nen file; Tao thu muc snhr; Tai lieu lap trinh game engine.

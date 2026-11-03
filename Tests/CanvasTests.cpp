@@ -85,6 +85,73 @@ int main()
     const auto blended = Read(16,16);
     Check(std::abs(static_cast<int>(blended[0])-128) <= 1 &&
           std::abs(static_cast<int>(blended[2])-127) <= 1, "alpha blend mismatch");
+
+    // The world pass uses the actual camera matrix rather than screen coordinates.
+    MyEngine::Camera2D camera;
+    camera.SetWorldSize({4000,3000});
+    camera.Resize(64,64);
+    camera.SetPosition({2000,1500});
+    glViewport(0,0,64,64);
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    canvas.BeginWorld(64,64,camera);
+    canvas.Rectangle(1910,1410,180,180,{0,1,0,1});
+    canvas.End();
+    Check(Read(32,32)[1]==255 && Read(20,20)[1]==0, "world projection misplaced rectangle");
+    camera.SetZoom(2);
+    glClear(GL_COLOR_BUFFER_BIT);
+    canvas.BeginWorld(64,64,camera);
+    canvas.Rectangle(1910,1410,180,180,{0,1,0,1});
+    canvas.End();
+    Check(Read(20,20)[1]==255, "camera zoom did not enlarge world geometry");
+
+    MyEngine::Texture2D atlas;
+    const auto atlasPath=MyEngine::FindAsset("Art/Items/farm_items_atlas.png");
+    Check(atlas.Load(atlasPath), "new item atlas failed to load");
+    std::ifstream atlasFile(atlasPath,std::ios::binary);
+    const std::vector<unsigned char> atlasEncoded{std::istreambuf_iterator<char>(atlasFile),{}};
+    int aw=0, ah=0;
+    auto* atlasPixels=stbi_load_from_memory(atlasEncoded.data(),static_cast<int>(atlasEncoded.size()),&aw,&ah,&channels,4);
+    if (atlasPixels)
+    {
+        const int cw=aw/2, ch=ah/2;
+        Check(cw<=width && ch<=height,"atlas cell exceeds test target");
+        glViewport(0,0,cw,ch);
+        for(int item=0;item<4;++item)
+        {
+            const int column=item%2, row=item/2;
+            glClear(GL_COLOR_BUFFER_BIT);
+            canvas.Begin(cw,ch);
+            canvas.Sprite(atlas,0,0,static_cast<float>(cw),static_cast<float>(ch),
+                          {column*0.5f,row*0.5f,0.5f,0.5f});
+            canvas.End();
+            bool checked=false;
+            for(int y=ch/4;y<ch*3/4 && !checked;++y)
+                for(int x=cw/4;x<cw*3/4 && !checked;++x)
+                {
+                    const auto index=((y+row*ch)*aw+x+column*cw)*4;
+                    if(atlasPixels[index+3]<250) continue;
+                    const auto pixel=Read(x,ch-1-y);
+                    for(int c=0;c<3;++c)
+                        Check(std::abs(static_cast<int>(pixel[c])-
+                              static_cast<int>(std::lround(atlasPixels[index+c]*atlasPixels[index+3]/255.0)))<=3,
+                              "atlas UV selected wrong item");
+                    checked=true;
+                }
+            Check(checked,"atlas item has no opaque test sample");
+        }
+        stbi_image_free(atlasPixels);
+    }
+    else Check(false,"atlas PNG decoding failed");
+    atlas.Reset();
+    MyEngine::Shader shader;
+    Check(shader.Load(MyEngine::FindAsset("Shaders/canvas.vert"),MyEngine::FindAsset("Shaders/canvas.frag")),
+          "external GLSL shader failed");
+    const auto program=shader.Id();
+    Check(!shader.Load(MyEngine::FindAsset("Shaders/canvas.vert"),MyEngine::FindAsset("Shaders/missing.frag")) &&
+          shader.Id()==program && glIsProgram(program), "failed shader replacement lost a valid program");
+    shader.Reset();
+    shader.Reset();
     const auto original = texture.Id();
     Check(!texture.Load(MyEngine::FindAsset("does-not-exist.png")) && texture.Id() == original,
           "failed PNG load destroyed an existing texture");
