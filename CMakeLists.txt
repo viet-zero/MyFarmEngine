@@ -19,9 +19,14 @@ add_library(MyFarmEngineCore STATIC
     Engine/Core/Window.cpp
     Engine/Core/Time.cpp
     Engine/Graphics/Renderer.cpp
+    Engine/Graphics/Texture2D.cpp
+    Engine/Graphics/Canvas2D.cpp
+    Engine/Resources/AssetPath.cpp
     Engine/Input/Input.cpp
 )
 target_include_directories(MyFarmEngineCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Engine)
+target_include_directories(MyFarmEngineCore SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/stb)
+target_compile_definitions(MyFarmEngineCore PRIVATE MYFARM_SOURCE_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/Assets")
 target_compile_definitions(MyFarmEngineCore PUBLIC GLFW_INCLUDE_NONE)
 target_link_libraries(MyFarmEngineCore PUBLIC glfw glad)
 

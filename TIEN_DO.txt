@@ -9,7 +9,7 @@ DOT A - THU HOI TAI NGUYEN TU CAC CHAT
 [x] Them nen moi va prompt/nguon tao anh.
 
 DOT B - HIEN THI NEN TRONG CHUONG TRINH
-[ ] Shader OpenGL 3.3, texture PNG va quad 2D.
+[x] Shader OpenGL 3.3, texture PNG va quad 2D (cho build/test xac minh).
 [ ] Nen giu ti le khi resize, nap mot lan va don tai nguyen GPU.
 [ ] Tim Assets theo thu muc EXE, khong phu thuoc thu muc CMD hien tai.
 [ ] Build/test va ghi ro ket qua, khong danh dau test chua chay la dat.
