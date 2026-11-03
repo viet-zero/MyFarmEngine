@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(MyFarmEngine VERSION 0.1.0 LANGUAGES C CXX)
+project(MyFarmEngine VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,10 +21,12 @@ add_library(MyFarmEngineCore STATIC
     Engine/Graphics/Renderer.cpp
     Engine/Graphics/Texture2D.cpp
     Engine/Graphics/Canvas2D.cpp
+    Engine/Graphics/Shader.cpp
     Engine/Resources/AssetPath.cpp
     Engine/Input/Input.cpp
 )
 target_include_directories(MyFarmEngineCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Engine)
+target_include_directories(MyFarmEngineCore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glm)
 target_include_directories(MyFarmEngineCore SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/stb)
 target_compile_definitions(MyFarmEngineCore PRIVATE MYFARM_SOURCE_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/Assets")
 target_compile_definitions(MyFarmEngineCore PUBLIC GLFW_INCLUDE_NONE)
@@ -41,6 +43,8 @@ target_link_libraries(MyFarmEngine PRIVATE MyFarmEngineCore)
 
 # Runtime content travels beside the EXE. No source archive or old code is deployed.
 add_custom_target(MyFarmRuntimeAssets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Art" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Art"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shaders" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Backgrounds" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Backgrounds"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v11/Characters" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v11/Characters"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v11/Animals" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v11/Animals"

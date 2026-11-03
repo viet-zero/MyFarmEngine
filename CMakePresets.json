@@ -15,14 +15,30 @@
       "displayName": "Phase 1 Release",
       "binaryDir": "${sourceDir}/out/build/phase1-release",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "phase2-debug",
+      "inherits": "phase1-debug",
+      "displayName": "Phase 2 Debug",
+      "binaryDir": "${sourceDir}/out/build/phase2-debug"
+    },
+    {
+      "name": "phase2-release",
+      "inherits": "phase1-release",
+      "displayName": "Phase 2 Release",
+      "binaryDir": "${sourceDir}/out/build/phase2-release"
     }
   ],
   "buildPresets": [
     { "name": "phase1-debug", "configurePreset": "phase1-debug", "jobs": 4 },
-    { "name": "phase1-release", "configurePreset": "phase1-release", "jobs": 4 }
+    { "name": "phase1-release", "configurePreset": "phase1-release", "jobs": 4 },
+    { "name": "phase2-debug", "configurePreset": "phase2-debug", "jobs": 4 },
+    { "name": "phase2-release", "configurePreset": "phase2-release", "jobs": 4 }
   ],
   "testPresets": [
     { "name": "phase1-debug", "configurePreset": "phase1-debug", "output": { "outputOnFailure": true } },
-    { "name": "phase1-release", "configurePreset": "phase1-release", "output": { "outputOnFailure": true } }
+    { "name": "phase1-release", "configurePreset": "phase1-release", "output": { "outputOnFailure": true } },
+    { "name": "phase2-debug", "configurePreset": "phase2-debug", "output": { "outputOnFailure": true } },
+    { "name": "phase2-release", "configurePreset": "phase2-release", "output": { "outputOnFailure": true } }
   ]
 }

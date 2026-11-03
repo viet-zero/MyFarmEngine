@@ -4,8 +4,8 @@ Cap nhat: 03/11/2026
 GIAI DOAN 2 - CAMERA VA SPRITE THE GIOI (DOT MOI)
 [x] Tao moi Linh, An, atlas 4 vat pham va ban do vuon bang imagegen.
 [x] Luu PNG goc, prompt va toa do UV atlas trong Assets/Art.
-[ ] Tach shader GLSL ra file va them ma tran chieu GLM.
-[ ] Camera truc giao, bam player, zoom va chuyen doi toa do.
+[x] Tach shader GLSL ra file va them ma tran chieu GLM.
+[x] Camera truc giao, bam player, zoom va chuyen doi toa do.
 [ ] Canh 2D, WASD, doi nhan vat va hotbar vat pham.
 [ ] Test logic/GPU, huong dan giai doan 2 va push cac commit nho.
 

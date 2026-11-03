@@ -1,78 +1,22 @@
 #include "Canvas2D.h"
+#include "Resources/AssetPath.h"
 #include <glad/gl.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <iostream>
-
-namespace
-{
-    constexpr auto VertexShader = R"(#version 330 core
-layout(location=0) in vec2 position;
-uniform vec4 rectangle;
-uniform vec2 uvScale;
-out vec2 uv;
-void main() {
-    gl_Position = vec4(rectangle.xy + position * rectangle.zw, 0.0, 1.0);
-    uv = (position - 0.5) * uvScale + 0.5;
-})";
-    constexpr auto FragmentShader = R"(#version 330 core
-in vec2 uv;
-uniform sampler2D image;
-uniform vec4 tint;
-out vec4 color;
-void main() { color = texture(image, uv) * tint; }
-)";
-    unsigned int Compile(unsigned int type, const char* source)
-    {
-        const auto shader = glCreateShader(type);
-        glShaderSource(shader, 1, &source, nullptr);
-        glCompileShader(shader);
-        int valid = 0;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &valid);
-        if (!valid)
-        {
-            char message[2048] = {};
-            glGetShaderInfoLog(shader, sizeof(message), nullptr, message);
-            std::cerr << "Canvas shader failed: " << message << '\n';
-            glDeleteShader(shader);
-            return 0;
-        }
-        return shader;
-    }
-}
 
 namespace MyEngine
 {
     bool Canvas2D::Initialize()
     {
-        if (m_Program)
+        if (m_Shader.Id())
             return true;
-        const auto vertex = Compile(GL_VERTEX_SHADER, VertexShader);
-        const auto fragment = Compile(GL_FRAGMENT_SHADER, FragmentShader);
-        if (!vertex || !fragment)
-        {
-            glDeleteShader(vertex);
-            glDeleteShader(fragment);
+        if (!m_Shader.Load(FindAsset("Shaders/canvas.vert"), FindAsset("Shaders/canvas.frag")))
             return false;
-        }
-        m_Program = glCreateProgram();
-        glAttachShader(m_Program, vertex);
-        glAttachShader(m_Program, fragment);
-        glLinkProgram(m_Program);
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
-        int valid = 0;
-        glGetProgramiv(m_Program, GL_LINK_STATUS, &valid);
-        if (!valid)
-        {
-            char message[2048] = {};
-            glGetProgramInfoLog(m_Program, sizeof(message), nullptr, message);
-            std::cerr << "Canvas link failed: " << message << '\n';
-            Shutdown();
-            return false;
-        }
-        m_Rect = glGetUniformLocation(m_Program, "rectangle");
-        m_Color = glGetUniformLocation(m_Program, "tint");
-        m_Uv = glGetUniformLocation(m_Program, "uvScale");
+        m_Rect = glGetUniformLocation(m_Shader.Id(), "rectangle");
+        m_Color = glGetUniformLocation(m_Shader.Id(), "tint");
+        m_Uv = glGetUniformLocation(m_Shader.Id(), "uvRegion");
+        m_Projection = glGetUniformLocation(m_Shader.Id(), "viewProjection");
         // Two triangles; the top-left image row maps to the top of the window.
         constexpr float vertices[] = {0,0, 1,0, 1,1, 0,0, 1,1, 0,1};
         glGenVertexArrays(1, &m_Vao);
@@ -88,8 +32,8 @@ namespace MyEngine
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glUseProgram(m_Program);
-        glUniform1i(glGetUniformLocation(m_Program, "image"), 0);
+        glUseProgram(m_Shader.Id());
+        glUniform1i(glGetUniformLocation(m_Shader.Id(), "image"), 0);
         End();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         return true;
@@ -101,27 +45,46 @@ namespace MyEngine
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glUseProgram(m_Program);
+        glUseProgram(m_Shader.Id());
         glBindVertexArray(m_Vao);
         glActiveTexture(GL_TEXTURE0);
+        glDisable(GL_CULL_FACE);
+        if (width > 0 && height > 0)
+            SetProjection(glm::ortho(0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f));
+    }
+    void Canvas2D::SetProjection(const glm::mat4& projection)
+    {
+        glUniformMatrix4fv(m_Projection, 1, GL_FALSE, glm::value_ptr(projection));
+    }
+    void Canvas2D::BeginWorld(int width, int height, const Camera2D& camera)
+    {
+        Begin(width, height);
+        SetProjection(camera.ViewProjection());
     }
     void Canvas2D::Draw(unsigned int texture, float x, float y, float width, float height,
                         const std::array<float, 4>& color, float uvX, float uvY)
     {
         if (!texture || m_Width <= 0 || m_Height <= 0)
             return;
-        const float screenWidth = static_cast<float>(m_Width);
-        const float screenHeight = static_cast<float>(m_Height);
-        glUniform4f(m_Rect, 2*x/screenWidth-1, 1-2*y/screenHeight,
-                    2*width/screenWidth, -2*height/screenHeight);
+        glUniform4f(m_Rect, x, y, width, height);
         glUniform4fv(m_Color, 1, color.data());
-        glUniform2f(m_Uv, uvX, uvY);
+        glUniform4f(m_Uv, (1-uvX)*0.5f, (1-uvY)*0.5f, uvX, uvY);
         glBindTexture(GL_TEXTURE_2D, texture);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
     void Canvas2D::Image(const Texture2D& texture, float x, float y, float width, float height)
     {
         Draw(texture.Id(), x, y, width, height, {1,1,1,1});
+    }
+    void Canvas2D::Sprite(const Texture2D& texture, float x, float y, float width, float height,
+                          const std::array<float, 4>& uv, const std::array<float, 4>& tint)
+    {
+        if (!texture.Id() || m_Width <= 0 || m_Height <= 0) return;
+        glUniform4f(m_Rect, x, y, width, height);
+        glUniform4fv(m_Color, 1, tint.data());
+        glUniform4fv(m_Uv, 1, uv.data());
+        glBindTexture(GL_TEXTURE_2D, texture.Id());
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
     void Canvas2D::Cover(const Texture2D& texture)
     {
@@ -150,7 +113,7 @@ namespace MyEngine
         if (m_White) glDeleteTextures(1, &m_White);
         if (m_Vbo) glDeleteBuffers(1, &m_Vbo);
         if (m_Vao) glDeleteVertexArrays(1, &m_Vao);
-        if (m_Program) glDeleteProgram(m_Program);
-        m_White = m_Vbo = m_Vao = m_Program = 0;
+        m_Shader.Reset();
+        m_White = m_Vbo = m_Vao = 0;
     }
 }

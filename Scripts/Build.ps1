@@ -1,6 +1,8 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
+    [ValidateSet('phase1','phase2')]
+    [string]$Phase = 'phase2',
     [switch]$SkipGraphicsTests
 )
 $ErrorActionPreference = 'Stop'
@@ -15,7 +17,7 @@ if (!$installation) { throw 'Visual Studio C++ compiler and CMake tools were not
 & (Join-Path $installation 'Common7/Tools/Launch-VsDevShell.ps1') -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
 $tools = Join-Path $installation 'Common7/IDE/CommonExtensions/Microsoft/CMake'
 $env:PATH = (Join-Path $tools 'CMake/bin') + ';' + (Join-Path $tools 'Ninja') + ';' + $env:PATH
-$preset = 'phase1-' + $Configuration.ToLowerInvariant()
+$preset = $Phase + '-' + $Configuration.ToLowerInvariant()
 
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
