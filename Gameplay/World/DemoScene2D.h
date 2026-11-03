@@ -20,6 +20,7 @@ namespace MyGame
         void DrawDog(MyEngine::Canvas2D& canvas) const;
         void DrawCrop(MyEngine::Canvas2D& canvas) const;
         MyEngine::Camera2D m_Camera;
+        AssetTextures* m_Assets=nullptr;
         const MyEngine::Texture2D* m_Map=nullptr;
         const MyEngine::Texture2D* m_Items=nullptr;
         std::array<const MyEngine::Texture2D*, 2> m_Characters{};

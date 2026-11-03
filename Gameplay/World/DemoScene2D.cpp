@@ -18,6 +18,7 @@ namespace MyGame
 {
     bool DemoScene2D::Initialize(AssetTextures& assets,const std::filesystem::path& dataRoot)
     {
+        m_Assets=&assets;
         if(!m_Visuals.Load(dataRoot/"VisualClips.csv"))
             for(const auto& error:m_Visuals.Errors()) std::cerr<<"Visual catalog: "<<error<<'\n';
         m_Map=assets.Load("world_garden");
@@ -118,10 +119,11 @@ namespace MyGame
         canvas.Rectangle(feet.x-22, feet.y-4, 44, 9, {0.08f,0.16f,0.09f,0.19f});
         const auto* texture=m_Characters[static_cast<std::size_t>(character)];
         const auto anchor=m_Anchors[static_cast<std::size_t>(character)];
-        // Current approved player sheets contain one frame. The controller still owns the
-        // state timeline; multi-frame UVs can be enabled when a reviewed sheet is exported.
-        (void)animation;
-        if(texture) canvas.Sprite(*texture, feet.x-156*anchor.x, feet.y-156*anchor.y-bob, 156,156);
+        std::array<float,4> uv{0,0,1,1};
+        if(const auto* clip=animation.Clip();clip && m_Assets)
+            if(const auto* record=m_Assets->Record(clip->assetId))
+                if(const auto region=AssetManifest::FrameUv(*record,animation.Frame())) uv=*region;
+        if(texture) canvas.Sprite(*texture, feet.x-156*anchor.x, feet.y-156*anchor.y-bob, 156,156,uv);
         else canvas.Rectangle(feet.x-22,feet.y-78-bob,44,78,
             character==0?std::array<float,4>{0.85f,0.65f,0.22f,1}:std::array<float,4>{0.28f,0.5f,0.8f,1});
     }
@@ -191,6 +193,7 @@ namespace MyGame
     {
         m_Ready = false;
         m_Map=m_Items=nullptr;
+        m_Assets=nullptr;
         m_Characters.fill(nullptr);
         m_Visuals={};m_PlayerAnimation={};m_NpcAnimation={};m_DogAnimation={};m_CropAnimation={};
     }
