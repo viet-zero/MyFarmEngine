@@ -4,6 +4,7 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
+#include <set>
 
 namespace
 {
@@ -55,21 +56,24 @@ namespace MyGame
         m_Clips.clear();m_Errors.clear();std::ifstream file(csv);
         if(!file){m_Errors.emplace_back("manifest_missing");return false;}
         std::string line;std::getline(file,line);
-        constexpr std::string_view header="profile,kind,state,direction,asset_id,first_frame,frame_count,fps,loop,total_frames";
+        constexpr std::string_view oldHeader="profile,kind,state,direction,asset_id,first_frame,frame_count,fps,loop,total_frames";
+        constexpr std::string_view header="profile,kind,state,direction,asset_id,first_frame,frame_count,fps,loop,total_frames,flip_x";
         if(!line.empty() && line.back()=='\r') line.pop_back();
-        if(line!=header){m_Errors.emplace_back("invalid_header");return false;}
+        const bool hasFlip=line==header;
+        if(!hasFlip && line!=oldHeader){m_Errors.emplace_back("invalid_header");return false;}
         int row=1;
         while(std::getline(file,line))
         {
             ++row;if(!line.empty() && line.back()=='\r') line.pop_back();if(line.empty()) continue;
             const auto fields=Split(line);
-            if(fields.size()!=10){m_Errors.push_back("row_"+std::to_string(row)+":field_count");continue;}
+            if(fields.size()!=(hasFlip?11u:10u)){m_Errors.push_back("row_"+std::to_string(row)+":field_count");continue;}
             const auto state=State(fields[2]);const auto facing=Direction(fields[3]);
-            int first=0,count=0,total=0;float fps=0;int loop=0;
+            int first=0,count=0,total=0;float fps=0;int loop=0,flip=0;
             if(fields[0].empty() || !state || !facing || !Number(fields[5],first) || !Number(fields[6],count) ||
-               !Number(fields[7],fps) || !Number(fields[8],loop) || !Number(fields[9],total) || (loop!=0 && loop!=1))
+               !Number(fields[7],fps) || !Number(fields[8],loop) || !Number(fields[9],total) || (loop!=0 && loop!=1) ||
+               (hasFlip && (!Number(fields[10],flip) || (flip!=0 && flip!=1))))
             {m_Errors.push_back("row_"+std::to_string(row)+":invalid_value");continue;}
-            VisualClip clip{fields[4],{first,count,fps,loop==1},*facing,total};
+            VisualClip clip{fields[4],{first,count,fps,loop==1},*facing,total,flip==1};
             if(!clip.timeline.IsValid(total))
             {m_Errors.push_back("row_"+std::to_string(row)+":frame_bounds");continue;}
             const auto key=Key(fields[0],*state,*facing);
@@ -84,6 +88,16 @@ namespace MyGame
         if(const auto it=m_Clips.find(Key(profile,state,facing));it!=m_Clips.end()) return &it->second;
         if(const auto it=m_Clips.find(Key(profile,state,Facing::Any));it!=m_Clips.end()) return &it->second;
         return nullptr;
+    }
+    std::vector<std::string> VisualCatalog::AssetIds() const
+    {
+        std::set<std::string> ids;
+        for(const auto& [key,clip]:m_Clips)
+        {
+            (void)key;
+            if(!clip.assetId.empty()) ids.insert(clip.assetId);
+        }
+        return {ids.begin(),ids.end()};
     }
 
     bool AnimationController::Select(const VisualCatalog& catalog,std::string_view profile,VisualState state,Facing facing)
@@ -110,6 +124,14 @@ namespace MyGame
         if(!std::isfinite(x) || !std::isfinite(y) || (x==0.0f && y==0.0f)) return previous;
         if(std::abs(x)>std::abs(y)) return x<0?Facing::Left:Facing::Right;
         return y<0?Facing::Up:Facing::Down;
+    }
+    VisualState ResolvePlayerState(bool moving,bool running,bool actionTriggered,bool hurtTriggered,
+                                   VisualState current,bool currentFinished)
+    {
+        if(hurtTriggered) return VisualState::Hurt;
+        if(actionTriggered) return VisualState::Action;
+        if((current==VisualState::Action || current==VisualState::Hurt) && !currentFinished) return current;
+        return moving?(running?VisualState::Run:VisualState::Walk):VisualState::Idle;
     }
     int GrowthFrame(double age,const std::vector<double>& stageDurations)
     {

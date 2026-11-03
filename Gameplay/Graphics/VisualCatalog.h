@@ -18,6 +18,7 @@ namespace MyGame
         MyEngine::AnimationClip timeline;
         Facing facing=Facing::Any;
         int availableFrames=1;
+        bool flipX=false;
     };
 
     class VisualCatalog
@@ -25,6 +26,7 @@ namespace MyGame
     public:
         bool Load(const std::filesystem::path& csv);
         const VisualClip* Find(std::string_view profile,VisualState state,Facing facing) const;
+        std::vector<std::string> AssetIds() const;
         const std::vector<std::string>& Errors() const { return m_Errors; }
     private:
         std::map<std::string,VisualClip> m_Clips;
@@ -60,5 +62,7 @@ namespace MyGame
     };
 
     Facing FacingFromVelocity(float x,float y,Facing previous);
+    VisualState ResolvePlayerState(bool moving,bool running,bool actionTriggered,bool hurtTriggered,
+                                   VisualState current,bool currentFinished);
     int GrowthFrame(double age,const std::vector<double>& stageDurations);
 }

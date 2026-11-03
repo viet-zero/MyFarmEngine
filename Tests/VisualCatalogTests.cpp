@@ -16,11 +16,21 @@ int main(int argc,char** argv)
     Check(argc==2,"missing manifest argument");if(argc!=2) return 1;
     VisualCatalog catalog;
     Check(catalog.Load(argv[1]),"default visual catalog failed to load");
+    Check(catalog.AssetIds().size()>=12,"directional sprite assets not registered");
+    for(const auto direction:{Facing::Down,Facing::Left,Facing::Right,Facing::Up})
+        for(const auto state:{VisualState::Idle,VisualState::Walk,VisualState::Run,VisualState::Action})
+        {
+            Check(catalog.Find("player_linh",state,direction)!=nullptr,"Linh directional clip missing");
+            Check(catalog.Find("player_an",state,direction)!=nullptr,"An directional clip missing");
+        }
     AnimationController player;
     Check(player.Select(catalog,"player_linh",VisualState::Walk,Facing::Right),"player walk selection failed");
     player.Update(0.4f,false);const auto elapsed=player.Save().timeline.elapsed;
-    Check(player.Select(catalog,"player_linh",VisualState::Walk,Facing::Left),"fallback direction failed");
-    Check(player.Save().timeline.elapsed==elapsed,"same any-direction clip restarted");
+    Check(player.Select(catalog,"player_linh",VisualState::Walk,Facing::Right),"same direction failed");
+    Check(player.Save().timeline.elapsed==elapsed,"same clip restarted");
+    const auto* right=player.Clip();
+    Check(player.Select(catalog,"player_linh",VisualState::Walk,Facing::Left),"left selection failed");
+    Check(player.Clip()!=right && player.Save().timeline.elapsed==0.0,"direction change did not switch/restart");
     Check(player.Select(catalog,"player_linh",VisualState::Run,Facing::Left),"run selection failed");
     Check(player.Save().timeline.elapsed==0.0,"state change did not restart");
     player.Update(1.0f,true);Check(player.Save().timeline.elapsed==0.0,"pause advanced controller");
@@ -30,6 +40,18 @@ int main(int argc,char** argv)
     Check(loaded.Rebuild(catalog,snapshot),"save/load rebuild failed");
     Check(loaded.State()==VisualState::Run && loaded.Direction()==Facing::Left &&
           loaded.Frame()==player.Frame(),"rebuilt controller lost state");
+    Check(catalog.Find("player_an",VisualState::Walk,Facing::Left)->flipX,
+          "An left walk should mirror reviewed side sheet");
+    Check(catalog.Find("player_linh",VisualState::Idle,Facing::Left)->flipX,
+          "Linh left idle should mirror reviewed pose");
+    Check(!catalog.Find("player_linh",VisualState::Walk,Facing::Left)->flipX,
+          "Linh left walk has its own left-facing art");
+    Check(ResolvePlayerState(true,false,false,false,VisualState::Idle,true)==VisualState::Walk &&
+          ResolvePlayerState(true,true,false,false,VisualState::Walk,true)==VisualState::Run &&
+          ResolvePlayerState(true,true,true,false,VisualState::Run,true)==VisualState::Action &&
+          ResolvePlayerState(true,true,false,false,VisualState::Action,false)==VisualState::Action &&
+          ResolvePlayerState(false,false,false,false,VisualState::Action,true)==VisualState::Idle,
+          "state transitions ignored action priority or completion");
 
     AnimationController npc;
     Check(npc.Select(catalog,"npc_an",VisualState::Walk,Facing::Left),"NPC left clip missing");
