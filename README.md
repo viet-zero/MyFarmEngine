@@ -2,9 +2,9 @@
 
 Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
-**Branch hiện tại: Gameplay10 Phase E — bản đồ đồng nhất, animation và va chạm.** Hướng dẫn tự làm, công dụng hàm và biến được tập trung trong [HuongDan/](HuongDan/README.md). Multiplayer, chat chữ và thoại nằm trong [kế hoạch online](Docs/KeHoachOnline.md).
+**Branch hiện tại: Gameplay10 Phase F — Y-sorting, animation bốn hướng và hái quả.** Hướng dẫn tự làm, công dụng hàm và biến được tập trung trong [HuongDan/](HuongDan/README.md). Multiplayer, chat chữ và thoại nằm trong [kế hoạch online](Docs/KeHoachOnline.md).
 
-**Nền đồ họa giai đoạn 2, phiên bản 0.2.0:** OpenGL 3.3, shader GLSL ngoài, texture PNG/alpha, camera trực giao bám player và sprite atlas. Phase E vẽ một bản đồ liên tục cho làng, ruộng, hồ-rừng; thêm khung đi bộ của người/chó, bốn hình cây tăng trưởng, collider chân, trượt theo vật cản và chặn tương tác qua nhà/rào. Save game và online là các bước sau.
+**Nền đồ họa giai đoạn 2, phiên bản 0.2.0:** OpenGL 3.3, shader GLSL ngoài, texture PNG/alpha, camera trực giao bám player và sprite atlas. Phase F sắp thứ tự người, chó, cây và vật phẩm theo Y của chân; thêm atlas idle/walk/run/action bốn hướng, collider thân cây trên ảnh nền và F hái quả. Save game và online là các bước sau.
 
 ![Giai đoạn 2 đang chạy](Docs/Screenshots/phase2_world.png)
 
@@ -17,7 +17,7 @@ Trong PowerShell tại thư mục repo:
 
 ```powershell
 .\Scripts\Build.ps1 -Configuration Debug
-.\out\build\phase-e-debug\MyFarmEngine.exe
+.\out\build\phase-f-debug\MyFarmEngine.exe
 ```
 
 Thoát bằng ESC hoặc nút đóng cửa sổ. Đổi kích thước cửa sổ để kiểm tra viewport.
@@ -26,6 +26,7 @@ Thoát bằng ESC hoặc nút đóng cửa sổ. Đổi kích thước cửa s�
 |---|---|
 | WASD / Shift trái | Đi / chạy trong cảnh vườn |
 | F4 / F5 / F6 | Chuyển nhanh tới làng / ruộng / hồ-rừng để kiểm tra map |
+| F7 / F8 | Đến điểm hái táo / điểm thử che khuất bởi tán cây |
 | Space / H | Action / Hurt animation state |
 | F | Tương tác với vật phía trước; phím 2 chọn hoe, phím 3 chọn seeds |
 | Q / E / Tab | Zoom ra / vào / đổi nhân vật |
@@ -47,10 +48,10 @@ Thoát bằng ESC hoặc nút đóng cửa sổ. Đổi kích thước cửa s�
 .\Scripts\Build.ps1 -Configuration Debug -SkipGraphicsTests
 
 # Tự thoát sau 5 frame; VSync mặc định bật
-.\out\build\phase-e-debug\MyFarmEngine.exe --smoke-test
+.\out\build\phase-f-debug\MyFarmEngine.exe --smoke-test
 
 # Chỉ dùng khi đo hiệu năng không giới hạn bởi VSync
-.\out\build\phase-e-debug\MyFarmEngine.exe --no-vsync
+.\out\build\phase-f-debug\MyFarmEngine.exe --no-vsync
 ```
 
 Nếu PowerShell chặn script, có thể mở Developer PowerShell của Visual Studio với CMake/Ninja trên PATH và dùng các lệnh preset trong tài liệu. Nếu Windows Application Control chặn EXE, việc build thành công không có nghĩa ứng dụng đã chạy được; không tự tắt chính sách bảo mật.
@@ -64,6 +65,8 @@ Nếu PowerShell chặn script, có thể mở Developer PowerShell của Visual
 - [Thư mục hướng dẫn riêng: build, WorldMap và Interaction](HuongDan/README.md)
 
 - [Phase E: cách chỉnh bản đồ, animation, collider và từng hàm/thông số](HuongDan/CollisionVaDoHoa.md)
+
+- [Phase F: Y-sorting, animation bốn hướng, va chạm và thu hoạch cây táo; hàm và thông số](HuongDan/RenderOrderAnimationInteraction.md)
 
 - [Kế hoạch chơi online, chat chữ và thoại](Docs/KeHoachOnline.md)
 

@@ -1,6 +1,31 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+GAMEPLAY10 PHASE F - Y-SORTING, ANIMATION 4 HUONG, CAY TAO
+Branch: feat/gameplay10-phase-f-depth-directional-harvest; baseline Phase E: b41d046.
+Commit f19b509: render queue cull truoc, sort theo Y chan, thu tu on dinh va test.
+Commit b5ef59e: 9 atlas huong/tu the, manifest, catalog, UV flip va test.
+Commit 4307c18: collider than cay, CSV canopy/tuong tac, fruit event va test.
+Commit cc38534: mask ellipse GPU lay mau lai anh nen, test pixel va reset shader state.
+Commit 851dc3d: action one-shot chi restart khi co input moi.
+Commit 33c0419: noi sort/atlas/collider/thu hoach vao scene; F7/F8 xem truc tiep.
+Commit 92b3a22: preset Debug/Release/ASan rieng va Build.ps1 mac dinh Phase F.
+[x] Background lien tuc duoc ve mot lan; hai tan cay duoc xep theo Y chan cung player, NPC, cho, crop va pickup.
+[x] Than cay co collider rieng tren Objects.csv; F trong tam, dung huong, duong nhin hop le se hai qua.
+[x] Stock trai cay, cooldown, stamina, inventory capacity, event FruitHarvested va thoi gian moc lai.
+[x] Linh/An idle/walk/run/action 4 huong; NPC/cho/crop state rieng. Clip khong restart moi frame.
+[x] F7 dung canh cay hai qua, tieu de tang Apples; F8 xem tan cay che phan tren nhan vat.
+[x] Asset pipeline: 204 Original, 27 Export candidate; asset audit PASS.
+[x] Debug /W4 /WX 16/16; Release /W4 /WX 16/16; MSVC ASan CPU 10/10.
+[x] HuongDan/RenderOrderAnimationInteraction.md: ham, tham so, CSV, cach mang sang ECS/game khac.
+[ ] Mask ellipse chi xap xi vien la; 1 cay tao trang tri thu ba chua gan collider/harvest.
+[ ] So Apples la bo dem scene; inventory van la so luong chung. Chua save/load game, online/chat/voice.
+[ ] Chua benchmark FPS/draw calls; khong gan mac hieu nang bang so do chua co.
+EXE: out/build/phase-f-release/MyFarmEngine.exe
+Buoc tiep theo: mask alpha/foreground layer chinh xac, item Apple rieng va save/load version; sau do server-authoritative interaction cho online.
+
+CAC MUC BEN DUOI LA LICH SU PHASE E VA TRUOC DO
+
 GAMEPLAY10 PHASE E - BAN DO, ANIMATION, VA CHAM
 Branch: feat/gameplay10-phase-e-collision-visuals; baseline Phase D: 3c7cd8b.
 Commit 11a541c: asset/atlas/clip/prompt va SHA256.

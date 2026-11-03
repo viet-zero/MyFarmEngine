@@ -1,6 +1,8 @@
 # Tài nguyên MyFarmEngine
 
-**Cập nhật Phase E:** 195 ảnh snapshot Original, 18 export candidate, trong đó 5 artwork mới cho bản đồ/khung đi bộ/chó/cây. Prompt và nguồn tại [Art/PHASE_E_PROMPTS.md](Art/PHASE_E_PROMPTS.md); manifest SHA256 tại `Art/manifest.csv`. Ảnh map liên tục và sprite sheet 2×2 đang dùng trong scene mặc định. Các con số ở phần lịch sử bên dưới là thời điểm Phase A/B.
+**Cập nhật Phase F:** 204 ảnh snapshot Original, 27 export candidate, gồm 9 atlas nhân vật mới cho idle/walk/action nhiều hướng. Prompt và SHA256 của chúng ở [Art/PHASE_F_PROMPTS.md](Art/PHASE_F_PROMPTS.md) và `Art/manifest.csv`. Phase E trước đó có 195 Original và 18 export candidate.
+
+**Phase E:** 195 ảnh snapshot Original, 18 export candidate, trong đó 5 artwork mới cho bản đồ/khung đi bộ/chó/cây. Prompt và nguồn tại [Art/PHASE_E_PROMPTS.md](Art/PHASE_E_PROMPTS.md); manifest SHA256 tại `Art/manifest.csv`. Ảnh map liên tục và sprite sheet 2×2 đang dùng trong scene mặc định. Các con số ở phần lịch sử bên dưới là thời điểm Phase A/B.
 
 ## Pipeline hiện hành — Phase A
 
