@@ -1,0 +1,12 @@
+{
+  "texture": "Art/Items/farm_items_atlas.png",
+  "grid": [2, 2],
+  "uv_origin": "top_left",
+  "items": [
+    { "id": "watering_can", "uv": [0.0, 0.0, 0.5, 0.5] },
+    { "id": "garden_hoe", "uv": [0.5, 0.0, 0.5, 0.5] },
+    { "id": "seed_sack", "uv": [0.0, 0.5, 0.5, 0.5] },
+    { "id": "strawberry_cake", "uv": [0.5, 0.5, 0.5, 0.5] }
+  ],
+  "note": "Reference metadata. The demo uses the same four fixed regions in C++; no JSON runtime parser is claimed."
+}

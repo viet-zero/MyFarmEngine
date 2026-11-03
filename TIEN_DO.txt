@@ -1,6 +1,14 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+GIAI DOAN 2 - CAMERA VA SPRITE THE GIOI (DOT MOI)
+[x] Tao moi Linh, An, atlas 4 vat pham va ban do vuon bang imagegen.
+[x] Luu PNG goc, prompt va toa do UV atlas trong Assets/Art.
+[ ] Tach shader GLSL ra file va them ma tran chieu GLM.
+[ ] Camera truc giao, bam player, zoom va chuyen doi toa do.
+[ ] Canh 2D, WASD, doi nhan vat va hotbar vat pham.
+[ ] Test logic/GPU, huong dan giai doan 2 va push cac commit nho.
+
 DOT A - THU HOI TAI NGUYEN TU CAC CHAT
 [x] Doc chat: Giai nen file; Tao thu muc snhr; Tai lieu lap trinh game engine.
 [x] Tim thay ZIP tai Downloads tren may; khong can tai link sandbox da cu.
