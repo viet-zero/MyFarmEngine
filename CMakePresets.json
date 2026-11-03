@@ -1,0 +1,28 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "phase1-debug",
+      "displayName": "Phase 1 Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/phase1-debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "BUILD_TESTING": "ON" }
+    },
+    {
+      "name": "phase1-release",
+      "inherits": "phase1-debug",
+      "displayName": "Phase 1 Release",
+      "binaryDir": "${sourceDir}/out/build/phase1-release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "phase1-debug", "configurePreset": "phase1-debug", "jobs": 4 },
+    { "name": "phase1-release", "configurePreset": "phase1-release", "jobs": 4 }
+  ],
+  "testPresets": [
+    { "name": "phase1-debug", "configurePreset": "phase1-debug", "output": { "outputOnFailure": true } },
+    { "name": "phase1-release", "configurePreset": "phase1-release", "output": { "outputOnFailure": true } }
+  ]
+}
