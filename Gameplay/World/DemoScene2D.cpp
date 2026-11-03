@@ -27,13 +27,14 @@ namespace MyGame
             std::cerr<<"World objects: definitions missing or invalid; object fallback omitted\n";
         if(!m_World.LoadStaticColliders(dataRoot/"StaticColliders.csv"))
             std::cerr<<"World colliders: definitions missing or invalid; static fallback omitted\n";
+        if(!m_Trees.Load(dataRoot/"ForegroundTrees.csv",m_World))
+            std::cerr<<"Foreground trees: definitions missing or invalid; orchard overlay omitted\n";
         if(!m_Visuals.Load(dataRoot/"VisualClips.csv"))
             for(const auto& error:m_Visuals.Errors()) std::cerr<<"Visual catalog: "<<error<<'\n';
+        for(const auto& id:m_Visuals.AssetIds()) assets.Load(id);
         m_Map=assets.Load("world_phase_e");
         m_Characters[0]=assets.Load("player_linh");
         m_Characters[1]=assets.Load("player_an");
-        m_WalkCharacters[0]=assets.Load("player_linh_walk");
-        m_WalkCharacters[1]=assets.Load("player_an_walk");
         m_DogTexture=assets.Load("dog_walk");
         m_CropTexture=assets.Load("turnip_growth");
         m_Items=assets.Load("items_farm");
@@ -56,13 +57,20 @@ namespace MyGame
         m_Player = m_World.Spawn(Zone::Farm);
         m_Dog=m_Player+glm::vec2{-70,30};
         m_Actor={};m_Actor.position=m_Player;
-        m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+2);
+        m_FruitHarvested=0;
+        m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+m_Trees.Entries().size()+2);
         for(const auto& object:m_World.Objects())
         {
             m_World.SetObjectActive(object.gameplayId,true);
-            if(object.blocked)
+            if(object.blocked && !m_Trees.Contains(object.gameplayId))
                 m_Targets.push_back({object.gameplayId,TargetKind::Object,
                     object.position+object.size*0.5f,2});
+        }
+        for(const auto& tree:m_Trees.Entries())
+        {
+            InteractionTarget target{tree.gameplayId,TargetKind::FruitTree,tree.interaction};
+            target.stock=target.maxStock=tree.fruitCount;
+            m_Targets.push_back(std::move(target));
         }
         m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{3000,1700}});
         m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
@@ -101,12 +109,22 @@ namespace MyGame
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) m_Camera.SetZoom(m_Camera.Zoom()*1.15f);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R)) {Reset();return;}
         bool teleported=false;
+        glm::vec2 teleportDogOffset{-70,30};
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F4)){m_Player=m_World.Spawn(Zone::Town);teleported=true;}
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F5)){m_Player=m_World.Spawn(Zone::Farm);teleported=true;}
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F6)){m_Player=m_World.Spawn(Zone::LakeForest);teleported=true;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F7))
+        {
+            m_Player={1990,1740};m_Facing=Facing::Up;teleported=true;
+        }
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F8))
+        {
+            m_Player={2140,1450};m_Facing=Facing::Left;
+            teleportDogOffset={100,30};teleported=true;
+        }
         if(teleported)
         {
-            m_Dog=m_Player+glm::vec2{-70,30};
+            m_Dog=m_Player+teleportDogOffset;
             m_Camera.SetPosition(m_Player);
         }
         m_Actor.position=m_Player;
@@ -118,12 +136,24 @@ namespace MyGame
         default:m_Actor.facing={0,1};break;
         }
         InteractionSystem::Tick(m_Actor,m_Targets,deltaTime);
+        bool actionTriggered=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F))
         {
             auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
             if(target && !m_World.HasLineOfSight(m_Actor.position,target->position)) target=nullptr;
             m_LastAction=InteractionSystem::Use(m_Actor,target,m_SelectedItem,m_Events);
+            if(m_LastAction==InteractionResult::Success) actionTriggered=true;
             m_FeedbackTime=0.6f;
+            if(m_LastAction==InteractionResult::Success && target && target->kind==TargetKind::FruitTree)
+            {
+                ++m_FruitHarvested;
+                if(auto* window=glfwGetCurrentContext())
+                {
+                    const std::string title="My Farm - Phase F | Apples: "+std::to_string(m_FruitHarvested)+
+                        " | F: Harvest | F7: Orchard | F8: Depth";
+                    glfwSetWindowTitle(window,title.c_str());
+                }
+            }
             if(m_LastAction==InteractionResult::Success && target &&
                target->kind==TargetKind::Object && !target->active)
                 m_World.SetObjectActive(target->id,false);
@@ -131,13 +161,11 @@ namespace MyGame
         m_Effects.Consume(m_Events.Take());m_Effects.Update(deltaTime);
         m_FeedbackTime=std::max(0.0f,m_FeedbackTime-deltaTime);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_TAB)) m_Character = 1-m_Character;
-        VisualState requested=m_Moving?(running?VisualState::Run:VisualState::Walk):VisualState::Idle;
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE)) requested=VisualState::Action;
-        else if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_H)) requested=VisualState::Hurt;
-        else if((m_PlayerState==VisualState::Action || m_PlayerState==VisualState::Hurt) &&
-                !m_PlayerAnimation.Finished()) requested=m_PlayerState;
-        m_PlayerState=requested;
-        m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",m_PlayerState,m_Facing);
+        const bool hurtTriggered=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_H);
+        m_PlayerState=ResolvePlayerState(m_Moving,running,actionTriggered,hurtTriggered,
+                                         m_PlayerState,m_PlayerAnimation.Finished());
+        m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",m_PlayerState,m_Facing,
+                                 actionTriggered && m_PlayerState==VisualState::Action);
         m_PlayerAnimation.Update(deltaTime,false);
 
         m_NpcTime+=deltaTime;
@@ -168,8 +196,9 @@ namespace MyGame
                 m_SelectedItem = i;
                 if (auto* window = glfwGetCurrentContext())
                 {
-                    const std::string title = std::string("My Farm | ") + ItemNames[i] +
-                        " | WASD: Move | Q/E: Zoom | Tab: Character | F1/F2: Gallery | Home: Landscape | F3: World";
+                    const std::string title = std::string("My Farm - Phase F | ") + ItemNames[i] +
+                        " | Apples: " + std::to_string(m_FruitHarvested) +
+                        " | WASD: Move | F: Interact | F7: Orchard | F8: Depth";
                     glfwSetWindowTitle(window, title.c_str());
                 }
             }
@@ -178,18 +207,20 @@ namespace MyGame
     void DemoScene2D::DrawActor(MyEngine::Canvas2D& canvas,int character,glm::vec2 feet,
                                 const AnimationController& animation,float bob)
     {
-        // The reviewed walk sheet has four true poses. Other states retain their single-pose art.
+        // The selected clip owns its texture and UV; gameplay never depends on sprite dimensions.
         canvas.Rectangle(feet.x-22, feet.y-4, 44, 9, {0.08f,0.16f,0.09f,0.19f});
         const auto* texture=m_Characters[static_cast<std::size_t>(character)];
         const auto anchor=m_Anchors[static_cast<std::size_t>(character)];
         std::array<float,4> uv{0,0,1,1};
-        if((animation.State()==VisualState::Walk || animation.State()==VisualState::Run) &&
-           m_WalkCharacters[static_cast<std::size_t>(character)])
+        if(const auto* clip=animation.Clip();clip && m_Assets)
         {
-            texture=m_WalkCharacters[static_cast<std::size_t>(character)];
-            if(const auto* clip=animation.Clip();clip && m_Assets)
+            if(const auto* loaded=m_Assets->Loaded(clip->assetId))
                 if(const auto* record=m_Assets->Record(clip->assetId))
-                    if(const auto region=AssetManifest::FrameUv(*record,animation.Frame())) uv=*region;
+                    if(const auto region=AssetManifest::FrameUv(*record,animation.Frame()-record->firstFrame))
+                    {
+                        texture=loaded;uv=*region;
+                        if(clip->flipX){uv[0]+=uv[2];uv[2]=-uv[2];}
+                    }
         }
         if(texture) canvas.Sprite(*texture, feet.x-156*anchor.x, feet.y-156*anchor.y-bob, 156,156,uv);
         else canvas.Rectangle(feet.x-22,feet.y-78-bob,44,78,
@@ -269,32 +300,67 @@ namespace MyGame
                     }
             }
         const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
-        if(WorldMap::Intersects({2940,1580},{120,120},visibleOrigin,renderCamera.ViewSize())) DrawCrop(canvas);
+        m_RenderOrder.Begin(visibleOrigin,renderCamera.ViewSize());
+        const auto crop=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
+            return target.id=="crop.plot.01";});
+        if(crop!=m_Targets.end() && crop->active && crop->planted)
+            m_RenderOrder.Submit(RenderKind::Crop,0,crop->position-glm::vec2{56,94},{112,112},crop->position.y);
         const auto pickup=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
             return target.id=="item.demo.01";});
-        if(pickup!=m_Targets.end() && pickup->active &&
-           WorldMap::Intersects(pickup->position-glm::vec2{12,12},{24,24},visibleOrigin,renderCamera.ViewSize()))
-        {
-            if(m_Items) canvas.Sprite(*m_Items,pickup->position.x-26,pickup->position.y-40,52,52,m_ItemRegions[2]);
-            else canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
-        }
-        for(const auto& object:m_World.Objects())
-        {
-            if(!object.active || !WorldMap::Intersects(object.position,object.size,visibleOrigin,renderCamera.ViewSize())) continue;
-            const std::array<float,4> color=object.visualId=="visual.water.ripple"?
-                std::array<float,4>{0.65f,0.86f,0.96f,0.6f}:
-                (object.blocked?std::array<float,4>{0.35f,0.37f,0.24f,1}:
-                                std::array<float,4>{0.69f,0.52f,0.23f,1});
-            if(!m_Map) canvas.Rectangle(object.position.x,object.position.y,object.size.x,object.size.y,color);
-        }
-        const glm::vec2 npc=NpcPosition;
+        if(pickup!=m_Targets.end() && pickup->active)
+            m_RenderOrder.Submit(RenderKind::Pickup,0,pickup->position-glm::vec2{26,40},{52,52},pickup->position.y);
+        if(m_Map)
+            for(std::size_t i=0;i<m_Trees.Entries().size();++i)
+            {
+                const auto& tree=m_Trees.Entries()[i];
+                m_RenderOrder.Submit(RenderKind::TreeCanopy,i,tree.canopyOrigin,tree.canopySize,tree.footY);
+            }
+        else
+            for(std::size_t i=0;i<m_World.Objects().size();++i)
+            {
+                const auto& object=m_World.Objects()[i];
+                if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position,object.size,
+                                                       object.position.y+object.size.y);
+            }
+        m_RenderOrder.Submit(RenderKind::Actor,0,m_Player-glm::vec2{78,156},{156,156},m_Player.y);
+        m_RenderOrder.Submit(RenderKind::Actor,1,NpcPosition-glm::vec2{78,156},{156,156},NpcPosition.y);
+        m_RenderOrder.Submit(RenderKind::Animal,0,m_Dog-glm::vec2{52,87},{104,104},m_Dog.y);
+        m_RenderOrder.Sort();
         const float bob = m_Moving ? std::sin(m_WalkTime*12.0f)*2.2f : 0;
-        // Painter's ordering gives sprites a consistent overlap by their foot Y.
-        if (m_Player.y < npc.y) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
-        if(WorldMap::Intersects(npc-glm::vec2{80,160},{160,160},visibleOrigin,m_Camera.ViewSize()))
-            DrawActor(canvas,1-m_Character,npc,m_NpcAnimation,0);
-        if(WorldMap::Intersects(m_Dog-glm::vec2{34,48},{68,48},visibleOrigin,m_Camera.ViewSize())) DrawDog(canvas);
-        if (m_Player.y >= npc.y) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
+        for(const auto& entry:m_RenderOrder.Entries())
+        {
+            switch(entry.kind)
+            {
+            case RenderKind::Crop:DrawCrop(canvas);break;
+            case RenderKind::Pickup:
+                if(m_Items) canvas.Sprite(*m_Items,pickup->position.x-26,pickup->position.y-40,52,52,m_ItemRegions[2]);
+                else canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
+                break;
+            case RenderKind::Actor:
+                if(entry.index==0) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
+                else DrawActor(canvas,1-m_Character,NpcPosition,m_NpcAnimation,0);
+                break;
+            case RenderKind::Animal:DrawDog(canvas);break;
+            case RenderKind::TreeCanopy:
+            {
+                const auto& tree=m_Trees.Entries()[entry.index];
+                const auto x=tree.canopyOrigin.x,y=tree.canopyOrigin.y;
+                const auto w=tree.canopySize.x,h=tree.canopySize.y;
+                canvas.SpriteEllipse(*m_Map,x,y,w,h,{x/WorldSize.x,y/WorldSize.y,w/WorldSize.x,h/WorldSize.y});
+                break;
+            }
+            case RenderKind::WorldObject:
+            {
+                const auto& object=m_World.Objects()[entry.index];
+                const std::array<float,4> color=object.visualId=="visual.water.ripple"?
+                    std::array<float,4>{0.65f,0.86f,0.96f,0.6f}:
+                    (object.blocked?std::array<float,4>{0.35f,0.37f,0.24f,1}:
+                                    std::array<float,4>{0.69f,0.52f,0.23f,1});
+                canvas.Rectangle(object.position.x,object.position.y,object.size.x,object.size.y,color);
+                break;
+            }
+            }
+        }
         for(const auto& effect:m_Effects.Active())
         {
             if(!WorldMap::Intersects(effect.position-glm::vec2{6,6},{12,12},visibleOrigin,renderCamera.ViewSize())) continue;
@@ -343,7 +409,7 @@ namespace MyGame
         m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;
         m_Assets=nullptr;
         m_Characters.fill(nullptr);
-        m_WalkCharacters.fill(nullptr);
+        m_Trees={};m_RenderOrder={};
         m_Visuals={};m_PlayerAnimation={};m_NpcAnimation={};m_DogAnimation={};m_CropAnimation={};
         m_Targets.clear();m_Events.Clear();m_Effects.Clear();
     }

@@ -1,3 +1,3 @@
 gameplay_id,canopy_x,canopy_y,width,height,foot_y,interact_x,interact_y,fruits
-tree.apple.01,1570,760,860,780,1590,1990,1660,3
-tree.apple.02,2140,560,540,660,1290,2380,1380,2
+tree.apple.01,1530,900,710,530,1540,1990,1660,3
+tree.apple.02,2050,720,460,450,1240,2380,1380,2

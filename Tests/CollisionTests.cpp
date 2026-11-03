@@ -22,6 +22,10 @@ int main(int argc,char** argv)
     check(!world.CanOccupy({500,700},body),"body entered house");
     check(!world.CanOccupy({1024,1800},body),"body entered fountain");
     check(!world.CanOccupy({1980,1510},body),"body entered orchard trunk");
+    check(world.CanOccupy({1990,1740},body) && world.CanOccupy({1920,1770},{{22,13}}),
+          "orchard debug spawn blocked");
+    check(world.CanOccupy({2140,1450},body) && world.CanOccupy({2240,1480},{{22,13}}),
+          "depth debug spawn blocked");
     check(!world.CanOccupy({2700,1210},body),"body entered fence");
     check(!world.HasLineOfSight({1300,700},{200,700}),"interact through building");
     check(world.HasLineOfSight({2200,2200},{2300,2200}),"clear interaction path");

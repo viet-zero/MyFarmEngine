@@ -3,6 +3,8 @@
 #include "Gameplay/Graphics/AssetTextures.h"
 #include "Gameplay/Graphics/VisualCatalog.h"
 #include "Gameplay/World/WorldMap.h"
+#include "Gameplay/World/ForegroundTrees.h"
+#include "Gameplay/Graphics/RenderOrder.h"
 #include "Gameplay/Systems/InteractionSystem.h"
 #include "Gameplay/Effects/EffectPool.h"
 #include <array>
@@ -24,6 +26,8 @@ namespace MyGame
         void DrawCrop(MyEngine::Canvas2D& canvas) const;
         MyEngine::Camera2D m_Camera;
         WorldMap m_World;
+        ForegroundTrees m_Trees;
+        RenderOrder m_RenderOrder;
         InteractionActor m_Actor;
         std::vector<InteractionTarget> m_Targets;
         EventBus m_Events;
@@ -36,7 +40,6 @@ namespace MyGame
         const MyEngine::Texture2D* m_DogTexture=nullptr;
         const MyEngine::Texture2D* m_CropTexture=nullptr;
         std::array<const MyEngine::Texture2D*, 2> m_Characters{};
-        std::array<const MyEngine::Texture2D*, 2> m_WalkCharacters{};
         std::array<std::array<float,4>,4> m_ItemRegions{};
         std::array<glm::vec2,2> m_Anchors{glm::vec2(0.5f,1),glm::vec2(0.5f,1)};
         VisualCatalog m_Visuals;
@@ -50,6 +53,7 @@ namespace MyGame
         Facing m_Facing=Facing::Down;
         VisualState m_PlayerState=VisualState::Idle;
         int m_Character = 0, m_SelectedItem = 0;
+        int m_FruitHarvested = 0;
         bool m_Ready = false;
     };
 }
