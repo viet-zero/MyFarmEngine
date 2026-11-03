@@ -1,5 +1,7 @@
 # Phase C — hướng dẫn tự dựng WorldMap cho MyFarmEngine hoặc game 2D khác
 
+Tài liệu này ghi lại cách Phase C hoạt động. Bản hiện hành Phase E thay phép kiểm tra điểm cuối bằng AABB, thêm static collider và ảnh toàn bản đồ: [CollisionVaDoHoa.md](CollisionVaDoHoa.md).
+
 Tài liệu này giải thích cách Phase C hoạt động, công dụng các hàm và ý nghĩa từng thông số để bạn tự sửa hoặc làm lại. Source chính: `Gameplay/World/WorldMap.h/.cpp`, `Gameplay/World/DemoScene2D.cpp`, `Gameplay/Data/Objects.csv`, `Engine/Graphics/Camera2D.h`.
 
 ## 1. Cách các phần nối với nhau

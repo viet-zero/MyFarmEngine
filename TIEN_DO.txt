@@ -1,6 +1,27 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+GAMEPLAY10 PHASE E - BAN DO, ANIMATION, VA CHAM
+Branch: feat/gameplay10-phase-e-collision-visuals; baseline Phase D: 3c7cd8b.
+Commit 11a541c: asset/atlas/clip/prompt va SHA256.
+Commit de32f71: collider, query map, slide, ray va test.
+Commit d298146: noi asset/va cham vao scene, bo anh ghep va teleport co cho.
+[x] 1 anh map lien tuc cho lang/ruong/ho-rung; bo mieng anh vuon hinh chu nhat va icon vat pham rai rac.
+[x] Sprite sheet 4 frame cho Linh/An/cho; 4 frame tuoi cay. Atlas/crop co manifest, SHA256 va prompt.
+[x] Collider chan rieng sprite; AABB player, NPC, dog; tile nuoc, nha, dai phun nuoc, hang rao.
+[x] Di chuyen substep tach X/Y truot canh; chan NaN/dt am, cham bien, di cheo va buoc lon.
+[x] Tuong tac F kiem tra line of sight qua static collider/nuoc; object bi pha mat collider.
+[x] Teleport F4/F5/F6 dua cho theo va can camera; spawn tren loi di.
+[x] Debug /W4 /WX 14/14; Release /W4 /WX 14/14; ASan CPU 8/8.
+[x] HuongDan/CollisionVaDoHoa.md giai thich ham, tham so va cach lam lai game khac.
+[ ] Anh walk hien la huong truoc; chua co sheet 4 huong va pixel-perfect collider.
+[ ] Chua co save/load world, gameplay online/chat/voice, UBSan hay ASan GPU.
+[ ] Da xem giao dien ban Debug truoc khi doi spawn; ban Release sau doi spawn chua chup lai vi Computer Use bi dung boi Escape.
+EXE: out/build/phase-e-release/MyFarmEngine.exe
+Buoc tiep theo: atlas 4 huong, save/load co version, sau do dong bo online theo Docs/KeHoachOnline.md.
+
+CAC MUC BEN DUOI LA LICH SU PHASE D VA TRUOC DO
+
 GAMEPLAY10 PHASE D - EVENT, EFFECT, INTERACTION
 Branch: feat/gameplay10-phase-d-interaction; baseline Phase C: 1d195f9.
 [x] Tach HuongDan/ lam noi luu huong dan, co muc luc va tai lieu ham/thong so.

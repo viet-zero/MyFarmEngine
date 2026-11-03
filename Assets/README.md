@@ -1,5 +1,7 @@
 # Tài nguyên MyFarmEngine
 
+**Cập nhật Phase E:** 195 ảnh snapshot Original, 18 export candidate, trong đó 5 artwork mới cho bản đồ/khung đi bộ/chó/cây. Prompt và nguồn tại [Art/PHASE_E_PROMPTS.md](Art/PHASE_E_PROMPTS.md); manifest SHA256 tại `Art/manifest.csv`. Ảnh map liên tục và sprite sheet 2×2 đang dùng trong scene mặc định. Các con số ở phần lịch sử bên dưới là thời điểm Phase A/B.
+
 ## Pipeline hiện hành — Phase A
 
 Ảnh gốc nằm trong Original (190 PNG, kiểm tra SHA256); 177 ảnh chưa duyệt có bản làm việc trong Workspace; 13 PNG hợp lệ nằm trong Export. Runtime chỉ bật record ready trong Gameplay/Data/Assets.csv sau khi kiểm tra path, decode, alpha, kích thước/grid/frame và anchor. PNG/metadata lỗi dùng fallback; F1 chưa bật lại các sprite needs_review. Các ghi chú Art/Library phía dưới mô tả kho cũ được giữ nguyên, không phải các thư mục ảnh runtime mới. Xem Docs/PhaseA/README.md để chạy pipeline.
