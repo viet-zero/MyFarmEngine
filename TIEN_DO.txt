@@ -1,6 +1,26 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+GAMEPLAY10 PHASE B - ANIMATION RIENG TUNG THUC THE
+Branch: feat/gameplay10-phase-b-animation; baseline Phase A: 0a8a1c9.
+[x] Animator loop/non-loop; frame bounds; pause; dt am/NaN/vo han an toan.
+[x] Khong restart timeline khi Select cung profile/state/clip moi frame.
+[x] VisualCatalog co idle/walk/run/action/hurt/sleep tuy profile.
+[x] Player chon state theo velocity + Shift; huong theo truc van toc troi.
+[x] NPC, dog, crop co controller/state rieng; crop chon stage theo tuoi game.
+[x] Frame UV qua AssetManifest da validate; asset chua duyet dung fallback.
+[x] Snapshot/rebuild animation giu state/huong/frame/pause.
+[x] Debug /W4 /WX: 10/10; Release /W4 /WX: 10/10.
+[x] MSVC ASan CPU: 4/4.
+[ ] UBSan: chua co Clang/WSL phu hop tren may.
+[ ] Save file day du: Gameplay/Save van la scaffold; moi rebuild timeline trong bo nho.
+[ ] Sprite nhieu frame that: player la sheet 1x1; crop/dog dung fallback hinh hoc.
+Huong dan: Docs/PhaseB/README.md
+EXE: out/build/phase-b-release/MyFarmEngine.exe
+Dung tai Phase B. Chua bat dau Phase C-E.
+
+CAC MUC BEN DUOI LA LICH SU PHASE A VA CAC GIAI DOAN TRUOC
+
 PHASE A - GAMEPLAY10 ASSET PIPELINE
 Branch: feat/gameplay10-phase-a-assets; baseline: 1b7432c.
 [x] Da doc README, 109 file source baseline (gom 60 file rong), CMake/preset/shader va hai tai lieu ZIP.
