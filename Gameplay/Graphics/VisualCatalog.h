@@ -44,7 +44,8 @@ namespace MyGame
     class AnimationController
     {
     public:
-        bool Select(const VisualCatalog& catalog,std::string_view profile,VisualState state,Facing facing);
+        bool Select(const VisualCatalog& catalog,std::string_view profile,VisualState state,Facing facing,
+                    bool restart=false);
         void Update(float deltaTime,bool paused);
         int Frame() const { return m_Animator.Frame(); }
         bool Finished() const { return m_Animator.Finished(); }

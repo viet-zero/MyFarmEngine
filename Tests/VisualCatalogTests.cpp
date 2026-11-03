@@ -40,6 +40,12 @@ int main(int argc,char** argv)
     Check(loaded.Rebuild(catalog,snapshot),"save/load rebuild failed");
     Check(loaded.State()==VisualState::Run && loaded.Direction()==Facing::Left &&
           loaded.Frame()==player.Frame(),"rebuilt controller lost state");
+    Check(player.Select(catalog,"player_linh",VisualState::Action,Facing::Left),"action clip missing");
+    player.Update(0.25f,false);
+    Check(player.Finished(),"one-shot action did not finish");
+    Check(player.Select(catalog,"player_linh",VisualState::Action,Facing::Left,true) &&
+          !player.Finished() && player.Save().timeline.elapsed==0.0,
+          "new action input did not restart the finished clip");
     Check(catalog.Find("player_an",VisualState::Walk,Facing::Left)->flipX,
           "An left walk should mirror reviewed side sheet");
     Check(catalog.Find("player_linh",VisualState::Idle,Facing::Left)->flipX,

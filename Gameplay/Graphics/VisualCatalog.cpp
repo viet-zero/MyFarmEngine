@@ -100,11 +100,13 @@ namespace MyGame
         return {ids.begin(),ids.end()};
     }
 
-    bool AnimationController::Select(const VisualCatalog& catalog,std::string_view profile,VisualState state,Facing facing)
+    bool AnimationController::Select(const VisualCatalog& catalog,std::string_view profile,VisualState state,Facing facing,
+                                     bool restart)
     {
         const auto* clip=catalog.Find(profile,state,facing);if(!clip) return false;
         const auto resolved=clip->facing;
         const auto key=Key(profile,state,resolved);
+        if(restart) m_Animator.Reset();
         if(!m_Animator.Play(key,clip->timeline,clip->availableFrames)) return false;
         m_Clip=clip;m_Profile=profile;m_State=state;m_Facing=facing;return true;
     }
