@@ -71,6 +71,12 @@ if(BUILD_TESTING)
     enable_project_warnings(EngineLifecycleTests)
     add_test(NAME engine.lifecycle COMMAND EngineLifecycleTests)
     add_test(NAME game.smoke COMMAND MyFarmEngine --smoke-test)
-    set_tests_properties(engine.lifecycle game.smoke PROPERTIES
+    add_executable(EngineCanvasTests Tests/CanvasTests.cpp)
+    target_include_directories(EngineCanvasTests SYSTEM PRIVATE ThirdParty/stb)
+    target_link_libraries(EngineCanvasTests PRIVATE MyFarmEngineCore)
+    enable_project_warnings(EngineCanvasTests)
+    add_test(NAME engine.canvas COMMAND EngineCanvasTests)
+    add_dependencies(EngineCanvasTests MyFarmRuntimeAssets)
+    set_tests_properties(engine.lifecycle game.smoke engine.canvas PROPERTIES
         TIMEOUT 30 LABELS "graphics" RUN_SERIAL TRUE)
 endif()

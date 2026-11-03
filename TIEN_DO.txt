@@ -14,7 +14,9 @@ DOT B - HIEN THI NEN TRONG CHUONG TRINH
 [x] Tim Assets theo thu muc EXE, khong phu thuoc thu muc CMD hien tai.
 [x] F1 xem 5 anh dai dien thu vien; F2 xem 8 anh lich su; mui ten de chuyen.
 [x] Sua input bo lo phim nhan nhanh; luu su kien nhan cho F1/F2/mui ten/ESC.
-[ ] Build/test va ghi ro ket qua, khong danh dau test chua chay la dat.
+[x] Debug 4/4 va Release 4/4 test dat, gom kiem tra pixel, alpha, cover, repaint.
+[x] Kiem tra truc tiep F1, Right, F2, Home; nen va gallery hien thi dung.
+[x] Chay tu thu muc khac van tim thay Assets; 189/189 file nhap khop SHA256.
 
 DOT C - TAI LIEU VA GIT
 [ ] Huong dan su dung, nguon anh, phan biet anh lich su va tinh nang da lam.
