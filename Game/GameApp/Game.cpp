@@ -2,7 +2,7 @@
 namespace MyGame {
 	bool Game::Initialize() {
 		m_gameplayState.Enter();
-		return true;
+		return m_gameplayState.IsReady();
 	}
 	void Game::Update(float deltaTime) {
 		m_gameplayState.Update(deltaTime);

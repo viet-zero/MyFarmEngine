@@ -39,6 +39,16 @@ target_include_directories(MyFarmEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     ThirdParty/glm ThirdParty/stb)
 target_link_libraries(MyFarmEngine PRIVATE MyFarmEngineCore)
 
+# Runtime content travels beside the EXE. No source archive or old code is deployed.
+add_custom_target(MyFarmRuntimeAssets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Backgrounds" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Backgrounds"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v11/Characters" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v11/Characters"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v11/Animals" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v11/Animals"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v8" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v8"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Docs/History/Previews" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/History"
+)
+add_dependencies(MyFarmEngine MyFarmRuntimeAssets)
+
 function(enable_project_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4 /permissive- /utf-8)
