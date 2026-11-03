@@ -6,7 +6,8 @@ GIAI DOAN 2 - CAMERA VA SPRITE THE GIOI (DOT MOI)
 [x] Luu PNG goc, prompt va toa do UV atlas trong Assets/Art.
 [x] Tach shader GLSL ra file va them ma tran chieu GLM.
 [x] Camera truc giao, bam player, zoom va chuyen doi toa do.
-[ ] Canh 2D, WASD, doi nhan vat va hotbar vat pham.
+[x] Canh 2D, WASD, doi nhan vat va hotbar vat pham.
+[x] Test camera/di chuyen: ti le, zoom, toa do, bam, gioi han va toc do cheo.
 [ ] Test logic/GPU, huong dan giai doan 2 va push cac commit nho.
 
 DOT A - THU HOI TAI NGUYEN TU CAC CHAT

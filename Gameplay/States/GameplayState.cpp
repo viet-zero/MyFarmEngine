@@ -27,17 +27,17 @@ namespace MyGame
 {
     void GameplayState::Enter()
     {
-        m_Mode = 0;
+        m_Mode = 3;
         m_Selected = 0;
         m_Ready = m_Canvas.Initialize() &&
-            m_Background.Load(MyEngine::FindAsset("Backgrounds/cozy_farm_morning.png"));
+            m_Background.Load(MyEngine::FindAsset("Backgrounds/cozy_farm_morning.png")) && m_Demo.Initialize();
         UpdateTitle();
     }
 
-    void GameplayState::Update(float /*deltaTime*/)
+    void GameplayState::Update(float deltaTime)
     {
         constexpr std::array keys = {GLFW_KEY_F1, GLFW_KEY_F2, GLFW_KEY_HOME,
-                                     GLFW_KEY_LEFT, GLFW_KEY_RIGHT};
+                                     GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_F3};
         for (std::size_t i = 0; i < keys.size(); ++i)
         {
             if (MyEngine::Input::ConsumeKeyPress(keys[i]))
@@ -45,7 +45,8 @@ namespace MyGame
                 if (i == 0) SetMode(m_Mode == 1 ? 0 : 1);
                 else if (i == 1) SetMode(m_Mode == 2 ? 0 : 2);
                 else if (i == 2) SetMode(0);
-                else if (m_Mode != 0)
+                else if (i == 5) SetMode(3);
+                else if (m_Mode == 1 || m_Mode == 2)
                 {
                     const auto count = m_Mode == 1 ? Library.size() : History.size();
                     m_Selected = (m_Selected + (i == 3 ? count - 1 : 1)) % count;
@@ -53,6 +54,7 @@ namespace MyGame
                 }
             }
         }
+        if (m_Mode == 3) m_Demo.Update(deltaTime);
     }
 
     void GameplayState::Render()
@@ -61,6 +63,11 @@ namespace MyGame
         int width = 0, height = 0;
         glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
         if (width <= 0 || height <= 0) return;
+        if (m_Mode == 3)
+        {
+            m_Demo.Render(m_Canvas,width,height);
+            return;
+        }
         m_Canvas.Begin(width, height);
         m_Canvas.Cover(m_Background);
         if (m_Mode != 0)
@@ -87,6 +94,7 @@ namespace MyGame
     void GameplayState::Exit()
     {
         m_Ready = false;
+        m_Demo.Shutdown();
         m_Preview.Reset();
         m_Background.Reset();
         m_Canvas.Shutdown();
@@ -102,7 +110,7 @@ namespace MyGame
     void GameplayState::LoadPreview()
     {
         m_Preview.Reset();
-        if (m_Mode != 0)
+        if (m_Mode == 1 || m_Mode == 2)
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];
             m_Preview.Load(MyEngine::FindAsset(path));
@@ -112,8 +120,10 @@ namespace MyGame
 
     void GameplayState::UpdateTitle()
     {
-        std::string title = "My Farm | Cozy Morning | F1: Artwork | F2: History | Esc: Exit";
-        if (m_Mode != 0)
+        std::string title = "My Farm | Cozy Morning | F1: Artwork | F2: History | F3: World | Esc: Exit";
+        if (m_Mode == 3)
+            title = "My Farm - Render02 | WASD: Move | Shift: Run | Q/E: Zoom | Tab: Character | 1-4: Item | R: Reset | F1/F2: Gallery | Home: Landscape";
+        if (m_Mode == 1 || m_Mode == 2)
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];
             title = "My Farm | " + std::string(m_Mode == 1 ? "Asset review: " : "PAST PREVIEW (reference only): ")

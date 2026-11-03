@@ -2,6 +2,7 @@
 
 #include "GameState.h"
 #include "Graphics/Canvas2D.h"
+#include "Gameplay/World/DemoScene2D.h"
 #include <array>
 #include <cstddef>
 
@@ -22,7 +23,8 @@ namespace MyGame
         void UpdateTitle();
         MyEngine::Canvas2D m_Canvas;
         MyEngine::Texture2D m_Background, m_Preview;
-        int m_Mode = 0;
+        DemoScene2D m_Demo;
+        int m_Mode = 3;
         std::size_t m_Selected = 0;
         bool m_Ready = false;
     };

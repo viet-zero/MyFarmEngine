@@ -36,6 +36,7 @@ add_executable(MyFarmEngine
     Game/main.cpp
     Game/GameApp/Game.cpp
     Gameplay/States/GameplayState.cpp
+    Gameplay/World/DemoScene2D.cpp
 )
 target_include_directories(MyFarmEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     ThirdParty/glm ThirdParty/stb)
@@ -65,6 +66,11 @@ enable_project_warnings(MyFarmEngine)
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(EngineCameraTests Tests/CameraTests.cpp)
+    target_include_directories(EngineCameraTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(EngineCameraTests PRIVATE MyFarmEngineCore)
+    enable_project_warnings(EngineCameraTests)
+    add_test(NAME engine.camera COMMAND EngineCameraTests)
     add_executable(EngineTimeTests Tests/TimeTests.cpp)
     target_link_libraries(EngineTimeTests PRIVATE MyFarmEngineCore)
     enable_project_warnings(EngineTimeTests)
