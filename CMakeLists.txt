@@ -37,6 +37,8 @@ target_include_directories(MyFarmAssetData SYSTEM PRIVATE ThirdParty/stb)
 target_link_libraries(MyFarmEngineCore PUBLIC MyFarmAssetData)
 add_library(MyFarmGameplayAnimation STATIC Gameplay/Graphics/VisualCatalog.cpp)
 target_link_libraries(MyFarmGameplayAnimation PUBLIC MyFarmEngineCore)
+add_library(MyFarmWorld STATIC Gameplay/World/WorldMap.cpp)
+target_link_libraries(MyFarmWorld PUBLIC MyFarmEngineCore)
 add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/AssetTextures.cpp)
 target_link_libraries(MyFarmVisualAssets PUBLIC MyFarmGameplayAnimation)
 
@@ -60,7 +62,7 @@ add_executable(MyFarmEngine
 )
 target_include_directories(MyFarmEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     ThirdParty/glm ThirdParty/stb)
-target_link_libraries(MyFarmEngine PRIVATE MyFarmVisualAssets)
+target_link_libraries(MyFarmEngine PRIVATE MyFarmVisualAssets MyFarmWorld)
 
 # Runtime content travels beside the EXE. No source archive or old code is deployed.
 add_custom_target(MyFarmRuntimeAssets ALL
@@ -69,6 +71,7 @@ add_custom_target(MyFarmRuntimeAssets ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Assets.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualClips.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/VisualClips.csv"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Objects.csv"
 )
 add_dependencies(MyFarmEngine MyFarmRuntimeAssets)
 
@@ -97,6 +100,7 @@ enable_project_warnings(MyFarmEngineCore)
 enable_project_warnings(MyFarmAssetData)
 enable_project_warnings(MyFarmVisualAssets)
 enable_project_warnings(MyFarmGameplayAnimation)
+enable_project_warnings(MyFarmWorld)
 enable_project_warnings(AssetAudit)
 enable_project_warnings(MyFarmEngine)
 
@@ -124,6 +128,10 @@ if(BUILD_TESTING)
     target_link_libraries(GameplayVisualTests PRIVATE MyFarmGameplayAnimation)
     enable_project_warnings(GameplayVisualTests)
     add_test(NAME gameplay.visuals COMMAND GameplayVisualTests ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualClips.csv)
+    add_executable(GameplayWorldTests Tests/WorldMapTests.cpp)
+    target_link_libraries(GameplayWorldTests PRIVATE MyFarmWorld)
+    enable_project_warnings(GameplayWorldTests)
+    add_test(NAME gameplay.world COMMAND GameplayWorldTests ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv)
 
     add_executable(EngineLifecycleTests Tests/LifecycleTests.cpp)
     target_link_libraries(EngineLifecycleTests PRIVATE MyFarmEngineCore)
