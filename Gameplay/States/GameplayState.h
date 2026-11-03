@@ -22,7 +22,9 @@ namespace MyGame
         void LoadPreview();
         void UpdateTitle();
         MyEngine::Canvas2D m_Canvas;
-        MyEngine::Texture2D m_Background, m_Preview;
+        AssetTextures m_Assets;
+        const MyEngine::Texture2D* m_Background=nullptr;
+        const MyEngine::Texture2D* m_Preview=nullptr;
         DemoScene2D m_Demo;
         int m_Mode = 3;
         std::size_t m_Selected = 0;

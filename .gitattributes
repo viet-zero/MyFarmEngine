@@ -1,0 +1,5 @@
+*.png -text
+*.jpg -text
+# Preserve archive metadata bytes: import_manifest.csv records their original hashes.
+Assets/Library/SNHR_v11/README_VI.txt -text
+Assets/Library/SNHR_v11/entity_manifest.csv -text

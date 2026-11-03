@@ -4,6 +4,8 @@ project(MyFarmEngine VERSION 0.2.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+option(MYFARM_WARNINGS_AS_ERRORS "Treat project warnings as errors" ON)
+option(MYFARM_ENABLE_ASAN "Instrument project targets with AddressSanitizer" OFF)
 
 # Build the engine, not the bundled GLFW demos/tools.
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build GLFW examples")
@@ -25,6 +27,21 @@ add_library(MyFarmEngineCore STATIC
     Engine/Resources/AssetPath.cpp
     Engine/Input/Input.cpp
 )
+add_library(MyFarmAssetData STATIC
+    Engine/Resources/ImageData.cpp
+    Gameplay/Assets/AssetManifest.cpp
+)
+target_include_directories(MyFarmAssetData PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Engine)
+target_include_directories(MyFarmAssetData SYSTEM PRIVATE ThirdParty/stb)
+target_link_libraries(MyFarmEngineCore PUBLIC MyFarmAssetData)
+add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/AssetTextures.cpp)
+target_link_libraries(MyFarmVisualAssets PUBLIC MyFarmEngineCore)
+
+add_executable(AssetAudit Gameplay/Assets/AssetAudit.cpp)
+target_link_libraries(AssetAudit PRIVATE MyFarmAssetData)
+target_compile_definitions(AssetAudit PRIVATE
+    MYFARM_SOURCE_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/Assets"
+    MYFARM_SOURCE_MANIFEST="${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv")
 target_include_directories(MyFarmEngineCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 target_include_directories(MyFarmEngineCore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glm)
 target_include_directories(MyFarmEngineCore SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/stb)
@@ -40,32 +57,51 @@ add_executable(MyFarmEngine
 )
 target_include_directories(MyFarmEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     ThirdParty/glm ThirdParty/stb)
-target_link_libraries(MyFarmEngine PRIVATE MyFarmEngineCore)
+target_link_libraries(MyFarmEngine PRIVATE MyFarmVisualAssets)
 
 # Runtime content travels beside the EXE. No source archive or old code is deployed.
 add_custom_target(MyFarmRuntimeAssets ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Art" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Art"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Export" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Export"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shaders" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Backgrounds" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Backgrounds"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v11/Characters" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v11/Characters"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v11/Animals" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v11/Animals"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Library/SNHR_v8" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Library/SNHR_v8"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Docs/History/Previews" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/History"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Assets.csv"
 )
 add_dependencies(MyFarmEngine MyFarmRuntimeAssets)
 
 function(enable_project_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4 /permissive- /utf-8)
+        if(MYFARM_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE /WX)
+        endif()
+        if(MYFARM_ENABLE_ASAN)
+            target_compile_options(${target} PRIVATE /fsanitize=address)
+            target_link_options(${target} PRIVATE /INCREMENTAL:NO)
+        endif()
     else()
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+        if(MYFARM_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE -Werror)
+        endif()
+        if(MYFARM_ENABLE_ASAN)
+            target_compile_options(${target} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+            target_link_options(${target} PRIVATE -fsanitize=address)
+        endif()
     endif()
 endfunction()
 enable_project_warnings(MyFarmEngineCore)
+enable_project_warnings(MyFarmAssetData)
+enable_project_warnings(MyFarmVisualAssets)
+enable_project_warnings(AssetAudit)
 enable_project_warnings(MyFarmEngine)
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(AssetPipelineTests Tests/AssetTests.cpp)
+    target_link_libraries(AssetPipelineTests PRIVATE MyFarmAssetData)
+    enable_project_warnings(AssetPipelineTests)
+    add_test(NAME assets.validation COMMAND AssetPipelineTests)
+    add_test(NAME assets.catalog COMMAND AssetAudit)
     add_executable(EngineCameraTests Tests/CameraTests.cpp)
     target_include_directories(EngineCameraTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(EngineCameraTests PRIVATE MyFarmEngineCore)
@@ -83,10 +119,15 @@ if(BUILD_TESTING)
     add_test(NAME game.smoke COMMAND MyFarmEngine --smoke-test)
     add_executable(EngineCanvasTests Tests/CanvasTests.cpp)
     target_include_directories(EngineCanvasTests SYSTEM PRIVATE ThirdParty/stb)
-    target_link_libraries(EngineCanvasTests PRIVATE MyFarmEngineCore)
+    target_link_libraries(EngineCanvasTests PRIVATE MyFarmVisualAssets)
     enable_project_warnings(EngineCanvasTests)
     add_test(NAME engine.canvas COMMAND EngineCanvasTests)
     add_dependencies(EngineCanvasTests MyFarmRuntimeAssets)
-    set_tests_properties(engine.lifecycle game.smoke engine.canvas PROPERTIES
+    add_test(NAME assets.fallback COMMAND ${CMAKE_COMMAND}
+        -DGAME=$<TARGET_FILE:MyFarmEngine>
+        -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}
+        -DBUILD=${CMAKE_CURRENT_BINARY_DIR}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetFallback.cmake)
+    set_tests_properties(engine.lifecycle game.smoke engine.canvas assets.fallback PROPERTIES
         TIMEOUT 30 LABELS "graphics" RUN_SERIAL TRUE)
 endif()

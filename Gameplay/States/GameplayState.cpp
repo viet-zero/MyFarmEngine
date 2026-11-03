@@ -9,17 +9,17 @@
 namespace
 {
     constexpr std::array Library = {
-        "Library/SNHR_v11/Characters/character_0001/sprite.png",
-        "Library/SNHR_v11/Animals/animal_0013/sprite.png",
-        "Library/SNHR_v8/Crops_Plants/IMG_082/plant_05_07_trim.png",
-        "Library/SNHR_v8/Environment/IMG_046/nature_prop_06_01_trim.png",
-        "Library/SNHR_v8/Items_Food/IMG_021/drink_item_01_01_trim.png"
+        "library_snhr_v11_characters_character_0001_sprite",
+        "library_snhr_v11_animals_animal_0013_sprite",
+        "library_snhr_v8_crops_plants_img_082_plant_05_07_trim",
+        "library_snhr_v8_environment_img_046_nature_prop_06_01_trim",
+        "library_snhr_v8_items_food_img_021_drink_item_01_01_trim"
     };
     constexpr std::array History = {
-        "History/Render02_Preview.png", "History/Gameplay03_Preview.png",
-        "History/SaveShop04_Preview.png", "History/Audit05_Preview.png",
-        "History/UI06_Inventory.png", "History/UI06_Shop.png",
-        "History/Sprite07_Preview.png", "History/Visual08_Preview.png"
+        "history_render02_preview", "history_gameplay03_preview",
+        "history_saveshop04_preview", "history_audit05_preview",
+        "history_ui06_inventory", "history_ui06_shop",
+        "history_sprite07_preview", "history_visual08_preview"
     };
 }
 
@@ -29,8 +29,9 @@ namespace MyGame
     {
         m_Mode = 3;
         m_Selected = 0;
-        m_Ready = m_Canvas.Initialize() &&
-            m_Background.Load(MyEngine::FindAsset("Backgrounds/cozy_farm_morning.png")) && m_Demo.Initialize();
+        m_Assets.Initialize(MyEngine::AssetRoot());
+        m_Background=m_Assets.Load("background_morning");
+        m_Ready = m_Canvas.Initialize() && m_Demo.Initialize(m_Assets);
         UpdateTitle();
     }
 
@@ -69,7 +70,8 @@ namespace MyGame
             return;
         }
         m_Canvas.Begin(width, height);
-        m_Canvas.Cover(m_Background);
+        if(m_Background) m_Canvas.Cover(*m_Background);
+        else m_Canvas.Rectangle(0,0,static_cast<float>(width),static_cast<float>(height),{0.32f,0.48f,0.28f,1});
         if (m_Mode != 0)
         {
             const auto w = static_cast<float>(width), h = static_cast<float>(height);
@@ -78,15 +80,16 @@ namespace MyGame
             const float x = (w-cardW)*0.5f, y = (h-cardH)*0.5f;
             m_Canvas.Rectangle(x+6, y+8, cardW, cardH, {0,0,0,0.2f});
             m_Canvas.Rectangle(x, y, cardW, cardH, {0.98f,0.96f,0.9f,1});
-            if (m_Preview.Id())
+            if (m_Preview)
             {
                 const float padding = std::min(28.0f, std::min(cardW, cardH)*0.08f);
-                const float scale = std::min((cardW-2*padding)/static_cast<float>(m_Preview.Width()),
-                                             (cardH-2*padding)/static_cast<float>(m_Preview.Height()));
-                const float imageW = static_cast<float>(m_Preview.Width())*scale;
-                const float imageH = static_cast<float>(m_Preview.Height())*scale;
-                m_Canvas.Image(m_Preview, (w-imageW)*0.5f, (h-imageH)*0.5f, imageW, imageH);
+                const float scale = std::min((cardW-2*padding)/static_cast<float>(m_Preview->Width()),
+                                             (cardH-2*padding)/static_cast<float>(m_Preview->Height()));
+                const float imageW = static_cast<float>(m_Preview->Width())*scale;
+                const float imageH = static_cast<float>(m_Preview->Height())*scale;
+                m_Canvas.Image(*m_Preview, (w-imageW)*0.5f, (h-imageH)*0.5f, imageW, imageH);
             }
+            else m_Canvas.Rectangle(x+cardW*0.3f,y+cardH*0.3f,cardW*0.4f,cardH*0.4f,{0.6f,0.4f,0.25f,1});
         }
         m_Canvas.End();
     }
@@ -95,8 +98,8 @@ namespace MyGame
     {
         m_Ready = false;
         m_Demo.Shutdown();
-        m_Preview.Reset();
-        m_Background.Reset();
+        m_Preview=m_Background=nullptr;
+        m_Assets.Shutdown();
         m_Canvas.Shutdown();
     }
 
@@ -109,11 +112,11 @@ namespace MyGame
 
     void GameplayState::LoadPreview()
     {
-        m_Preview.Reset();
+        m_Preview=nullptr;
         if (m_Mode == 1 || m_Mode == 2)
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];
-            m_Preview.Load(MyEngine::FindAsset(path));
+            m_Preview=m_Assets.Load(path);
         }
         UpdateTitle();
     }
@@ -127,7 +130,7 @@ namespace MyGame
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];
             title = "My Farm | " + std::string(m_Mode == 1 ? "Asset review: " : "PAST PREVIEW (reference only): ")
-                + path + (m_Preview.Id() ? "" : " [LOAD FAILED]")
+                + path + (m_Preview ? "" : " [FALLBACK / NOT APPROVED]")
                 + " | Left/Right: Browse | Home: Landscape | Esc: Exit";
         }
         if (auto* window = glfwGetCurrentContext())

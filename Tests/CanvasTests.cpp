@@ -1,6 +1,7 @@
 #include "Core/Window.h"
 #include "Graphics/Canvas2D.h"
 #include "Resources/AssetPath.h"
+#include "Gameplay/Graphics/AssetTextures.h"
 #include <glad/gl.h>
 #include <stb_image.h>
 #include <array>
@@ -152,6 +153,17 @@ int main()
           shader.Id()==program && glIsProgram(program), "failed shader replacement lost a valid program");
     shader.Reset();
     shader.Reset();
+    MyGame::AssetTextures assets;
+    Check(assets.Initialize(MyEngine::AssetRoot()),"runtime asset manifest did not load");
+    const auto* farmer=assets.Load("player_linh");
+    Check(farmer && farmer==assets.Load("player_linh") && assets.CachedCount()==1,
+          "validated texture cache did not reuse an asset");
+    Check(assets.Load("library_snhr_v11_characters_character_0001_sprite")==nullptr && assets.CachedCount()==1,
+          "needs_review artwork was uploaded to GPU");
+    Check(assets.Load("unknown_asset")==nullptr && assets.CachedCount()==1,"unknown asset activated");
+    const auto farmerId=farmer?farmer->Id():0;
+    assets.Shutdown();
+    Check(farmerId && !glIsTexture(farmerId),"cached texture leaked");
     const auto original = texture.Id();
     Check(!texture.Load(MyEngine::FindAsset("does-not-exist.png")) && texture.Id() == original,
           "failed PNG load destroyed an existing texture");

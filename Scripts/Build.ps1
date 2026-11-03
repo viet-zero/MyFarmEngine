@@ -1,8 +1,8 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
-    [ValidateSet('phase1','phase2')]
-    [string]$Phase = 'phase2',
+    [ValidateSet('phase1','phase2','phase-a')]
+    [string]$Phase = 'phase-a',
     [switch]$SkipGraphicsTests
 )
 $ErrorActionPreference = 'Stop'
@@ -21,6 +21,7 @@ $preset = $Phase + '-' + $Configuration.ToLowerInvariant()
 
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
+    & (Join-Path $PSScriptRoot 'PrepareAssets.ps1')
     cmake --preset $preset
     if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
     cmake --build --preset $preset

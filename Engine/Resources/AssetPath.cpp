@@ -8,7 +8,7 @@
 
 namespace MyEngine
 {
-    std::filesystem::path FindAsset(const std::filesystem::path& relative)
+    std::filesystem::path AssetRoot()
     {
         std::filesystem::path executableDirectory;
 #ifdef _WIN32
@@ -21,9 +21,16 @@ namespace MyEngine
         executableDirectory = std::filesystem::read_symlink("/proc/self/exe", error).parent_path();
 #endif
         std::error_code existsError;
-        const auto deployed = executableDirectory / "Assets" / relative;
-        if (!executableDirectory.empty() && std::filesystem::is_regular_file(deployed, existsError))
+        const auto deployed = executableDirectory / "Assets";
+        if (!executableDirectory.empty() && std::filesystem::is_directory(deployed, existsError))
             return deployed;
-        return std::filesystem::path(MYFARM_SOURCE_ASSETS) / relative;
+        return std::filesystem::path(MYFARM_SOURCE_ASSETS);
+    }
+    std::filesystem::path FindAsset(const std::filesystem::path& relative)
+    {
+        if(relative.empty()) return {};
+        const auto first=*relative.begin();
+        if(first=="Shaders" || first=="Data") return AssetRoot()/relative;
+        return AssetRoot()/"Export"/relative;
     }
 }

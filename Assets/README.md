@@ -1,5 +1,9 @@
 # Tài nguyên MyFarmEngine
 
+## Pipeline hiện hành — Phase A
+
+Ảnh gốc nằm trong Original (190 PNG, kiểm tra SHA256); 177 ảnh chưa duyệt có bản làm việc trong Workspace; 13 PNG hợp lệ nằm trong Export. Runtime chỉ bật record ready trong Gameplay/Data/Assets.csv sau khi kiểm tra path, decode, alpha, kích thước/grid/frame và anchor. PNG/metadata lỗi dùng fallback; F1 chưa bật lại các sprite needs_review. Các ghi chú Art/Library phía dưới mô tả kho cũ được giữ nguyên, không phải các thư mục ảnh runtime mới. Xem Docs/PhaseA/README.md để chạy pipeline.
+
 ## Bộ vẽ tay giai đoạn 2
 
 `Art/` có hai nhân vật Linh/An, atlas bốn vật phẩm và bản đồ vườn mới tạo bằng imagegen tích hợp. Prompt được lưu ở `Art/PROMPTS.txt`, SHA256 ở `Art/manifest.csv`. Các ảnh này dùng trực tiếp trong cảnh mặc định giai đoạn 2. Nhân vật mới là một tư thế có alpha; chưa có walk cycle nhiều hướng. Xem `HUONG_DAN_GIAI_DOAN_2.md` để sử dụng camera và UV atlas.

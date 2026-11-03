@@ -6,25 +6,33 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 namespace
 {
     const glm::vec2 WorldSize{1600, 1067};
-    constexpr std::array<std::array<float,4>,4> ItemRegions = {{
-        {0,0,0.5f,0.5f}, {0.5f,0,0.5f,0.5f},
-        {0,0.5f,0.5f,0.5f}, {0.5f,0.5f,0.5f,0.5f}
-    }};
     constexpr std::array<const char*,4> ItemNames = {"Watering can", "Garden hoe", "Seeds", "Strawberry cake"};
 }
 
 namespace MyGame
 {
-    bool DemoScene2D::Initialize()
+    bool DemoScene2D::Initialize(AssetTextures& assets)
     {
-        m_Ready = m_Map.Load(MyEngine::FindAsset("Art/World/garden_world.png")) &&
-            m_Characters[0].Load(MyEngine::FindAsset("Art/Characters/farmer_linh.png")) &&
-            m_Characters[1].Load(MyEngine::FindAsset("Art/Characters/farmer_an.png")) &&
-            m_Items.Load(MyEngine::FindAsset("Art/Items/farm_items_atlas.png"));
+        m_Map=assets.Load("world_garden");
+        m_Characters[0]=assets.Load("player_linh");
+        m_Characters[1]=assets.Load("player_an");
+        m_Items=assets.Load("items_farm");
+        if(const auto* items=assets.Record("items_farm"))
+            for(int i=0;i<4;++i)
+            {
+                const auto uv=AssetManifest::FrameUv(*items,i);
+                if(uv) m_ItemRegions[static_cast<std::size_t>(i)]=*uv;
+                else {m_Items=nullptr;std::cerr<<"Asset fallback [items_farm]: four_item_regions_required\n";}
+            }
+        for(int i=0;i<2;++i)
+            if(const auto* character=assets.Record(i==0?"player_linh":"player_an"))
+                m_Anchors[static_cast<std::size_t>(i)]={character->anchorX,character->anchorY};
+        m_Ready=true; // Missing artwork uses geometric placeholders, not a fatal game error.
         Reset();
         return m_Ready;
     }
@@ -70,7 +78,11 @@ namespace MyGame
     {
         // Ground marker and a single-pose cutout; bobbing is procedural, not a walk-cycle sheet.
         canvas.Rectangle(feet.x-22, feet.y-4, 44, 9, {0.08f,0.16f,0.09f,0.19f});
-        canvas.Sprite(m_Characters[static_cast<std::size_t>(character)], feet.x-78, feet.y-150-bob, 156,156);
+        const auto* texture=m_Characters[static_cast<std::size_t>(character)];
+        const auto anchor=m_Anchors[static_cast<std::size_t>(character)];
+        if(texture) canvas.Sprite(*texture, feet.x-156*anchor.x, feet.y-156*anchor.y-bob, 156,156);
+        else canvas.Rectangle(feet.x-22,feet.y-78-bob,44,78,
+            character==0?std::array<float,4>{0.85f,0.65f,0.22f,1}:std::array<float,4>{0.28f,0.5f,0.8f,1});
     }
     void DemoScene2D::Render(MyEngine::Canvas2D& canvas, int width, int height)
     {
@@ -79,10 +91,11 @@ namespace MyGame
         canvas.BeginWorld(width,height,m_Camera);
         // Neutral surround when an unusually wide view extends beyond the painted map.
         canvas.Rectangle(-4000,-4000,8000,8000,{0.43f,0.57f,0.28f,1});
-        canvas.Image(m_Map,0,0,WorldSize.x,WorldSize.y);
+        if(m_Map) canvas.Image(*m_Map,0,0,WorldSize.x,WorldSize.y);
         constexpr std::array<glm::vec2,4> objects = {{{650,700},{1010,700},{1090,770},{970,850}}};
         for (std::size_t i=0; i<objects.size(); ++i)
-            canvas.Sprite(m_Items,objects[i].x-32,objects[i].y-52,64,64,ItemRegions[i]);
+            if(m_Items) canvas.Sprite(*m_Items,objects[i].x-32,objects[i].y-52,64,64,m_ItemRegions[i]);
+            else canvas.Rectangle(objects[i].x-16,objects[i].y-24,32,32,{0.8f,0.5f,0.2f,1});
         const glm::vec2 npc{990,600};
         const float bob = m_Moving ? std::sin(m_WalkTime*12.0f)*2.2f : 0;
         // Painter's ordering gives sprites a consistent overlap by their foot Y.
@@ -103,13 +116,15 @@ namespace MyGame
             canvas.Rectangle(x-3,y-3,size+6,size+6,
                              i==m_SelectedItem ? std::array<float,4>{0.95f,0.74f,0.32f,1} : std::array<float,4>{0.18f,0.28f,0.18f,0.7f});
             canvas.Rectangle(x,y,size,size,{0.99f,0.97f,0.88f,0.94f});
-            canvas.Sprite(m_Items,x+5,y+5,size-10,size-10,ItemRegions[static_cast<std::size_t>(i)]);
+            if(m_Items) canvas.Sprite(*m_Items,x+5,y+5,size-10,size-10,m_ItemRegions[static_cast<std::size_t>(i)]);
+            else canvas.Rectangle(x+10,y+10,size-20,size-20,{0.65f,0.35f,0.16f,1});
         }
         canvas.Rectangle(16,16,132,76,{0.99f,0.97f,0.88f,0.92f});
         for (int i=0; i<2; ++i)
         {
             const float x=20+static_cast<float>(i)*62;
-            canvas.Image(m_Characters[static_cast<std::size_t>(i)],x,20,58,58);
+            const auto* portrait=m_Characters[static_cast<std::size_t>(i)];
+            if(portrait) canvas.Image(*portrait,x,20,58,58);
             if (i==m_Character) canvas.Rectangle(x,82,58,3,{0.71f,0.46f,0.14f,1});
         }
         canvas.End();
@@ -117,8 +132,7 @@ namespace MyGame
     void DemoScene2D::Shutdown()
     {
         m_Ready = false;
-        m_Map.Reset();
-        m_Items.Reset();
-        for (auto& character:m_Characters) character.Reset();
+        m_Map=m_Items=nullptr;
+        m_Characters.fill(nullptr);
     }
 }

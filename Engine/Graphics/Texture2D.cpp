@@ -1,63 +1,46 @@
 #include "Texture2D.h"
 #include <glad/gl.h>
-#include <fstream>
 #include <iostream>
-#include <iterator>
-#include <limits>
-#include <vector>
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#ifdef _MSC_VER
-#pragma warning(push, 0)
-#endif
-#include <stb_image.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 namespace MyEngine
 {
     Texture2D::~Texture2D() { Reset(); }
     bool Texture2D::Load(const std::filesystem::path& path)
     {
-        // filesystem::path keeps Unicode Windows paths intact.
-        std::ifstream file(path, std::ios::binary);
-        const std::vector<unsigned char> encoded{
-            std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-        if (!file || encoded.empty() ||
-            encoded.size() > static_cast<size_t>(std::numeric_limits<int>::max()))
+        ImageData image;
+        std::string error;
+        if (!DecodePng(path,image,error))
         {
-            std::cerr << "Cannot read PNG: " << path << '\n';
+            std::cerr << "Cannot decode PNG: " << path << ": " << error << '\n';
             return false;
         }
-        int width = 0, height = 0, channels = 0;
-        auto* pixels = stbi_load_from_memory(encoded.data(), static_cast<int>(encoded.size()),
-                                             &width, &height, &channels, 4);
-        if (!pixels)
-        {
-            std::cerr << "Cannot decode PNG: " << path << ": " << stbi_failure_reason() << '\n';
+        return Upload(image);
+    }
+    bool Texture2D::Upload(const ImageData& image)
+    {
+        const int width=image.width,height=image.height;
+        if(width<=0 || height<=0 || image.rgba.size()!=static_cast<std::size_t>(width)*static_cast<std::size_t>(height)*4)
             return false;
-        }
         int maxSize = 0;
         glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
         if (width > maxSize || height > maxSize)
         {
-            stbi_image_free(pixels);
-            std::cerr << "Texture exceeds GPU size limit: " << path << '\n';
+            std::cerr << "Texture exceeds GPU size limit\n";
             return false;
         }
-        Reset();
-        glGenTextures(1, &m_Id);
-        glBindTexture(GL_TEXTURE_2D, m_Id);
+        unsigned int candidate=0;
+        glGenTextures(1, &candidate);
+        glBindTexture(GL_TEXTURE_2D, candidate);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        stbi_image_free(pixels);
+                     GL_RGBA, GL_UNSIGNED_BYTE, image.rgba.data());
         glBindTexture(GL_TEXTURE_2D, 0);
+        if(glGetError()!=GL_NO_ERROR) {glDeleteTextures(1,&candidate);return false;}
+        Reset();
+        m_Id=candidate;
         m_Width = width;
         m_Height = height;
         return true;

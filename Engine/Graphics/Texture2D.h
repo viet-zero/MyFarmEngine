@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include "Resources/ImageData.h"
 
 namespace MyEngine
 {
@@ -11,6 +12,7 @@ namespace MyEngine
         Texture2D(const Texture2D&) = delete;
         Texture2D& operator=(const Texture2D&) = delete;
         bool Load(const std::filesystem::path& path);
+        bool Upload(const ImageData& image);
         void Reset();
         unsigned int Id() const { return m_Id; }
         int Width() const { return m_Width; }

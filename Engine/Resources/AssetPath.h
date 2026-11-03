@@ -3,6 +3,8 @@
 
 namespace MyEngine
 {
-    // Assets are deployed beside the executable; development source is a fallback.
+    // Deployed root is authoritative, even when a file is missing. Images live in
+    // Export; shaders/metadata live in Shaders/Data. Source root is development-only.
     std::filesystem::path FindAsset(const std::filesystem::path& relative);
+    std::filesystem::path AssetRoot();
 }

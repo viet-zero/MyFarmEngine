@@ -1,6 +1,23 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+PHASE A - GAMEPLAY10 ASSET PIPELINE
+Branch: feat/gameplay10-phase-a-assets; baseline: 1b7432c.
+[x] Da doc README, 109 file source baseline (gom 60 file rong), CMake/preset/shader va hai tai lieu ZIP.
+[x] Khong tim thay AGENTS.md; da ghi ro trong Docs/PhaseA/README.md.
+[x] Kiem ke 190 PNG: 13 ready (5 anh game + 8 anh lich su), 177 needs_review.
+[x] Original 190 snapshot + SHA256; Workspace 177 anh; Export 13 anh.
+[x] Parser CSV/PNG validate path, Unicode, alpha, grid/frame, anchor va status.
+[x] Runtime chi dung Export; cache texture; fallback + warning khi asset loi/thieu.
+[x] Debug 8/8, Release 8/8 voi /W4 /WX; 37 ca validation.
+[x] ASan CPU 2/2; checksum anh cu va snapshot khong doi.
+[ ] UBSan chua chay: may khong co Clang/WSL; khong danh dau da kiem chung.
+[x] Huong dan va bao cao: Docs/PhaseA/README.md, SourceInventory.csv, AssetInventory.csv.
+Dung tai Phase A. Khong bat dau Phase B-E; khong nhap ECS/save/companion tu tai lieu cu.
+EXE moi: out/build/phase-a-release/MyFarmEngine.exe.
+
+CAC MUC BEN DUOI LA LICH SU TRUOC PHASE A
+
 GIAI DOAN 2 - CAMERA VA SPRITE THE GIOI (DOT MOI)
 [x] Tao moi Linh, An, atlas 4 vat pham va ban do vuon bang imagegen.
 [x] Luu PNG goc, prompt va toa do UV atlas trong Assets/Art.

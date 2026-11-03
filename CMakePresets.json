@@ -27,18 +27,44 @@
       "inherits": "phase1-release",
       "displayName": "Phase 2 Release",
       "binaryDir": "${sourceDir}/out/build/phase2-release"
+    },
+    {
+      "name": "phase-a-debug",
+      "inherits": "phase2-debug",
+      "displayName": "Gameplay10 Phase A Debug",
+      "binaryDir": "${sourceDir}/out/build/phase-a-debug",
+      "cacheVariables": { "MYFARM_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "phase-a-release",
+      "inherits": "phase2-release",
+      "displayName": "Gameplay10 Phase A Release",
+      "binaryDir": "${sourceDir}/out/build/phase-a-release",
+      "cacheVariables": { "MYFARM_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "phase-a-asan",
+      "inherits": "phase-a-release",
+      "binaryDir": "${sourceDir}/out/build/phase-a-asan",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo", "MYFARM_ENABLE_ASAN": "ON" }
     }
   ],
   "buildPresets": [
     { "name": "phase1-debug", "configurePreset": "phase1-debug", "jobs": 4 },
     { "name": "phase1-release", "configurePreset": "phase1-release", "jobs": 4 },
     { "name": "phase2-debug", "configurePreset": "phase2-debug", "jobs": 4 },
-    { "name": "phase2-release", "configurePreset": "phase2-release", "jobs": 4 }
+    { "name": "phase2-release", "configurePreset": "phase2-release", "jobs": 4 },
+    { "name": "phase-a-debug", "configurePreset": "phase-a-debug", "jobs": 4 },
+    { "name": "phase-a-release", "configurePreset": "phase-a-release", "jobs": 4 },
+    { "name": "phase-a-asan", "configurePreset": "phase-a-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit"] }
   ],
   "testPresets": [
     { "name": "phase1-debug", "configurePreset": "phase1-debug", "output": { "outputOnFailure": true } },
     { "name": "phase1-release", "configurePreset": "phase1-release", "output": { "outputOnFailure": true } },
     { "name": "phase2-debug", "configurePreset": "phase2-debug", "output": { "outputOnFailure": true } },
-    { "name": "phase2-release", "configurePreset": "phase2-release", "output": { "outputOnFailure": true } }
+    { "name": "phase2-release", "configurePreset": "phase2-release", "output": { "outputOnFailure": true } },
+    { "name": "phase-a-debug", "configurePreset": "phase-a-debug", "output": { "outputOnFailure": true } },
+    { "name": "phase-a-release", "configurePreset": "phase-a-release", "output": { "outputOnFailure": true } },
+    { "name": "phase-a-asan", "configurePreset": "phase-a-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^assets\\.(validation|catalog)$" } } }
   ]
 }
