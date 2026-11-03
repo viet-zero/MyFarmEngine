@@ -119,6 +119,24 @@
       "inherits": "phase-d-asan",
       "displayName": "Gameplay10 Phase E ASan CPU",
       "binaryDir": "${sourceDir}/out/build/phase-e-asan"
+    },
+    {
+      "name": "phase-f-debug",
+      "inherits": "phase-e-debug",
+      "displayName": "Gameplay10 Phase F Debug",
+      "binaryDir": "${sourceDir}/out/build/phase-f-debug"
+    },
+    {
+      "name": "phase-f-release",
+      "inherits": "phase-e-release",
+      "displayName": "Gameplay10 Phase F Release",
+      "binaryDir": "${sourceDir}/out/build/phase-f-release"
+    },
+    {
+      "name": "phase-f-asan",
+      "inherits": "phase-e-asan",
+      "displayName": "Gameplay10 Phase F ASan CPU",
+      "binaryDir": "${sourceDir}/out/build/phase-f-asan"
     }
   ],
   "buildPresets": [
@@ -140,7 +158,10 @@
     { "name": "phase-d-asan", "configurePreset": "phase-d-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests", "GameplayWorldTests", "GameplayEffectTests", "GameplayInteractionTests"] },
     { "name": "phase-e-debug", "configurePreset": "phase-e-debug", "jobs": 4 },
     { "name": "phase-e-release", "configurePreset": "phase-e-release", "jobs": 4 },
-    { "name": "phase-e-asan", "configurePreset": "phase-e-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests", "GameplayWorldTests", "GameplayCollisionTests", "GameplayEffectTests", "GameplayInteractionTests"] }
+    { "name": "phase-e-asan", "configurePreset": "phase-e-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests", "GameplayWorldTests", "GameplayCollisionTests", "GameplayEffectTests", "GameplayInteractionTests"] },
+    { "name": "phase-f-debug", "configurePreset": "phase-f-debug", "jobs": 4 },
+    { "name": "phase-f-release", "configurePreset": "phase-f-release", "jobs": 4 },
+    { "name": "phase-f-asan", "configurePreset": "phase-f-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests", "GameplayRenderOrderTests", "GameplayWorldTests", "GameplayCollisionTests", "GameplayForegroundTreeTests", "GameplayEffectTests", "GameplayInteractionTests"] }
   ],
   "testPresets": [
     { "name": "phase1-debug", "configurePreset": "phase1-debug", "output": { "outputOnFailure": true } },
@@ -161,6 +182,9 @@
     { "name": "phase-d-asan", "configurePreset": "phase-d-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.(visuals|world|effects|interaction))$" } } },
     { "name": "phase-e-debug", "configurePreset": "phase-e-debug", "output": { "outputOnFailure": true } },
     { "name": "phase-e-release", "configurePreset": "phase-e-release", "output": { "outputOnFailure": true } },
-    { "name": "phase-e-asan", "configurePreset": "phase-e-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.(visuals|world|collision|effects|interaction))$" } } }
+    { "name": "phase-e-asan", "configurePreset": "phase-e-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.(visuals|world|collision|effects|interaction))$" } } },
+    { "name": "phase-f-debug", "configurePreset": "phase-f-debug", "output": { "outputOnFailure": true } },
+    { "name": "phase-f-release", "configurePreset": "phase-f-release", "output": { "outputOnFailure": true } },
+    { "name": "phase-f-asan", "configurePreset": "phase-f-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.(visuals|render_order|world|collision|foreground_trees|effects|interaction))$" } } }
   ]
 }

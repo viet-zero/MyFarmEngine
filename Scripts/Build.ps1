@@ -1,8 +1,8 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
-    [ValidateSet('phase1','phase2','phase-a','phase-b','phase-c','phase-d','phase-e')]
-    [string]$Phase = 'phase-e',
+    [ValidateSet('phase1','phase2','phase-a','phase-b','phase-c','phase-d','phase-e','phase-f')]
+    [string]$Phase = 'phase-f',
     [switch]$Asan,
     [switch]$SkipGraphicsTests
 )
