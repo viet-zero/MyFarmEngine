@@ -86,6 +86,15 @@ int main()
     const auto blended = Read(16,16);
     Check(std::abs(static_cast<int>(blended[0])-128) <= 1 &&
           std::abs(static_cast<int>(blended[2])-127) <= 1, "alpha blend mismatch");
+    glClearColor(0,0,1,1);glClear(GL_COLOR_BUFFER_BIT);
+    canvas.Begin(32,32);
+    canvas.SpriteEllipse(texture,0,0,32,32,{0,0,1,1});
+    canvas.End();
+    Check(Read(0,0)[2]==255 && Read(16,16)[2]!=255,"ellipse mask failed at corner/center");
+    canvas.Begin(32,32);
+    canvas.Rectangle(0,0,2,2,{1,0,0,1});
+    canvas.End();
+    Check(Read(0,31)[0]==255,"ellipse state leaked into next pass");
 
     // The world pass uses the actual camera matrix rather than screen coordinates.
     MyEngine::Camera2D camera;

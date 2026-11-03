@@ -22,6 +22,8 @@ namespace MyEngine
         void Sprite(const Texture2D& texture, float x, float y, float width, float height,
                     const std::array<float, 4>& uv = {0,0,1,1},
                     const std::array<float, 4>& tint = {1,1,1,1});
+        void SpriteEllipse(const Texture2D& texture,float x,float y,float width,float height,
+                           const std::array<float,4>& uv);
         void Cover(const Texture2D& texture);
         void Rectangle(float x, float y, float width, float height,
                        const std::array<float, 4>& color);
@@ -32,7 +34,7 @@ namespace MyEngine
         void SetProjection(const glm::mat4& projection);
         Shader m_Shader;
         unsigned int m_Vao = 0, m_Vbo = 0, m_White = 0;
-        int m_Rect = -1, m_Color = -1, m_Uv = -1, m_Projection = -1;
+        int m_Rect = -1, m_Color = -1, m_Uv = -1, m_Projection = -1, m_EllipseMask = -1;
         int m_Width = 0, m_Height = 0;
     };
 }

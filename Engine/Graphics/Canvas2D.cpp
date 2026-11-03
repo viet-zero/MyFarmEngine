@@ -17,6 +17,7 @@ namespace MyEngine
         m_Color = glGetUniformLocation(m_Shader.Id(), "tint");
         m_Uv = glGetUniformLocation(m_Shader.Id(), "uvRegion");
         m_Projection = glGetUniformLocation(m_Shader.Id(), "viewProjection");
+        m_EllipseMask = glGetUniformLocation(m_Shader.Id(), "ellipseMask");
         // Two triangles; the top-left image row maps to the top of the window.
         constexpr float vertices[] = {0,0, 1,0, 1,1, 0,0, 1,1, 0,1};
         glGenVertexArrays(1, &m_Vao);
@@ -34,6 +35,7 @@ namespace MyEngine
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glUseProgram(m_Shader.Id());
         glUniform1i(glGetUniformLocation(m_Shader.Id(), "image"), 0);
+        glUniform1i(m_EllipseMask,0);
         End();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         return true;
@@ -46,6 +48,7 @@ namespace MyEngine
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glUseProgram(m_Shader.Id());
+        glUniform1i(m_EllipseMask,0);
         glBindVertexArray(m_Vao);
         glActiveTexture(GL_TEXTURE0);
         glDisable(GL_CULL_FACE);
@@ -85,6 +88,14 @@ namespace MyEngine
         glUniform4fv(m_Uv, 1, uv.data());
         glBindTexture(GL_TEXTURE_2D, texture.Id());
         glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+    void Canvas2D::SpriteEllipse(const Texture2D& texture,float x,float y,float width,float height,
+                                 const std::array<float,4>& uv)
+    {
+        if(!texture.Id() || m_Width<=0 || m_Height<=0) return;
+        glUniform1i(m_EllipseMask,1);
+        Sprite(texture,x,y,width,height,uv);
+        glUniform1i(m_EllipseMask,0);
     }
     void Canvas2D::Cover(const Texture2D& texture)
     {
