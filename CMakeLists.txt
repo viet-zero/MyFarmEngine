@@ -17,6 +17,7 @@ add_library(glad STATIC ThirdParty/glad/src/glad.c)
 target_include_directories(glad PUBLIC ThirdParty/glad/include)
 
 add_library(MyFarmEngineCore STATIC
+    Engine/Animation/Animator.cpp
     Engine/Core/Application.cpp
     Engine/Core/Window.cpp
     Engine/Core/Time.cpp
@@ -111,6 +112,10 @@ if(BUILD_TESTING)
     target_link_libraries(EngineTimeTests PRIVATE MyFarmEngineCore)
     enable_project_warnings(EngineTimeTests)
     add_test(NAME engine.time COMMAND EngineTimeTests)
+    add_executable(EngineAnimatorTests Tests/AnimatorTests.cpp)
+    target_link_libraries(EngineAnimatorTests PRIVATE MyFarmEngineCore)
+    enable_project_warnings(EngineAnimatorTests)
+    add_test(NAME engine.animator COMMAND EngineAnimatorTests)
 
     add_executable(EngineLifecycleTests Tests/LifecycleTests.cpp)
     target_link_libraries(EngineLifecycleTests PRIVATE MyFarmEngineCore)
