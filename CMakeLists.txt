@@ -37,7 +37,7 @@ target_include_directories(MyFarmAssetData SYSTEM PRIVATE ThirdParty/stb)
 target_link_libraries(MyFarmEngineCore PUBLIC MyFarmAssetData)
 add_library(MyFarmGameplayAnimation STATIC Gameplay/Graphics/VisualCatalog.cpp)
 target_link_libraries(MyFarmGameplayAnimation PUBLIC MyFarmEngineCore)
-add_library(MyFarmWorld STATIC Gameplay/World/WorldMap.cpp)
+add_library(MyFarmWorld STATIC Gameplay/World/WorldMap.cpp Gameplay/Systems/CollisionSystem.cpp)
 target_link_libraries(MyFarmWorld PUBLIC MyFarmEngineCore)
 add_library(MyFarmGameplayLogic STATIC Engine/Event/EventBus.cpp Gameplay/Effects/EffectPool.cpp Gameplay/Systems/InteractionSystem.cpp)
 target_link_libraries(MyFarmGameplayLogic PUBLIC MyFarmEngineCore)
@@ -74,6 +74,7 @@ add_custom_target(MyFarmRuntimeAssets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Assets.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualClips.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/VisualClips.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Objects.csv"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/StaticColliders.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/StaticColliders.csv"
 )
 add_dependencies(MyFarmEngine MyFarmRuntimeAssets)
 
@@ -134,7 +135,11 @@ if(BUILD_TESTING)
     add_executable(GameplayWorldTests Tests/WorldMapTests.cpp)
     target_link_libraries(GameplayWorldTests PRIVATE MyFarmWorld)
     enable_project_warnings(GameplayWorldTests)
-    add_test(NAME gameplay.world COMMAND GameplayWorldTests ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv)
+    add_test(NAME gameplay.world COMMAND GameplayWorldTests ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/StaticColliders.csv)
+    add_executable(GameplayCollisionTests Tests/CollisionTests.cpp)
+    target_link_libraries(GameplayCollisionTests PRIVATE MyFarmWorld)
+    enable_project_warnings(GameplayCollisionTests)
+    add_test(NAME gameplay.collision COMMAND GameplayCollisionTests ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/StaticColliders.csv)
     add_executable(GameplayEffectTests Tests/EffectTests.cpp)
     target_link_libraries(GameplayEffectTests PRIVATE MyFarmGameplayLogic)
     enable_project_warnings(GameplayEffectTests)
