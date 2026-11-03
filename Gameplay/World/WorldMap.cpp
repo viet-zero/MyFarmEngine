@@ -12,14 +12,14 @@ namespace MyGame
     {
         for(int y=0;y<Height;++y) for(int x=0;x<Width;++x)
         {
-            const Zone zone=x<32?Zone::Town:(x<64?Zone::Farm:Zone::LakeForest);
+            const Zone zone=x<TownEndX?Zone::Town:(x<FarmEndX?Zone::Farm:Zone::LakeForest);
             Terrain terrain=zone==Zone::Farm?Terrain::Soil:Terrain::Grass;
             if(zone==Zone::Town && (x%12==0 || y==31)) terrain=Terrain::Path;
             if(zone==Zone::Farm && (x%8==0 || y%9==0)) terrain=Terrain::Path;
             if(zone==Zone::LakeForest)
             {
-                const int dx=x-79,dy=y-31;
-                if(dx*dx+dy*dy<120) terrain=Terrain::Water;
+                const int dx=x-LakeCenterX,dy=y-LakeCenterY;
+                if(dx*dx+dy*dy<LakeRadiusSquared) terrain=Terrain::Water;
                 else if((x*17+y*13)%7<3) terrain=Terrain::Forest;
             }
             m_Cells[static_cast<std::size_t>(y*Width+x)]={zone,terrain,terrain==Terrain::Water};

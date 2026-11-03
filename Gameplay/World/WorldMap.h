@@ -23,6 +23,8 @@ namespace MyGame
     {
     public:
         static constexpr int TileSize=64, ChunkTiles=16, Width=96, Height=64;
+        static constexpr int TownEndX=32,FarmEndX=64;
+        static constexpr int LakeCenterX=79,LakeCenterY=31,LakeRadiusSquared=120;
         static constexpr glm::vec2 Size(){return {Width*TileSize,Height*TileSize};}
         WorldMap();
         bool LoadObjects(const std::filesystem::path& csv);
