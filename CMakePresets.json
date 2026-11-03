@@ -65,6 +65,24 @@
       "inherits": "phase-a-asan",
       "displayName": "Gameplay10 Phase B ASan CPU",
       "binaryDir": "${sourceDir}/out/build/phase-b-asan"
+    },
+    {
+      "name": "phase-c-debug",
+      "inherits": "phase-b-debug",
+      "displayName": "Gameplay10 Phase C Debug",
+      "binaryDir": "${sourceDir}/out/build/phase-c-debug"
+    },
+    {
+      "name": "phase-c-release",
+      "inherits": "phase-b-release",
+      "displayName": "Gameplay10 Phase C Release",
+      "binaryDir": "${sourceDir}/out/build/phase-c-release"
+    },
+    {
+      "name": "phase-c-asan",
+      "inherits": "phase-b-asan",
+      "displayName": "Gameplay10 Phase C ASan CPU",
+      "binaryDir": "${sourceDir}/out/build/phase-c-asan"
     }
   ],
   "buildPresets": [
@@ -77,7 +95,10 @@
     { "name": "phase-a-asan", "configurePreset": "phase-a-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit"] },
     { "name": "phase-b-debug", "configurePreset": "phase-b-debug", "jobs": 4 },
     { "name": "phase-b-release", "configurePreset": "phase-b-release", "jobs": 4 },
-    { "name": "phase-b-asan", "configurePreset": "phase-b-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests"] }
+    { "name": "phase-b-asan", "configurePreset": "phase-b-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests"] },
+    { "name": "phase-c-debug", "configurePreset": "phase-c-debug", "jobs": 4 },
+    { "name": "phase-c-release", "configurePreset": "phase-c-release", "jobs": 4 },
+    { "name": "phase-c-asan", "configurePreset": "phase-c-asan", "jobs": 4, "targets": ["AssetPipelineTests", "AssetAudit", "EngineAnimatorTests", "GameplayVisualTests", "GameplayWorldTests"] }
   ],
   "testPresets": [
     { "name": "phase1-debug", "configurePreset": "phase1-debug", "output": { "outputOnFailure": true } },
@@ -89,6 +110,9 @@
     { "name": "phase-a-asan", "configurePreset": "phase-a-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^assets\\.(validation|catalog)$" } } },
     { "name": "phase-b-debug", "configurePreset": "phase-b-debug", "output": { "outputOnFailure": true } },
     { "name": "phase-b-release", "configurePreset": "phase-b-release", "output": { "outputOnFailure": true } },
-    { "name": "phase-b-asan", "configurePreset": "phase-b-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.visuals)$" } } }
+    { "name": "phase-b-asan", "configurePreset": "phase-b-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.visuals)$" } } },
+    { "name": "phase-c-debug", "configurePreset": "phase-c-debug", "output": { "outputOnFailure": true } },
+    { "name": "phase-c-release", "configurePreset": "phase-c-release", "output": { "outputOnFailure": true } },
+    { "name": "phase-c-asan", "configurePreset": "phase-c-asan", "output": { "outputOnFailure": true }, "filter": { "include": { "name": "^(assets\\.(validation|catalog)|engine\\.animator|gameplay\\.(visuals|world))$" } } }
   ]
 }

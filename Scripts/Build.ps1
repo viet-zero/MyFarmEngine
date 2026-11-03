@@ -1,8 +1,8 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
-    [ValidateSet('phase1','phase2','phase-a','phase-b')]
-    [string]$Phase = 'phase-b',
+    [ValidateSet('phase1','phase2','phase-a','phase-b','phase-c')]
+    [string]$Phase = 'phase-c',
     [switch]$SkipGraphicsTests
 )
 $ErrorActionPreference = 'Stop'
