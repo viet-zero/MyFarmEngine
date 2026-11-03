@@ -1,6 +1,23 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+GAMEPLAY10 PHASE D - EVENT, EFFECT, INTERACTION
+Branch: feat/gameplay10-phase-d-interaction; baseline Phase C: 1d195f9.
+[x] Tach HuongDan/ lam noi luu huong dan, co muc luc va tai lieu ham/thong so.
+[x] EventBus cho ToolUsed/ObjectHit/CropPlanted/CropHarvested/ItemPicked, cap 256.
+[x] EffectPool cap 128, particle/floating marker/screen shake; dt xau an toan.
+[x] InteractionSystem kiem tra range/facing/cooldown/stamina/busy/UI/capacity/tool.
+[x] F tuong tac, object co HP, crop trong/thu hoach, item nhat; renderer chi doc state.
+[x] Destroy object bo hinh va collider theo gameplay ID.
+[x] Debug /W4 /WX 13/13; Release /W4 /WX 13/13; ASan CPU 7/7.
+[ ] UBSan va ASan GPU chua chay; inventory/save/ECS full chua co.
+[ ] FloatingText hien la marker hinh hoc; collision ray/occlusion thuoc Phase E.
+EXE: out/build/phase-d-release/MyFarmEngine.exe
+Huong dan: HuongDan/README.md, HuongDan/Interaction.md, HuongDan/BuildVaChay.md.
+Dung tai Phase D. Chua bat dau Phase E hay multiplayer.
+
+CAC MUC BEN DUOI LA LICH SU PHASE C VA TRUOC DO
+
 GAMEPLAY10 PHASE C - THE GIOI BA VUNG
 Branch: feat/gameplay10-phase-c-world; baseline Phase B: f76b1d6.
 [x] WorldMap 96x64 o, 64 units/o, chunk 16x16; zone Town/Farm/LakeForest.
