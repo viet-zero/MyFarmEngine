@@ -1,6 +1,23 @@
 MYFARMENGINE - KIEM TRA TIEN DO
 Cap nhat: 03/11/2026
 
+GAMEPLAY10 PHASE C - THE GIOI BA VUNG
+Branch: feat/gameplay10-phase-c-world; baseline Phase B: f76b1d6.
+[x] WorldMap 96x64 o, 64 units/o, chunk 16x16; zone Town/Farm/LakeForest.
+[x] Tile rieng, water blocker, spawn rieng cho moi zone.
+[x] Objects.csv: 7 dinh nghia cay/da/bui/cong/ruong/bien/nuoc; gameplay ID khac visual ID.
+[x] Camera clamp theo world 6144x4096; tile/chunk/object duoc cull theo viewport.
+[x] F4/F5/F6 chuyen nhanh giua ba zone; F5 ve ruong, R reset.
+[x] Debug 11/11; Release 11/11 voi /W4 /WX; ASan CPU 5/5.
+[x] Huong dan tu lam lai, giai thich ham/bien: Docs/PhaseC/HUONG_DAN_WORLD_MAP.md.
+[x] Da them ke hoach online, chat chu va thoai: Docs/KeHoachOnline.md.
+[ ] UBSan chua chay; save game va collision nang cao van chua co.
+[ ] Chunk hien de cull, chua streaming; chua benchmark FPS/draw calls.
+EXE: out/build/phase-c-release/MyFarmEngine.exe
+Dung tai Phase C. Phase D/E va online chua trien khai.
+
+CAC MUC BEN DUOI LA LICH SU PHASE B VA TRUOC DO
+
 GAMEPLAY10 PHASE B - ANIMATION RIENG TUNG THUC THE
 Branch: feat/gameplay10-phase-b-animation; baseline Phase A: 0a8a1c9.
 [x] Animator loop/non-loop; frame bounds; pause; dt am/NaN/vo han an toan.
