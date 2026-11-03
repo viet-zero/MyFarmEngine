@@ -21,6 +21,7 @@ int main(int argc,char** argv)
     check(!world.CanOccupy({5050,1200},body),"body entered lake");
     check(!world.CanOccupy({500,700},body),"body entered house");
     check(!world.CanOccupy({1024,1800},body),"body entered fountain");
+    check(!world.CanOccupy({1980,1510},body),"body entered orchard trunk");
     check(!world.CanOccupy({2700,1210},body),"body entered fence");
     check(!world.HasLineOfSight({1300,700},{200,700}),"interact through building");
     check(world.HasLineOfSight({2200,2200},{2300,2200}),"clear interaction path");
@@ -41,5 +42,6 @@ int main(int argc,char** argv)
     check(dynamic.x<=2264,"actor overlap");
     check(!world.CanOccupy({4670,2600},body),"active tree");
     check(world.SetObjectActive("tree.oak.01",false) && world.CanOccupy({4670,2600},body),"removed tree");
+    check(!world.CanOccupy({1980,1510},body),"fruit harvest must keep tree collider");
     return failures?1:0;
 }

@@ -6,7 +6,7 @@
 
 namespace MyGame
 {
-    enum class GameEventKind {ToolUsed,ObjectHit,CropPlanted,CropHarvested,ItemPicked};
+    enum class GameEventKind {ToolUsed,ObjectHit,CropPlanted,CropHarvested,ItemPicked,FruitHarvested};
     struct GameEvent
     {
         GameEventKind kind;

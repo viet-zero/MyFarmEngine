@@ -6,7 +6,7 @@
 
 namespace MyGame
 {
-    enum class TargetKind {Object,Crop,Pickup};
+    enum class TargetKind {Object,Crop,Pickup,FruitTree};
     struct InteractionTarget
     {
         std::string id;
@@ -15,6 +15,8 @@ namespace MyGame
         int health=2;
         bool active=true,planted=false,ready=false;
         float age=0;
+        int stock=0,maxStock=0;
+        float regrowSeconds=30.0f;
     };
     struct InteractionActor
     {

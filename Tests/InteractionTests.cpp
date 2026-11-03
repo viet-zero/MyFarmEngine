@@ -48,5 +48,24 @@ int main()
     check(InteractionSystem::Use(actor,&targets[2],0,events)==InteractionResult::Success,"pickup failed");
     check(actor.inventoryCount==5 && !targets[2].active,"pickup state failed");
     check(InteractionSystem::Nearest(actor,targets)==nullptr,"inactive target chosen");
+    InteractionActor harvester;harvester.position={0,0};harvester.facing={1,0};
+    InteractionTarget fruit{"tree.apple.01",TargetKind::FruitTree,{60,0}};
+    fruit.stock=fruit.maxStock=2;fruit.regrowSeconds=0.3f;
+    EventBus fruitEvents;
+    check(InteractionSystem::Use(harvester,&fruit,0,fruitEvents)==InteractionResult::Success &&
+          fruit.stock==1 && harvester.inventoryCount==4,"first apple harvest failed");
+    check(fruitEvents.Pending()==2,"fruit event missing");
+    for(int i=0;i<4;++i) InteractionSystem::Tick(harvester,targets,0.1f);
+    check(InteractionSystem::Use(harvester,&fruit,0,fruitEvents)==InteractionResult::Success &&
+          fruit.stock==0 && fruit.active,"second harvest removed tree");
+    for(int i=0;i<4;++i) InteractionSystem::Tick(harvester,targets,0.1f);
+    check(InteractionSystem::Use(harvester,&fruit,0,fruitEvents)==InteractionResult::NotReady,
+          "empty tree yielded fruit");
+    std::vector<InteractionTarget> forest{fruit};
+    for(int i=0;i<4;++i) InteractionSystem::Tick(harvester,forest,0.1f);
+    check(forest[0].stock==2,"fruit did not regrow");
+    harvester.inventoryCount=harvester.inventoryCapacity;
+    check(InteractionSystem::Use(harvester,&forest[0],0,fruitEvents)==InteractionResult::InventoryFull,
+          "full inventory harvested fruit");
     return failures?1:0;
 }

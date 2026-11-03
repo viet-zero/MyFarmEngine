@@ -46,8 +46,10 @@ namespace MyGame
             if(!target->planted && actor.inventoryCount<=0) return InteractionResult::NoSeeds;
             if(target->planted && !target->ready) return InteractionResult::NotReady;
         }
+        if(target->kind==TargetKind::FruitTree && target->stock<=0) return InteractionResult::NotReady;
         const bool receivesItem=target->kind==TargetKind::Pickup ||
-                                (target->kind==TargetKind::Crop && target->planted);
+                                (target->kind==TargetKind::Crop && target->planted) ||
+                                target->kind==TargetKind::FruitTree;
         if(receivesItem && actor.inventoryCount>=actor.inventoryCapacity) return InteractionResult::InventoryFull;
 
         actor.stamina-=StaminaCost;actor.cooldown=CooldownSeconds;
@@ -73,6 +75,9 @@ namespace MyGame
         case TargetKind::Pickup:
             ++actor.inventoryCount;target->active=false;
             events.Publish({GameEventKind::ItemPicked,target->id,target->position,1});break;
+        case TargetKind::FruitTree:
+            --target->stock;++actor.inventoryCount;target->age=0;
+            events.Publish({GameEventKind::FruitHarvested,target->id,target->position,1});break;
         }
         return InteractionResult::Success;
     }
@@ -87,6 +92,12 @@ namespace MyGame
             {
                 target.age=std::min(5.0f,target.age+dt);
                 target.ready=target.age>=5.0f;
+            }
+            else if(target.active && target.kind==TargetKind::FruitTree && target.stock==0 &&
+                    std::isfinite(target.regrowSeconds) && target.regrowSeconds>0 && target.maxStock>0)
+            {
+                target.age=std::min(target.regrowSeconds,target.age+dt);
+                if(target.age>=target.regrowSeconds){target.stock=target.maxStock;target.age=0;}
             }
     }
 }

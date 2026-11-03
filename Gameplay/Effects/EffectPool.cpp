@@ -18,7 +18,8 @@ namespace MyGame
         {
             Spawn({EffectKind::Particle,event.position,{-18,-28},0,0.45f,event.amount});
             Spawn({EffectKind::Particle,event.position,{18,-38},0,0.55f,event.amount});
-            if(event.kind==GameEventKind::ItemPicked || event.kind==GameEventKind::CropHarvested)
+            if(event.kind==GameEventKind::ItemPicked || event.kind==GameEventKind::CropHarvested ||
+               event.kind==GameEventKind::FruitHarvested)
                 Spawn({EffectKind::FloatingText,event.position,{0,-34},0,1.1f,event.amount});
             if(event.kind==GameEventKind::ObjectHit)
                 m_Shake=std::min(4.0f,m_Shake+1.5f);
