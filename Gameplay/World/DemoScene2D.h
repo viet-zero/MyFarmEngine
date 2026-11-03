@@ -33,7 +33,10 @@ namespace MyGame
         AssetTextures* m_Assets=nullptr;
         const MyEngine::Texture2D* m_Map=nullptr;
         const MyEngine::Texture2D* m_Items=nullptr;
+        const MyEngine::Texture2D* m_DogTexture=nullptr;
+        const MyEngine::Texture2D* m_CropTexture=nullptr;
         std::array<const MyEngine::Texture2D*, 2> m_Characters{};
+        std::array<const MyEngine::Texture2D*, 2> m_WalkCharacters{};
         std::array<std::array<float,4>,4> m_ItemRegions{};
         std::array<glm::vec2,2> m_Anchors{glm::vec2(0.5f,1),glm::vec2(0.5f,1)};
         VisualCatalog m_Visuals;

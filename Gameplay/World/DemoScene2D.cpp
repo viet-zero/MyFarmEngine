@@ -1,5 +1,5 @@
 #include "DemoScene2D.h"
-#include "Gameplay/Player/Movement2D.h"
+#include "Gameplay/Systems/CollisionSystem.h"
 #include "Input/Input.h"
 #include "Resources/AssetPath.h"
 #include <GLFW/glfw3.h>
@@ -12,6 +12,10 @@ namespace
 {
     const glm::vec2 WorldSize=MyGame::WorldMap::Size();
     constexpr std::array<const char*,4> ItemNames = {"Watering can", "Garden hoe", "Seeds", "Strawberry cake"};
+    constexpr glm::vec2 NpcPosition{3190,2020};
+    constexpr MyGame::ColliderComponent PlayerCollider{{18,12}};
+    constexpr MyGame::ColliderComponent DogCollider{{22,13}};
+    constexpr MyGame::ColliderComponent NpcCollider{{18,12}};
 }
 
 namespace MyGame
@@ -21,11 +25,17 @@ namespace MyGame
         m_Assets=&assets;
         if(!m_World.LoadObjects(dataRoot/"Objects.csv"))
             std::cerr<<"World objects: definitions missing or invalid; object fallback omitted\n";
+        if(!m_World.LoadStaticColliders(dataRoot/"StaticColliders.csv"))
+            std::cerr<<"World colliders: definitions missing or invalid; static fallback omitted\n";
         if(!m_Visuals.Load(dataRoot/"VisualClips.csv"))
             for(const auto& error:m_Visuals.Errors()) std::cerr<<"Visual catalog: "<<error<<'\n';
-        m_Map=assets.Load("world_garden");
+        m_Map=assets.Load("world_phase_e");
         m_Characters[0]=assets.Load("player_linh");
         m_Characters[1]=assets.Load("player_an");
+        m_WalkCharacters[0]=assets.Load("player_linh_walk");
+        m_WalkCharacters[1]=assets.Load("player_an_walk");
+        m_DogTexture=assets.Load("dog_walk");
+        m_CropTexture=assets.Load("turnip_growth");
         m_Items=assets.Load("items_farm");
         if(const auto* items=assets.Record("items_farm"))
             for(int i=0;i<4;++i)
@@ -54,7 +64,7 @@ namespace MyGame
                 m_Targets.push_back({object.gameplayId,TargetKind::Object,
                     object.position+object.size*0.5f,2});
         }
-        m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{2770,2135}});
+        m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{3000,1700}});
         m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
         m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;
         m_WalkTime = 0;
@@ -77,20 +87,28 @@ namespace MyGame
             (MyEngine::Input::IsKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f),
             (MyEngine::Input::IsKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f) -
             (MyEngine::Input::IsKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f)};
-        m_Moving = glm::length(direction) > 0;
         m_Facing=FacingFromVelocity(direction.x,direction.y,m_Facing);
         const bool running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
         const float speed = running ? 300.0f : 180.0f;
-        const auto proposed=MoveWithinBounds(m_Player,direction,speed,deltaTime,WorldSize);
-        if(m_World.CanMoveTo(proposed)) m_Player=proposed;
+        const std::array<DynamicCollider,2> playerObstacles={{{NpcPosition,NpcCollider},{m_Dog,DogCollider}}};
+        const auto previous=m_Player;
+        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,direction,speed,deltaTime,
+                                               PlayerCollider,playerObstacles);
+        m_Moving=glm::length(m_Player-previous)>0.001f;
         if (m_Moving) m_WalkTime += deltaTime;
         else m_WalkTime = 0;
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) m_Camera.SetZoom(m_Camera.Zoom()/1.15f);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) m_Camera.SetZoom(m_Camera.Zoom()*1.15f);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R)) {Reset();return;}
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F4)) m_Player=m_World.Spawn(Zone::Town);
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F5)) m_Player=m_World.Spawn(Zone::Farm);
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F6)) m_Player=m_World.Spawn(Zone::LakeForest);
+        bool teleported=false;
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F4)){m_Player=m_World.Spawn(Zone::Town);teleported=true;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F5)){m_Player=m_World.Spawn(Zone::Farm);teleported=true;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F6)){m_Player=m_World.Spawn(Zone::LakeForest);teleported=true;}
+        if(teleported)
+        {
+            m_Dog=m_Player+glm::vec2{-70,30};
+            m_Camera.SetPosition(m_Player);
+        }
         m_Actor.position=m_Player;
         switch(m_Facing)
         {
@@ -103,6 +121,7 @@ namespace MyGame
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F))
         {
             auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
+            if(target && !m_World.HasLineOfSight(m_Actor.position,target->position)) target=nullptr;
             m_LastAction=InteractionSystem::Use(m_Actor,target,m_SelectedItem,m_Events);
             m_FeedbackTime=0.6f;
             if(m_LastAction==InteractionResult::Success && target &&
@@ -125,8 +144,9 @@ namespace MyGame
         const auto npcState=std::fmod(m_NpcTime,8.0f)>5.5f?VisualState::Action:
                             (std::fmod(m_NpcTime,8.0f)>2.5f?VisualState::Walk:VisualState::Idle);
         const auto npcFacing=std::fmod(m_NpcTime,8.0f)>4.0f?Facing::Left:Facing::Right;
-        if(!m_NpcAnimation.Select(m_Visuals,"npc_an",npcState,npcState==VisualState::Walk?npcFacing:Facing::Down))
-            m_NpcAnimation.Select(m_Visuals,"npc_an",VisualState::Idle,Facing::Down);
+        const char* npcProfile=m_Character==0?"npc_an":"npc_linh";
+        if(!m_NpcAnimation.Select(m_Visuals,npcProfile,npcState,npcState==VisualState::Walk?npcFacing:Facing::Down))
+            m_NpcAnimation.Select(m_Visuals,npcProfile,VisualState::Idle,Facing::Down);
         m_NpcAnimation.Update(deltaTime,false);
 
         m_DogTime+=deltaTime;
@@ -136,7 +156,11 @@ namespace MyGame
         m_DogAnimation.Select(m_Visuals,"dog",dogState,FacingFromVelocity(m_Player.x-m_Dog.x,m_Player.y-m_Dog.y,Facing::Down));
         m_DogAnimation.Update(deltaTime,false);
         if(dogState==VisualState::Walk || dogState==VisualState::Run)
-            m_Dog=MoveWithinBounds(m_Dog,m_Player-m_Dog,dogState==VisualState::Run?210.0f:120.0f,deltaTime,WorldSize);
+        {
+            const std::array<DynamicCollider,2> dogObstacles={{{NpcPosition,NpcCollider},{m_Player,PlayerCollider}}};
+            m_Dog=CollisionSystem::MoveAndSlide(m_World,m_Dog,m_Player-m_Dog,
+                dogState==VisualState::Run?210.0f:120.0f,deltaTime,DogCollider,dogObstacles);
+        }
         m_GameAge+=deltaTime;
         for (int i=0; i<4; ++i)
             if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i))
@@ -154,14 +178,19 @@ namespace MyGame
     void DemoScene2D::DrawActor(MyEngine::Canvas2D& canvas,int character,glm::vec2 feet,
                                 const AnimationController& animation,float bob)
     {
-        // Ground marker and a single-pose cutout; bobbing is procedural, not a walk-cycle sheet.
+        // The reviewed walk sheet has four true poses. Other states retain their single-pose art.
         canvas.Rectangle(feet.x-22, feet.y-4, 44, 9, {0.08f,0.16f,0.09f,0.19f});
         const auto* texture=m_Characters[static_cast<std::size_t>(character)];
         const auto anchor=m_Anchors[static_cast<std::size_t>(character)];
         std::array<float,4> uv{0,0,1,1};
-        if(const auto* clip=animation.Clip();clip && m_Assets)
-            if(const auto* record=m_Assets->Record(clip->assetId))
-                if(const auto region=AssetManifest::FrameUv(*record,animation.Frame())) uv=*region;
+        if((animation.State()==VisualState::Walk || animation.State()==VisualState::Run) &&
+           m_WalkCharacters[static_cast<std::size_t>(character)])
+        {
+            texture=m_WalkCharacters[static_cast<std::size_t>(character)];
+            if(const auto* clip=animation.Clip();clip && m_Assets)
+                if(const auto* record=m_Assets->Record(clip->assetId))
+                    if(const auto region=AssetManifest::FrameUv(*record,animation.Frame())) uv=*region;
+        }
         if(texture) canvas.Sprite(*texture, feet.x-156*anchor.x, feet.y-156*anchor.y-bob, 156,156,uv);
         else canvas.Rectangle(feet.x-22,feet.y-78-bob,44,78,
             character==0?std::array<float,4>{0.85f,0.65f,0.22f,1}:std::array<float,4>{0.28f,0.5f,0.8f,1});
@@ -169,6 +198,16 @@ namespace MyGame
     void DemoScene2D::DrawDog(MyEngine::Canvas2D& canvas) const
     {
         const auto state=m_DogAnimation.State();
+        if(m_DogTexture && m_Assets)
+        {
+            std::array<float,4> uv{0,0,0.5f,0.5f};
+            if(const auto* record=m_Assets->Record("dog_walk"))
+                if(const auto region=AssetManifest::FrameUv(*record,
+                   state==VisualState::Walk || state==VisualState::Run?m_DogAnimation.Frame():0)) uv=*region;
+            canvas.Sprite(*m_DogTexture,m_Dog.x-52,m_Dog.y-87,104,
+                          state==VisualState::Sleep?88.0f:104.0f,uv);
+            return;
+        }
         const float height=state==VisualState::Sleep?24.0f:42.0f;
         canvas.Rectangle(m_Dog.x-25,m_Dog.y-height,50,height,{0.55f,0.32f,0.16f,1});
         canvas.Rectangle(m_Dog.x+16,m_Dog.y-height-5,18,18,{0.68f,0.43f,0.22f,1});
@@ -178,13 +217,19 @@ namespace MyGame
         const auto it=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
             return target.id=="crop.plot.01";});
         if(it==m_Targets.end() || !it->active) return;
-        canvas.Rectangle(2736,2118,68,28,{0.42f,0.26f,0.14f,1});
         if(!it->planted) return;
         const int stage=GrowthFrame(it->age,{1,1,1,2});
+        if(m_CropTexture && m_Assets)
+            if(const auto* record=m_Assets->Record("turnip_growth"))
+                if(const auto uv=AssetManifest::FrameUv(*record,stage))
+                {
+                    canvas.Sprite(*m_CropTexture,it->position.x-56,it->position.y-94,112,112,*uv);
+                    return;
+                }
         const float size=14.0f+static_cast<float>(stage)*7.0f;
         const std::array<std::array<float,4>,4> colors={{{0.48f,0.72f,0.22f,1},{0.31f,0.68f,0.18f,1},
             {0.22f,0.58f,0.15f,1},{0.65f,0.82f,0.25f,1}}};
-        canvas.Rectangle(2770-size*0.5f,2135-size,size,size,colors[static_cast<std::size_t>(stage)]);
+        canvas.Rectangle(it->position.x-size*0.5f,it->position.y-size,size,size,colors[static_cast<std::size_t>(stage)]);
     }
     void DemoScene2D::Render(MyEngine::Canvas2D& canvas, int width, int height)
     {
@@ -205,6 +250,15 @@ namespace MyGame
             for(int cx=chunks.left;cx<chunks.right;++cx)
             {
                 const auto chunk=m_World.ChunkAt(cx,cy);
+                if(m_Map)
+                {
+                    const float x=static_cast<float>(chunk.tiles.left*WorldMap::TileSize);
+                    const float y=static_cast<float>(chunk.tiles.top*WorldMap::TileSize);
+                    const float w=static_cast<float>((chunk.tiles.right-chunk.tiles.left)*WorldMap::TileSize);
+                    const float h=static_cast<float>((chunk.tiles.bottom-chunk.tiles.top)*WorldMap::TileSize);
+                    canvas.Sprite(*m_Map,x,y,w,h,{x/WorldSize.x,y/WorldSize.y,w/WorldSize.x,h/WorldSize.y});
+                    continue;
+                }
                 for(int y=std::max(range.top,chunk.tiles.top);y<std::min(range.bottom,chunk.tiles.bottom);++y)
                     for(int x=std::max(range.left,chunk.tiles.left);x<std::min(range.right,chunk.tiles.right);++x)
                     {
@@ -214,16 +268,16 @@ namespace MyGame
                             WorldMap::TileSize+0.5f,colors[static_cast<std::size_t>(cell->terrain)]);
                     }
             }
-        const glm::vec2 paintedFarm{2300,1500},paintedSize{1600,1067};
         const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
-        if(m_Map && WorldMap::Intersects(paintedFarm,paintedSize,visibleOrigin,m_Camera.ViewSize()))
-            canvas.Image(*m_Map,paintedFarm.x,paintedFarm.y,paintedSize.x,paintedSize.y);
-        if(WorldMap::Intersects({2740,2080},{80,80},visibleOrigin,renderCamera.ViewSize())) DrawCrop(canvas);
+        if(WorldMap::Intersects({2940,1580},{120,120},visibleOrigin,renderCamera.ViewSize())) DrawCrop(canvas);
         const auto pickup=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
             return target.id=="item.demo.01";});
         if(pickup!=m_Targets.end() && pickup->active &&
            WorldMap::Intersects(pickup->position-glm::vec2{12,12},{24,24},visibleOrigin,renderCamera.ViewSize()))
-            canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
+        {
+            if(m_Items) canvas.Sprite(*m_Items,pickup->position.x-26,pickup->position.y-40,52,52,m_ItemRegions[2]);
+            else canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
+        }
         for(const auto& object:m_World.Objects())
         {
             if(!object.active || !WorldMap::Intersects(object.position,object.size,visibleOrigin,renderCamera.ViewSize())) continue;
@@ -231,16 +285,9 @@ namespace MyGame
                 std::array<float,4>{0.65f,0.86f,0.96f,0.6f}:
                 (object.blocked?std::array<float,4>{0.35f,0.37f,0.24f,1}:
                                 std::array<float,4>{0.69f,0.52f,0.23f,1});
-            canvas.Rectangle(object.position.x,object.position.y,object.size.x,object.size.y,color);
+            if(!m_Map) canvas.Rectangle(object.position.x,object.position.y,object.size.x,object.size.y,color);
         }
-        constexpr std::array<glm::vec2,4> objects = {{{2700,2190},{3070,2190},{3150,2260},{3030,2340}}};
-        for (std::size_t i=0; i<objects.size(); ++i)
-        {
-            if(!WorldMap::Intersects(objects[i]-glm::vec2{32,52},{64,64},visibleOrigin,m_Camera.ViewSize())) continue;
-            if(m_Items) canvas.Sprite(*m_Items,objects[i].x-32,objects[i].y-52,64,64,m_ItemRegions[i]);
-            else canvas.Rectangle(objects[i].x-16,objects[i].y-24,32,32,{0.8f,0.5f,0.2f,1});
-        }
-        const glm::vec2 npc{3190,2020};
+        const glm::vec2 npc=NpcPosition;
         const float bob = m_Moving ? std::sin(m_WalkTime*12.0f)*2.2f : 0;
         // Painter's ordering gives sprites a consistent overlap by their foot Y.
         if (m_Player.y < npc.y) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
@@ -293,9 +340,10 @@ namespace MyGame
     void DemoScene2D::Shutdown()
     {
         m_Ready = false;
-        m_Map=m_Items=nullptr;
+        m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;
         m_Assets=nullptr;
         m_Characters.fill(nullptr);
+        m_WalkCharacters.fill(nullptr);
         m_Visuals={};m_PlayerAnimation={};m_NpcAnimation={};m_DogAnimation={};m_CropAnimation={};
         m_Targets.clear();m_Events.Clear();m_Effects.Clear();
     }
