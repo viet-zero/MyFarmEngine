@@ -1,12 +1,16 @@
 #pragma once
-class Game
+#include "Gameplay/States/GameplayState.h"
+namespace MyGame
 {
-public:
-    bool Initialize();
-    void Update(float dt);
-    void Render();
-    void Shutdown();
+    class Game
+    {
+    public:
+        bool Initialize();
+        void Update(float deltaTime);
+        void Render();
+        void Shutdown();
 
-private:
-    GameplayState m_gameplayState;
-};
+    private:
+        GameplayState m_gameplayState;
+    };
+}

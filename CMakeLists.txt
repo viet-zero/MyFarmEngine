@@ -19,7 +19,7 @@ add_subdirectory(ThirdParty/glfw)
 
 add_library(glad
     ThirdParty/glad/src/glad.c
- "Game/Systems/ToolComponent.h")
+)
 
 target_include_directories(glad
     PUBLIC
@@ -30,26 +30,41 @@ target_include_directories(glad
 # Executable
 # ==============================
 add_executable(MyFarmEngine
+
+    # Game
     Game/main.cpp
     Game/GameApp/Game.cpp
 
+    # Gameplay
+    Gameplay/States/GameplayState.cpp
+
+    # Engine Core
     Engine/Core/Application.cpp
     Engine/Core/Window.cpp
     Engine/Core/Engine.cpp
     Engine/Core/Time.cpp
-    
+
+    # Renderer
     Engine/Graphics/Renderer.cpp
 
+    # Input
     Engine/Input/Input.cpp
- "Game/Systems/ToolComponent.h")
+)
 
+# ==============================
+# Include Directories
+# ==============================
 target_include_directories(MyFarmEngine
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         Engine
         ThirdParty/glm
         ThirdParty/stb
 )
 
+# ==============================
+# Libraries
+# ==============================
 target_link_libraries(MyFarmEngine
     PRIVATE
         glfw
