@@ -45,6 +45,18 @@ namespace MyGame
     {
         m_Player = m_World.Spawn(Zone::Farm);
         m_Dog=m_Player+glm::vec2{-70,30};
+        m_Actor={};m_Actor.position=m_Player;
+        m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+2);
+        for(const auto& object:m_World.Objects())
+        {
+            m_World.SetObjectActive(object.gameplayId,true);
+            if(object.blocked)
+                m_Targets.push_back({object.gameplayId,TargetKind::Object,
+                    object.position+object.size*0.5f,2});
+        }
+        m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{2770,2135}});
+        m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
+        m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;
         m_WalkTime = 0;
         m_NpcTime=m_DogTime=0;m_GameAge=0;
         m_Moving = false;
@@ -79,6 +91,26 @@ namespace MyGame
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F4)) m_Player=m_World.Spawn(Zone::Town);
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F5)) m_Player=m_World.Spawn(Zone::Farm);
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F6)) m_Player=m_World.Spawn(Zone::LakeForest);
+        m_Actor.position=m_Player;
+        switch(m_Facing)
+        {
+        case Facing::Left:m_Actor.facing={-1,0};break;
+        case Facing::Right:m_Actor.facing={1,0};break;
+        case Facing::Up:m_Actor.facing={0,-1};break;
+        default:m_Actor.facing={0,1};break;
+        }
+        InteractionSystem::Tick(m_Actor,m_Targets,deltaTime);
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F))
+        {
+            auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
+            m_LastAction=InteractionSystem::Use(m_Actor,target,m_SelectedItem,m_Events);
+            m_FeedbackTime=0.6f;
+            if(m_LastAction==InteractionResult::Success && target &&
+               target->kind==TargetKind::Object && !target->active)
+                m_World.SetObjectActive(target->id,false);
+        }
+        m_Effects.Consume(m_Events.Take());m_Effects.Update(deltaTime);
+        m_FeedbackTime=std::max(0.0f,m_FeedbackTime-deltaTime);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_TAB)) m_Character = 1-m_Character;
         VisualState requested=m_Moving?(running?VisualState::Run:VisualState::Walk):VisualState::Idle;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE)) requested=VisualState::Action;
@@ -143,7 +175,12 @@ namespace MyGame
     }
     void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas) const
     {
-        const int stage=GrowthFrame(m_GameAge,{5,8,12,16});
+        const auto it=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
+            return target.id=="crop.plot.01";});
+        if(it==m_Targets.end() || !it->active) return;
+        canvas.Rectangle(2736,2118,68,28,{0.42f,0.26f,0.14f,1});
+        if(!it->planted) return;
+        const int stage=GrowthFrame(it->age,{1,1,1,2});
         const float size=14.0f+static_cast<float>(stage)*7.0f;
         const std::array<std::array<float,4>,4> colors={{{0.48f,0.72f,0.22f,1},{0.31f,0.68f,0.18f,1},
             {0.22f,0.58f,0.15f,1},{0.65f,0.82f,0.25f,1}}};
@@ -153,9 +190,14 @@ namespace MyGame
     {
         if (!m_Ready) return;
         m_Camera.Resize(width,height);
-        canvas.BeginWorld(width,height,m_Camera);
-        const auto range=m_World.VisibleTiles(m_Camera.Position(),m_Camera.ViewSize());
-        const auto chunks=m_World.VisibleChunks(m_Camera.Position(),m_Camera.ViewSize());
+        auto renderCamera=m_Camera;
+        const float shake=m_Effects.Shake();
+        renderCamera.SetPosition(m_Camera.Position()+glm::vec2{
+            std::sin(static_cast<float>(m_GameAge)*87.0f)*shake,
+            std::cos(static_cast<float>(m_GameAge)*71.0f)*shake});
+        canvas.BeginWorld(width,height,renderCamera);
+        const auto range=m_World.VisibleTiles(renderCamera.Position(),renderCamera.ViewSize());
+        const auto chunks=m_World.VisibleChunks(renderCamera.Position(),renderCamera.ViewSize());
         constexpr std::array<std::array<float,4>,5> colors={{{0.43f,0.65f,0.32f,1},
             {0.78f,0.68f,0.49f,1},{0.55f,0.38f,0.24f,1},{0.21f,0.51f,0.7f,1},
             {0.23f,0.48f,0.26f,1}}};
@@ -173,13 +215,18 @@ namespace MyGame
                     }
             }
         const glm::vec2 paintedFarm{2300,1500},paintedSize{1600,1067};
-        const auto visibleOrigin=m_Camera.Position()-m_Camera.ViewSize()*0.5f;
+        const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
         if(m_Map && WorldMap::Intersects(paintedFarm,paintedSize,visibleOrigin,m_Camera.ViewSize()))
             canvas.Image(*m_Map,paintedFarm.x,paintedFarm.y,paintedSize.x,paintedSize.y);
-        if(WorldMap::Intersects({2740,2080},{80,80},visibleOrigin,m_Camera.ViewSize())) DrawCrop(canvas);
+        if(WorldMap::Intersects({2740,2080},{80,80},visibleOrigin,renderCamera.ViewSize())) DrawCrop(canvas);
+        const auto pickup=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
+            return target.id=="item.demo.01";});
+        if(pickup!=m_Targets.end() && pickup->active &&
+           WorldMap::Intersects(pickup->position-glm::vec2{12,12},{24,24},visibleOrigin,renderCamera.ViewSize()))
+            canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
         for(const auto& object:m_World.Objects())
         {
-            if(!WorldMap::Intersects(object.position,object.size,visibleOrigin,m_Camera.ViewSize())) continue;
+            if(!object.active || !WorldMap::Intersects(object.position,object.size,visibleOrigin,renderCamera.ViewSize())) continue;
             const std::array<float,4> color=object.visualId=="visual.water.ripple"?
                 std::array<float,4>{0.65f,0.86f,0.96f,0.6f}:
                 (object.blocked?std::array<float,4>{0.35f,0.37f,0.24f,1}:
@@ -201,6 +248,15 @@ namespace MyGame
             DrawActor(canvas,1-m_Character,npc,m_NpcAnimation,0);
         if(WorldMap::Intersects(m_Dog-glm::vec2{34,48},{68,48},visibleOrigin,m_Camera.ViewSize())) DrawDog(canvas);
         if (m_Player.y >= npc.y) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
+        for(const auto& effect:m_Effects.Active())
+        {
+            if(!WorldMap::Intersects(effect.position-glm::vec2{6,6},{12,12},visibleOrigin,renderCamera.ViewSize())) continue;
+            const float alpha=1.0f-effect.age/effect.lifetime;
+            const float size=effect.kind==EffectKind::FloatingText?16.0f:8.0f;
+            canvas.Rectangle(effect.position.x-size*0.5f,effect.position.y-size*0.5f,size,size,
+                effect.kind==EffectKind::FloatingText?std::array<float,4>{0.98f,0.86f,0.3f,alpha}:
+                                                      std::array<float,4>{0.95f,0.72f,0.42f,alpha});
+        }
         canvas.End();
 
         // Screen UI uses a different projection and therefore does not zoom with the world.
@@ -219,6 +275,12 @@ namespace MyGame
             else canvas.Rectangle(x+10,y+10,size-20,size-20,{0.65f,0.35f,0.16f,1});
         }
         canvas.Rectangle(16,16,132,76,{0.99f,0.97f,0.88f,0.92f});
+        canvas.Rectangle(16,105,132,8,{0.17f,0.22f,0.14f,1});
+        canvas.Rectangle(16,105,132.0f*std::clamp(m_Actor.stamina/20.0f,0.0f,1.0f),8,{0.3f,0.7f,0.3f,1});
+        if(m_FeedbackTime>0)
+            canvas.Rectangle(static_cast<float>(width)-44,16,28,28,
+                m_LastAction==InteractionResult::Success?std::array<float,4>{0.25f,0.78f,0.35f,m_FeedbackTime}:
+                                                         std::array<float,4>{0.85f,0.25f,0.19f,m_FeedbackTime});
         for (int i=0; i<2; ++i)
         {
             const float x=20+static_cast<float>(i)*62;
@@ -235,5 +297,6 @@ namespace MyGame
         m_Assets=nullptr;
         m_Characters.fill(nullptr);
         m_Visuals={};m_PlayerAnimation={};m_NpcAnimation={};m_DogAnimation={};m_CropAnimation={};
+        m_Targets.clear();m_Events.Clear();m_Effects.Clear();
     }
 }

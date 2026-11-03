@@ -3,6 +3,7 @@
 #include <array>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace MyGame
@@ -18,6 +19,7 @@ namespace MyGame
         glm::vec2 position;
         glm::vec2 size;
         bool blocked=false;
+        bool active=true;
     };
     class WorldMap
     {
@@ -36,6 +38,7 @@ namespace MyGame
         Zone ZoneAt(glm::vec2 point) const;
         glm::vec2 Spawn(Zone zone) const;
         const std::vector<WorldObject>& Objects() const {return m_Objects;}
+        bool SetObjectActive(std::string_view gameplayId,bool active);
         static bool Intersects(glm::vec2 a,glm::vec2 aSize,glm::vec2 b,glm::vec2 bSize);
     private:
         std::array<WorldCell,Width*Height> m_Cells{};

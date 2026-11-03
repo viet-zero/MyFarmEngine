@@ -56,6 +56,12 @@ namespace MyGame
         if(loaded.empty()) return false;
         m_Objects=std::move(loaded);return true;
     }
+    bool WorldMap::SetObjectActive(std::string_view gameplayId,bool active)
+    {
+        for(auto& object:m_Objects)
+            if(object.gameplayId==gameplayId){object.active=active;return true;}
+        return false;
+    }
     const WorldCell* WorldMap::TryCell(int x,int y) const
     {
         if(x<0 || y<0 || x>=Width || y>=Height) return nullptr;
@@ -68,7 +74,7 @@ namespace MyGame
                                  static_cast<int>(std::floor(point.y/TileSize)));
         if(!cell || cell->blocked) return false;
         for(const auto& object:m_Objects)
-            if(object.blocked && Intersects(point-glm::vec2{12,12},{24,24},object.position,object.size)) return false;
+            if(object.active && object.blocked && Intersects(point-glm::vec2{12,12},{24,24},object.position,object.size)) return false;
         return true;
     }
     TileRange WorldMap::VisibleTiles(glm::vec2 center,glm::vec2 viewSize,int padding) const

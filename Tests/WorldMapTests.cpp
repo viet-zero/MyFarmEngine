@@ -18,6 +18,8 @@ int main(int argc,char** argv)
     check(!map.CanMoveTo({-1,50}) && !map.CanMoveTo({std::numeric_limits<float>::quiet_NaN(),50}),"invalid position accepted");
     check(!map.CanMoveTo({5050,2050}),"lake water accepted");
     check(!map.CanMoveTo({4670,790}),"blocking tree accepted");
+    check(map.SetObjectActive("tree.oak.01",false) && map.CanMoveTo({4670,790}),"destroyed tree still blocked");
+    check(!map.SetObjectActive("absent",false),"unknown object state changed");
     check(map.Objects().size()==7,"object definitions missing");
     for(const auto& object:map.Objects()) check(object.gameplayId!=object.visualId,"visual ID reused as gameplay ID");
     MyEngine::Camera2D camera;camera.SetWorldSize(WorldMap::Size());camera.Resize(1280,720);

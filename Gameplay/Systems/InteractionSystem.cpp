@@ -14,6 +14,9 @@ namespace MyGame
             if(!target.active || !std::isfinite(target.position.x) || !std::isfinite(target.position.y)) continue;
             const glm::vec2 delta=target.position-actor.position;
             const float distance2=glm::dot(delta,delta);
+            const float facingLength=glm::length(actor.facing);
+            if(facingLength<=0 || !std::isfinite(facingLength)) return nullptr;
+            if(distance2>1 && glm::dot(delta/std::sqrt(distance2),actor.facing/facingLength)<0.5f) continue;
             if(distance2<=best){best=distance2;nearest=&target;}
         }
         return nearest;
@@ -78,6 +81,7 @@ namespace MyGame
         if(!std::isfinite(deltaTime) || deltaTime<=0) return;
         const float dt=std::min(deltaTime,0.1f);
         actor.cooldown=std::max(0.0f,actor.cooldown-dt);
+        actor.stamina=std::min(20.0f,actor.stamina+dt);
         for(auto& target:targets)
             if(target.active && target.kind==TargetKind::Crop && target.planted && !target.ready)
             {

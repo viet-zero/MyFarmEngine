@@ -3,6 +3,8 @@
 #include "Gameplay/Graphics/AssetTextures.h"
 #include "Gameplay/Graphics/VisualCatalog.h"
 #include "Gameplay/World/WorldMap.h"
+#include "Gameplay/Systems/InteractionSystem.h"
+#include "Gameplay/Effects/EffectPool.h"
 #include <array>
 
 namespace MyGame
@@ -22,6 +24,12 @@ namespace MyGame
         void DrawCrop(MyEngine::Canvas2D& canvas) const;
         MyEngine::Camera2D m_Camera;
         WorldMap m_World;
+        InteractionActor m_Actor;
+        std::vector<InteractionTarget> m_Targets;
+        EventBus m_Events;
+        EffectPool m_Effects;
+        InteractionResult m_LastAction=InteractionResult::NoTarget;
+        float m_FeedbackTime=0;
         AssetTextures* m_Assets=nullptr;
         const MyEngine::Texture2D* m_Map=nullptr;
         const MyEngine::Texture2D* m_Items=nullptr;
