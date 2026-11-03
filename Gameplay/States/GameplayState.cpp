@@ -31,7 +31,8 @@ namespace MyGame
         m_Selected = 0;
         m_Assets.Initialize(MyEngine::AssetRoot());
         m_Background=m_Assets.Load("background_morning");
-        m_Ready = m_Canvas.Initialize() && m_Demo.Initialize(m_Assets);
+        const auto root=MyEngine::AssetRoot();
+        m_Ready = m_Canvas.Initialize() && m_Demo.Initialize(m_Assets,root/"Data");
         UpdateTitle();
     }
 
@@ -125,7 +126,7 @@ namespace MyGame
     {
         std::string title = "My Farm | Cozy Morning | F1: Artwork | F2: History | F3: World | Esc: Exit";
         if (m_Mode == 3)
-            title = "My Farm - Render02 | WASD: Move | Shift: Run | Q/E: Zoom | Tab: Character | 1-4: Item | R: Reset | F1/F2: Gallery | Home: Landscape";
+            title = "My Farm - Phase B | WASD: Move | Shift: Run | Space: Action | H: Hurt | Tab: Character | R: Reset";
         if (m_Mode == 1 || m_Mode == 2)
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];
