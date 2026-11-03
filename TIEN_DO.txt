@@ -13,6 +13,7 @@ DOT B - HIEN THI NEN TRONG CHUONG TRINH
 [x] Nen giu ti le khi resize, nap mot lan va don tai nguyen GPU.
 [x] Tim Assets theo thu muc EXE, khong phu thuoc thu muc CMD hien tai.
 [x] F1 xem 5 anh dai dien thu vien; F2 xem 8 anh lich su; mui ten de chuyen.
+[x] Sua input bo lo phim nhan nhanh; luu su kien nhan cho F1/F2/mui ten/ESC.
 [ ] Build/test va ghi ro ket qua, khong danh dau test chua chay la dat.
 
 DOT C - TAI LIEU VA GIT

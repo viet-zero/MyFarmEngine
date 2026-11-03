@@ -29,7 +29,6 @@ namespace MyGame
     {
         m_Mode = 0;
         m_Selected = 0;
-        m_Keys.fill(false);
         m_Ready = m_Canvas.Initialize() &&
             m_Background.Load(MyEngine::FindAsset("Backgrounds/cozy_farm_morning.png"));
         UpdateTitle();
@@ -41,8 +40,7 @@ namespace MyGame
                                      GLFW_KEY_LEFT, GLFW_KEY_RIGHT};
         for (std::size_t i = 0; i < keys.size(); ++i)
         {
-            const bool down = MyEngine::Input::IsKeyPressed(keys[i]);
-            if (down && !m_Keys[i])
+            if (MyEngine::Input::ConsumeKeyPress(keys[i]))
             {
                 if (i == 0) SetMode(m_Mode == 1 ? 0 : 1);
                 else if (i == 1) SetMode(m_Mode == 2 ? 0 : 2);
@@ -54,7 +52,6 @@ namespace MyGame
                     LoadPreview();
                 }
             }
-            m_Keys[i] = down;
         }
     }
 

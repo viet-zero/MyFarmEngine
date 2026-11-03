@@ -24,7 +24,6 @@ namespace MyGame
         MyEngine::Texture2D m_Background, m_Preview;
         int m_Mode = 0;
         std::size_t m_Selected = 0;
-        std::array<bool, 5> m_Keys{};
         bool m_Ready = false;
     };
 }

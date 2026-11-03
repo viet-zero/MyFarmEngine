@@ -48,7 +48,8 @@ namespace MyEngine
         while (!m_Window.ShouldClose())
         {
             m_Window.PollEvents();
-            if (m_Window.ShouldClose() || Input::IsKeyPressed(GLFW_KEY_ESCAPE))
+            if (m_Window.ShouldClose() || Input::IsKeyPressed(GLFW_KEY_ESCAPE) ||
+                Input::ConsumeKeyPress(GLFW_KEY_ESCAPE))
                 break;
 
             int width = 0, height = 0;

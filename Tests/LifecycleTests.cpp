@@ -85,6 +85,18 @@ int main()
         }
         Check(app.Initialize(), "repeated Initialize failed");
         Check(game.starts == 1, "repeated Initialize started game twice");
+        auto* native = glfwGetCurrentContext();
+        const auto keyCallback = glfwSetKeyCallback(native, nullptr);
+        glfwSetKeyCallback(native, keyCallback);
+        Check(keyCallback != nullptr, "input key callback missing");
+        if (keyCallback)
+        {
+            keyCallback(native, GLFW_KEY_F1, 0, GLFW_PRESS, 0);
+            keyCallback(native, GLFW_KEY_F1, 0, GLFW_RELEASE, 0);
+            Check(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F1), "short key tap was lost");
+            Check(!MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F1), "key tap consumed twice");
+        }
+        Check(!MyEngine::Input::ConsumeKeyPress(-1), "unknown key accepted");
 #ifdef _WIN32
         // WM_PAINT is handled inside PollEvents, before the normal Update.
         Check(PostMessage(glfwGetWin32Window(glfwGetCurrentContext()), WM_PAINT, 0, 0) != 0,
