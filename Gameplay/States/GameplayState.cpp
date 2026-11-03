@@ -6,7 +6,7 @@ namespace MyGame
     {
     }
 
-    void GameplayState::Update(float deltaTime)
+    void GameplayState::Update(float /*deltaTime*/)
     {
     }
 

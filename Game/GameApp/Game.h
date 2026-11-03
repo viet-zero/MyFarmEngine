@@ -1,14 +1,17 @@
 #pragma once
+
+#include "Core/IGame.h"
 #include "Gameplay/States/GameplayState.h"
+
 namespace MyGame
 {
-    class Game
+    class Game : public MyEngine::IGame
     {
     public:
-        bool Initialize();
-        void Update(float deltaTime);
-        void Render();
-        void Shutdown();
+        bool Initialize() override;
+        void Update(float deltaTime) override;
+        void Render() override;
+        void Shutdown() override;
 
     private:
         GameplayState m_gameplayState;

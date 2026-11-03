@@ -4,9 +4,9 @@ namespace MyGame
 {
     struct GameConfig
     {
-        int windowWidth = 1280;
-        int windowHeight = 720;
-
-        const char* title = "My Farm";
+        unsigned int windowWidth = 1280;
+        unsigned int windowHeight = 720;
+        const char* title = "My Farm - Phase 1";
+        bool vsync = true;
     };
 }
