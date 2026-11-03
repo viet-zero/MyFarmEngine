@@ -3,6 +3,10 @@
 #include "Input/Input.h"
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
 #include <iostream>
 
 namespace
@@ -21,6 +25,7 @@ namespace
     public:
         bool failInitialize = false;
         int starts = 0, updates = 0, renders = 0, stops = 0;
+        bool awaitingRender = false;
         bool Initialize() override
         {
             ++starts;
@@ -32,22 +37,27 @@ namespace
             ++updates;
             Check(deltaTime >= 0.0f && deltaTime <= MyEngine::Time::MaxDeltaTime,
                   "game received invalid delta time");
-            Check(updates == renders + 1, "update/render order broken");
+            Check(!awaitingRender, "previous update was not rendered");
+            awaitingRender = true;
             if (updates == 1)
+            {
+                const int before = renders;
                 glfwSetWindowSize(glfwGetCurrentContext(), 480, 320);
+                // A resize callback during Update must not render recursively.
+                Check(renders == before, "resize re-entered rendering during Update");
+            }
         }
         void Render() override
         {
             ++renders;
+            awaitingRender = false;
             int width = 0, height = 0;
             glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
-            // Resize requests can arrive during Update. The viewport must match
-            // the framebuffer captured by Application before that Update.
+            // Both normal frames and event-driven refreshes use the latest size.
             int viewport[4] = {};
             glGetIntegerv(GL_VIEWPORT, viewport);
             Check(viewport[2] > 0 && viewport[3] > 0, "empty viewport");
-            if (renders == 3)
-                Check(viewport[2] == width && viewport[3] == height, "viewport did not follow resize");
+            Check(viewport[2] == width && viewport[3] == height, "viewport did not follow resize");
             Check(glGetError() == GL_NO_ERROR, "OpenGL error during frame");
         }
         void Shutdown() override
@@ -75,8 +85,17 @@ int main()
         }
         Check(app.Initialize(), "repeated Initialize failed");
         Check(game.starts == 1, "repeated Initialize started game twice");
+#ifdef _WIN32
+        // WM_PAINT is handled inside PollEvents, before the normal Update.
+        Check(PostMessage(glfwGetWin32Window(glfwGetCurrentContext()), WM_PAINT, 0, 0) != 0,
+              "could not queue repaint regression test");
+#endif
         app.Run(3);
-        Check(game.updates == 3 && game.renders == 3, "frame budget was not respected");
+        Check(game.updates == 3 && game.renders >= 3 && !game.awaitingRender,
+              "frame budget or update/render order was not respected");
+#ifdef _WIN32
+        Check(game.renders > game.updates, "WM_PAINT did not repaint inside event dispatch");
+#endif
         app.Shutdown();
         app.Shutdown();
         Check(game.stops == 1, "Shutdown called game more than once");

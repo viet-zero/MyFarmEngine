@@ -29,6 +29,12 @@ namespace MyEngine
         }
         Time::Reset();
         m_Initialized = true;
+        auto* window = m_Window.GetNativeWindow();
+        glfwSetWindowUserPointer(window, this);
+        glfwSetWindowRefreshCallback(window, [](GLFWwindow* native)
+        {
+            static_cast<Application*>(glfwGetWindowUserPointer(native))->Refresh();
+        });
         return true;
     }
 
@@ -37,6 +43,7 @@ namespace MyEngine
         if (!m_Initialized)
             return;
         unsigned int frames = 0;
+        m_Running = true;
         Time::Reset();
         while (!m_Window.ShouldClose())
         {
@@ -54,19 +61,51 @@ namespace MyEngine
                 continue;
             }
             Time::Update();
+            m_InFrame = true;
             m_Game.Update(Time::GetDeltaTime());
-            m_Renderer.Resize(width, height);
-            m_Renderer.BeginFrame();
-            m_Game.Render();
-            m_Renderer.EndFrame();
-            m_Window.SwapBuffers();
+            DrawFrame();
+            m_InFrame = false;
             if (maxFrames != 0 && ++frames >= maxFrames)
                 break;
         }
+        m_Running = false;
+    }
+
+    bool Application::DrawFrame()
+    {
+        int width = 0, height = 0;
+        m_Window.GetFramebufferSize(width, height);
+        if (width == 0 || height == 0)
+            return false;
+        m_Renderer.Resize(width, height);
+        m_Renderer.BeginFrame();
+        m_Game.Render();
+        m_Renderer.EndFrame();
+        m_Window.SwapBuffers();
+        return true;
+    }
+
+    void Application::Refresh()
+    {
+        // Windows can dispatch paint/resize while PollEvents is in its modal
+        // move/resize loop. Repaint the last game state without another Update.
+        if (!m_Initialized || !m_Running || m_InFrame || m_Window.ShouldClose())
+            return;
+        m_InFrame = true;
+        DrawFrame();
+        m_InFrame = false;
+        // Time spent dragging must not become a simulation jump on release.
+        Time::Reset();
     }
 
     void Application::Shutdown()
     {
+        m_Running = false;
+        if (auto* window = m_Window.GetNativeWindow())
+        {
+            glfwSetWindowRefreshCallback(window, nullptr);
+            glfwSetWindowUserPointer(window, nullptr);
+        }
         if (m_GameStarted)
         {
             m_Game.Shutdown();

@@ -1,5 +1,17 @@
 # Báo cáo giai đoạn 1 — nền engine
 
+## Bổ sung: sửa vùng đen khi kéo/resize cửa sổ (03/11/2026)
+
+Windows có thể giữ luồng chính trong vòng lặp kéo/resize bên trong `glfwPollEvents`. Bản trước chỉ vẽ sau khi hàm đó trả về nên vùng cửa sổ vừa mở rộng chưa được tô lại kịp.
+
+Đã thêm GLFW window refresh callback để vẽ lại trạng thái game hiện tại ngay khi Windows gửi yêu cầu repaint. Đường vẽ này cập nhật viewport từ framebuffer mới nhất và swap buffer, không chạy thêm Update. Chỉ đăng ký refresh callback để tránh vẽ/swap hai lần cho cùng một sự kiện resize. Chặn callback khi đang Update/Render nhằm tránh vẽ lồng nhau; tháo callback trước khi Shutdown. Reset đồng hồ sau repaint để thời gian kéo không thành bước nhảy mô phỏng. Game tạm ngừng mô phỏng trong vòng kéo cửa sổ của Windows; hỗ trợ animation liên tục khi kéo là công việc riêng nếu cần sau này.
+
+Kiểm thử lifecycle đã bổ sung `WM_PAINT` được gửi vào hàng đợi Windows trước PollEvents, kiểm tra có repaint ngoài frame Update thông thường, viewport đúng kích thước ngay sau Update và resize không gây render lồng nhau.
+
+**Kiểm chứng bản sửa:** Debug biên dịch thành công với cảnh báo dự án đã bật. Windows Application Control chặn cả ba EXE Debug mới build khi chạy trực tiếp; CTest báo không khởi chạy được. Vì vậy chưa xác minh runtime hoặc kéo chuột thực tế của bản sửa này. Các kết quả đạt ở bảng bên dưới thuộc phiên bản trước bản sửa repaint. Không thay đổi chính sách bảo mật để chạy test.
+
+Sau khi EXE được máy cho phép chạy, chạy `Scripts/Build.ps1 -Configuration Debug`, rồi thử kéo cạnh trên/trái/phải, phóng to, thu nhỏ/khôi phục, đóng/ESC. Nội dung phải phủ kín client area và không để lại dải đen. Hiện game mới có màu nền nên kiểm tra này chưa chứng minh tốc độ animation/gameplay.
+
 Ngày thực hiện: **03/11/2026**. Phiên bản CMake: **0.1.0**.
 
 ## 1. Mục tiêu và phạm vi

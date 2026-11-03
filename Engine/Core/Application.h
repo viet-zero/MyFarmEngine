@@ -21,10 +21,14 @@ namespace MyEngine
         void Shutdown();
 
     private:
+        void Refresh();
+        bool DrawFrame();
         IGame& m_Game;
         Window m_Window;
         Renderer m_Renderer;
         bool m_GameStarted = false;
         bool m_Initialized = false;
+        bool m_Running = false;
+        bool m_InFrame = false;
     };
 }
