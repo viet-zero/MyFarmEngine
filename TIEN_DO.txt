@@ -9,7 +9,17 @@ GIAI DOAN 2 - CAMERA VA SPRITE THE GIOI (DOT MOI)
 [x] Canh 2D, WASD, doi nhan vat va hotbar vat pham.
 [x] Test camera/di chuyen: ti le, zoom, toa do, bam, gioi han va toc do cheo.
 [x] Test logic/GPU: Debug 5/5, Release 5/5 dat; UV atlas tinh dung alpha anh.
-[ ] Huong dan giai doan 2 va push cac commit nho.
+[x] Huong dan: HUONG_DAN_GIAI_DOAN_2.md; 3 anh chup trong Docs/Screenshots/phase2*.
+Git: luu commit tai lieu va push origin/main; doi chieu git status -sb.
+Ban chay moi: out/build/phase2-debug/MyFarmEngine.exe (khong phai phase1-debug cu).
+Dieu khien: WASD, Shift, Q/E zoom, Tab doi nhan vat, 1-4 vat pham, R reset, F3 world.
+Gioi han: chua co collision voi canh, animation nhieu huong, hoac hanh dong su dung vat pham.
+Commit giai doan 2:
+21c93ae: bo anh moi va metadata.
+ec8e767: camera, shader ngoai, UV atlas va preset build phase2.
+3380326: canh vuon, WASD, hotbar va test camera/chuyen dong.
+25d75e1: test GPU cho projection, zoom, UV va loi shader.
+Commit tai lieu cuoi: huong dan, anh chup va checklist (xem git log).
 
 DOT A - THU HOI TAI NGUYEN TU CAC CHAT
 [x] Doc chat: Giai nen file; Tao thu muc snhr; Tai lieu lap trinh game engine.
@@ -41,16 +51,16 @@ f70e080: nen chuong trinh va F1/F2 gallery.
 652a126: test pixel va kiem tra SHA256.
 Commit tai lieu cuoi: README, anh chup thuc te va checklist nay (xem git log).
 
-KET QUA NGAY 03/11/2026
+KET QUA DOT TRUOC (truoc khi hoan tat giai doan 2)
 Debug: 4/4 dat; Release: 4/4 dat. Khong co canh bao compiler trong build cuoi.
 Da kiem tra truc tiep nen, F1, Right, F2, Home; xem Docs/Screenshots.
 Chua do FPS/CPU, chua quay video keo cua so hoac test nhieu man hinh/DPI.
 
 TINH TRANG GAME
 Core01: da trien khai; test repaint/resize/input da dat trong dot nay.
-Render02: da co shader, quad, PNG, cover va gallery; chua co camera/sprite gameplay.
+Render02: da co shader ngoai, quad, PNG/alpha, atlas, camera bam/zoom, sprite va WASD.
 Gameplay03, SaveShop04, Audit05, UI06, Sprite07, Visual08, Companion09:
 la cac moc duoc nhac trong chat/ZIP cu; CHUA duoc nhap code vao repo hien tai.
 Anh xem truoc cac moc cu KHONG chung minh game hien tai da co cac tinh nang do.
 
-BUOC TIEP THEO: camera 2D -> nhan vat WASD -> tilemap/va cham -> trong/tuoi/thu hoach.
+BUOC TIEP THEO: tilemap/va cham -> animation nhieu huong -> trong/tuoi/thu hoach.

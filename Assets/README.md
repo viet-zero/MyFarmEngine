@@ -1,5 +1,9 @@
 # Tài nguyên MyFarmEngine
 
+## Bộ vẽ tay giai đoạn 2
+
+`Art/` có hai nhân vật Linh/An, atlas bốn vật phẩm và bản đồ vườn mới tạo bằng imagegen tích hợp. Prompt được lưu ở `Art/PROMPTS.txt`, SHA256 ở `Art/manifest.csv`. Các ảnh này dùng trực tiếp trong cảnh mặc định giai đoạn 2. Nhân vật mới là một tư thế có alpha; chưa có walk cycle nhiều hướng. Xem `HUONG_DAN_GIAI_DOAN_2.md` để sử dụng camera và UV atlas.
+
 ## Nền mới đã tích hợp
 
 `Backgrounds/cozy_farm_morning.png`: ảnh mới tạo bằng công cụ imagegen tích hợp ngày 03/11/2026, theo yêu cầu nền nông trại vẽ tay, mịn, ấm áp và thư giãn trong chat “Tạo thư mục snhr”. Prompt đầy đủ ở `Backgrounds/PROMPT.txt`. Ảnh là phong cảnh minh họa tĩnh; không phải tilemap hoặc cảnh có thể tương tác.

@@ -2,10 +2,10 @@
 
 Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
-**Trạng thái ngày 03/11/2026: nền engine hoàn tất, đã bắt đầu Render02 với nền PNG và trình xem ảnh.**
-Đã thu hồi 177 PNG tài nguyên và 8 ảnh lịch sử từ các ZIP/chat trước; tạo và tích hợp nền nông trại vẽ tay mới. Debug và Release đều đạt 4/4 test trong lần kiểm tra mới nhất. Chưa có bản đồ tương tác, nhân vật điều khiển được hoặc cơ chế trồng cây.
+**Trạng thái ngày 03/11/2026: đã hoàn thiện nền đồ họa giai đoạn 2, phiên bản 0.2.0.**
+Có OpenGL 3.3, shader GLSL ngoài, texture PNG/alpha, camera trực giao bám player và sprite atlas. Cảnh vườn mới có hai nhân vật đẹp hơn, di chuyển WASD, zoom và hotbar bốn vật phẩm. Debug và Release đều đạt 5/5 test. Va chạm với cảnh, animation nhiều hướng và cơ chế trồng cây là các bước tiếp theo.
 
-![Màn hình nền thực tế](Docs/Screenshots/cozy_background.png)
+![Giai đoạn 2 đang chạy](Docs/Screenshots/phase2_world.png)
 
 ## Build và chạy trên Windows
 
@@ -16,13 +16,17 @@ Trong PowerShell tại thư mục repo:
 
 ```powershell
 .\Scripts\Build.ps1 -Configuration Debug
-.\out\build\phase1-debug\MyFarmEngine.exe
+.\out\build\phase2-debug\MyFarmEngine.exe
 ```
 
 Thoát bằng ESC hoặc nút đóng cửa sổ. Đổi kích thước cửa sổ để kiểm tra viewport.
 
 | Phím | Chức năng |
 |---|---|
+| WASD / Shift trái | Đi / chạy trong cảnh vườn |
+| Q / E / Tab | Zoom ra / vào / đổi nhân vật |
+| 1–4 / R | Chọn vật phẩm / đặt lại player và camera |
+| F3 | Về cảnh vườn giai đoạn 2 |
 | F1 | Xem 5 ảnh đại diện các nhóm tài nguyên đã nhập |
 | F2 | Xem 8 ảnh lịch sử từ các giai đoạn trong archive cũ |
 | Trái / phải | Đổi ảnh trong chế độ xem |
@@ -39,15 +43,17 @@ Toàn bộ 177 PNG được lưu trong Assets/Library; F1 chỉ chọn 5 ảnh �
 .\Scripts\Build.ps1 -Configuration Debug -SkipGraphicsTests
 
 # Tự thoát sau 5 frame; VSync mặc định bật
-.\out\build\phase1-debug\MyFarmEngine.exe --smoke-test
+.\out\build\phase2-debug\MyFarmEngine.exe --smoke-test
 
 # Chỉ dùng khi đo hiệu năng không giới hạn bởi VSync
-.\out\build\phase1-debug\MyFarmEngine.exe --no-vsync
+.\out\build\phase2-debug\MyFarmEngine.exe --no-vsync
 ```
 
 Nếu PowerShell chặn script, có thể mở Developer PowerShell của Visual Studio với CMake/Ninja trên PATH và dùng các lệnh preset trong tài liệu. Nếu Windows Application Control chặn EXE, việc build thành công không có nghĩa ứng dụng đã chạy được; không tự tắt chính sách bảo mật.
 
 ## Tài liệu
+
+- [Hướng dẫn giai đoạn 2: build, điều khiển và cách viết đồ họa](HUONG_DAN_GIAI_DOAN_2.md)
 
 - [Giai đoạn 1: thay đổi, cách làm, hiệu năng và kiểm chứng](Docs/GiaiDoan1.md)
 - [Lộ trình và tiêu chí hoàn thành giai đoạn tiếp theo](Docs/LoTrinh.md)

@@ -6,6 +6,8 @@
 
 ## Giai đoạn 2 — nhân vật và bản đồ nhỏ
 
+**Cập nhật mới nhất:** nền kỹ thuật giai đoạn 2 đã hoàn thành: shader GLSL ngoài, GLM camera, PNG/alpha, sprite atlas, WASD và cảnh vườn mẫu; Debug/Release 5/5 test. [Hướng dẫn đầy đủ](../HUONG_DAN_GIAI_DOAN_2.md). Các mục camera/WASD “chưa làm” trong ghi chú cũ bên dưới đã được thay thế bởi bản này. Tilemap logic, va chạm với cảnh và animation nhiều hướng vẫn chưa có.
+
 Cập nhật 03/11/2026: đã có shader/quad, texture PNG, canvas 2D và ảnh nền giữ tỉ lệ; thêm F1/F2 để xem tài nguyên/lịch sử. Đã có test pixel GPU và 4/4 test Debug/Release. Camera thế giới, sprite animation, nhân vật WASD và tilemap vẫn chưa được triển khai. Bước tiếp theo thực tế là camera trực giao và player di chuyển, không cần viết lại phần quad/PNG đã có.
 
 Mục tiêu: mở game, thấy bản đồ và điều khiển được nhân vật. Thực hiện theo thứ tự:
@@ -45,4 +47,4 @@ Chỉ thêm động vật, NPC, cửa hàng, crafting, câu cá, nhiệm vụ ho
 
 Profiling Release trên cảnh cố định, sửa lỗi ưu tiên cao, thử trên máy khác, hoàn thiện tài liệu thiết kế và video demo. Ghi rõ tính năng thực hiện/giới hạn, các thư viện sử dụng, lệnh build và kết quả đo có thể lặp lại.
 
-Bước ngay sau đợt thay đổi này: triển khai **camera 2D và nhân vật WASD** trên nền quad/PNG đã có, đồng thời tiếp tục kiểm tra kéo/resize trên các cấu hình hiển thị khác.
+Bước ngay sau đợt thay đổi này: **tilemap/va chạm và sprite animation nhiều hướng**, rồi xây vòng trồng trọt của giai đoạn 3. Camera và WASD đã có trong bản giai đoạn 2.
