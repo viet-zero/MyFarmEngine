@@ -9,7 +9,7 @@ DOT A - THU HOI TAI NGUYEN TU CAC CHAT
 [x] Them nen moi va prompt/nguon tao anh.
 
 DOT B - HIEN THI NEN TRONG CHUONG TRINH
-[x] Shader OpenGL 3.3, texture PNG va quad 2D (cho build/test xac minh).
+[x] Shader OpenGL 3.3, texture PNG va quad 2D da qua test pixel GPU.
 [x] Nen giu ti le khi resize, nap mot lan va don tai nguyen GPU.
 [x] Tim Assets theo thu muc EXE, khong phu thuoc thu muc CMD hien tai.
 [x] F1 xem 5 anh dai dien thu vien; F2 xem 8 anh lich su; mui ten de chuyen.
@@ -19,15 +19,28 @@ DOT B - HIEN THI NEN TRONG CHUONG TRINH
 [x] Chay tu thu muc khac van tim thay Assets; 189/189 file nhap khop SHA256.
 
 DOT C - TAI LIEU VA GIT
-[ ] Huong dan su dung, nguon anh, phan biet anh lich su va tinh nang da lam.
-[ ] Commit nho theo tai nguyen -> renderer -> giao dien -> kiem thu/tai lieu.
-[ ] Push origin/main va xac nhan dong bo.
+[x] Huong dan su dung, nguon anh, phan biet anh lich su va tinh nang da lam.
+[x] Commit nho theo tai nguyen -> renderer -> giao dien -> input -> test -> tai lieu.
+Git: day cac commit len origin/main; doi chieu git status -sb va git ls-remote.
+
+CAC COMMIT NHO
+ff36f54: tai nguyen, nen moi va manifest nguon.
+741b782: PNG texture, quad/canvas va tim duong dan Assets.
+f70e080: nen chuong trinh va F1/F2 gallery.
+54305ce: sua nhan phim nhanh bi bo lo.
+652a126: test pixel va kiem tra SHA256.
+Commit tai lieu cuoi: README, anh chup thuc te va checklist nay (xem git log).
+
+KET QUA NGAY 03/11/2026
+Debug: 4/4 dat; Release: 4/4 dat. Khong co canh bao compiler trong build cuoi.
+Da kiem tra truc tiep nen, F1, Right, F2, Home; xem Docs/Screenshots.
+Chua do FPS/CPU, chua quay video keo cua so hoac test nhieu man hinh/DPI.
 
 TINH TRANG GAME
-Core01: da trien khai nen engine; ban sua repaint can kiem chung lai.
-Render02: dang trien khai nen PNG; chua xong camera/sprite gameplay.
+Core01: da trien khai; test repaint/resize/input da dat trong dot nay.
+Render02: da co shader, quad, PNG, cover va gallery; chua co camera/sprite gameplay.
 Gameplay03, SaveShop04, Audit05, UI06, Sprite07, Visual08, Companion09:
 la cac moc duoc nhac trong chat/ZIP cu; CHUA duoc nhap code vao repo hien tai.
 Anh xem truoc cac moc cu KHONG chung minh game hien tai da co cac tinh nang do.
 
-BUOC TIEP THEO: hoan tat nen chuong trinh, sau do camera 2D va nhan vat WASD.
+BUOC TIEP THEO: camera 2D -> nhan vat WASD -> tilemap/va cham -> trong/tuoi/thu hoach.

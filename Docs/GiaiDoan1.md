@@ -1,5 +1,7 @@
 # Báo cáo giai đoạn 1 — nền engine
 
+**Cập nhật kiểm chứng sau cùng, 03/11/2026:** bản tích hợp hình ảnh hiện đã build và chạy được, Debug 4/4, Release 4/4 test đạt, bao gồm hồi quy repaint và input nhấn nhanh. Các ghi chú Windows chặn EXE ở các phần bên dưới là lịch sử của lần kiểm tra trước. Xem [báo cáo hình ảnh mới](TichHopHinhAnh.md).
+
 ## Bổ sung: sửa vùng đen khi kéo/resize cửa sổ (03/11/2026)
 
 Windows có thể giữ luồng chính trong vòng lặp kéo/resize bên trong `glfwPollEvents`. Bản trước chỉ vẽ sau khi hàm đó trả về nên vùng cửa sổ vừa mở rộng chưa được tô lại kịp.

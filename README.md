@@ -2,9 +2,10 @@
 
 Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
-**Trạng thái ngày 03/11/2026: đã triển khai giai đoạn 1 — nền engine và vòng đời game.**
-Hiện ứng dụng mở cửa sổ màu nền; chưa có nhân vật, sprite, bản đồ hoặc cơ chế trồng cây.
-Kiểm chứng Debug hoàn tất; smoke test game Release còn bị Windows Application Control chặn trên máy kiểm tra.
+**Trạng thái ngày 03/11/2026: nền engine hoàn tất, đã bắt đầu Render02 với nền PNG và trình xem ảnh.**
+Đã thu hồi 177 PNG tài nguyên và 8 ảnh lịch sử từ các ZIP/chat trước; tạo và tích hợp nền nông trại vẽ tay mới. Debug và Release đều đạt 4/4 test trong lần kiểm tra mới nhất. Chưa có bản đồ tương tác, nhân vật điều khiển được hoặc cơ chế trồng cây.
+
+![Màn hình nền thực tế](Docs/Screenshots/cozy_background.png)
 
 ## Build và chạy trên Windows
 
@@ -19,6 +20,16 @@ Trong PowerShell tại thư mục repo:
 ```
 
 Thoát bằng ESC hoặc nút đóng cửa sổ. Đổi kích thước cửa sổ để kiểm tra viewport.
+
+| Phím | Chức năng |
+|---|---|
+| F1 | Xem 5 ảnh đại diện các nhóm tài nguyên đã nhập |
+| F2 | Xem 8 ảnh lịch sử từ các giai đoạn trong archive cũ |
+| Trái / phải | Đổi ảnh trong chế độ xem |
+| Home | Quay về phong cảnh |
+| ESC | Thoát |
+
+Toàn bộ 177 PNG được lưu trong Assets/Library; F1 chỉ chọn 5 ảnh đại diện, không phải duyệt toàn bộ thư viện. F2 là ảnh chụp quá khứ, không phải gameplay có thể tương tác.
 
 ```powershell
 # Bản tối ưu hóa và kiểm thử
@@ -40,6 +51,10 @@ Nếu PowerShell chặn script, có thể mở Developer PowerShell của Visual
 
 - [Giai đoạn 1: thay đổi, cách làm, hiệu năng và kiểm chứng](Docs/GiaiDoan1.md)
 - [Lộ trình và tiêu chí hoàn thành giai đoạn tiếp theo](Docs/LoTrinh.md)
+- [Tích hợp ảnh, cách làm, hiệu năng và kiểm chứng mới](Docs/TichHopHinhAnh.md)
+- [Ảnh các giai đoạn từ chat cũ](Docs/History/README.md)
+- [Tiến độ dạng text](TIEN_DO.txt)
+- [Nguồn và trạng thái tài nguyên](Assets/README.md)
 
 ## Cấu trúc
 
@@ -48,7 +63,7 @@ Nếu PowerShell chặn script, có thể mở Developer PowerShell của Visual
 - `Gameplay/`: trạng thái game và các khung chức năng dự kiến.
 - `Tests/`: kiểm thử thời gian và vòng đời OpenGL/game.
 - `Scripts/`: quy trình build/test có thể chạy lại.
-- `Assets/`: hiện chưa có tài nguyên.
+- `Assets/`: nền mới, thư viện PNG và manifest nguồn/SHA256.
 - `ThirdParty/`: thư viện có sẵn trong repo.
 
 Các file gameplay rỗng và `GameInitializer.cpp` là khung có từ trước, chưa được xem là tính năng hoàn thành. `GameInitializer.cpp` chưa nằm trong target build.

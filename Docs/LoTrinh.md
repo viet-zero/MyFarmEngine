@@ -6,6 +6,8 @@
 
 ## Giai đoạn 2 — nhân vật và bản đồ nhỏ
 
+Cập nhật 03/11/2026: đã có shader/quad, texture PNG, canvas 2D và ảnh nền giữ tỉ lệ; thêm F1/F2 để xem tài nguyên/lịch sử. Đã có test pixel GPU và 4/4 test Debug/Release. Camera thế giới, sprite animation, nhân vật WASD và tilemap vẫn chưa được triển khai. Bước tiếp theo thực tế là camera trực giao và player di chuyển, không cần viết lại phần quad/PNG đã có.
+
 Mục tiêu: mở game, thấy bản đồ và điều khiển được nhân vật. Thực hiện theo thứ tự:
 
 1. **Shader và hình chữ nhật:** tạo chương trình vertex/fragment shader OpenGL 3.3; quản lý VAO/VBO/EBO, báo lỗi compile/link, vẽ một quad. Giải phóng tài nguyên trước khi context bị hủy.
@@ -43,4 +45,4 @@ Chỉ thêm động vật, NPC, cửa hàng, crafting, câu cá, nhiệm vụ ho
 
 Profiling Release trên cảnh cố định, sửa lỗi ưu tiên cao, thử trên máy khác, hoàn thiện tài liệu thiết kế và video demo. Ghi rõ tính năng thực hiện/giới hạn, các thư viện sử dụng, lệnh build và kết quả đo có thể lặp lại.
 
-Bước ngay sau đợt thay đổi này: hoàn tất kiểm tra thủ công của giai đoạn 1, rồi triển khai **shader + quad đầu tiên** của giai đoạn 2.
+Bước ngay sau đợt thay đổi này: triển khai **camera 2D và nhân vật WASD** trên nền quad/PNG đã có, đồng thời tiếp tục kiểm tra kéo/resize trên các cấu hình hiển thị khác.
