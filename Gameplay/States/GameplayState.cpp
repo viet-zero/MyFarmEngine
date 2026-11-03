@@ -126,7 +126,7 @@ namespace MyGame
     {
         std::string title = "My Farm | Cozy Morning | F1: Artwork | F2: History | F3: World | Esc: Exit";
         if (m_Mode == 3)
-            title = "My Farm - Phase B | WASD: Move | Shift: Run | Space: Action | H: Hurt | Tab: Character | R: Reset";
+            title = "My Farm - Phase C | WASD: Move | Shift: Run | F4: Town | F5: Farm | F6: Lake/Forest | R: Reset";
         if (m_Mode == 1 || m_Mode == 2)
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];

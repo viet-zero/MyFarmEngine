@@ -10,7 +10,7 @@
 
 namespace
 {
-    const glm::vec2 WorldSize{1600, 1067};
+    const glm::vec2 WorldSize=MyGame::WorldMap::Size();
     constexpr std::array<const char*,4> ItemNames = {"Watering can", "Garden hoe", "Seeds", "Strawberry cake"};
 }
 
@@ -19,6 +19,8 @@ namespace MyGame
     bool DemoScene2D::Initialize(AssetTextures& assets,const std::filesystem::path& dataRoot)
     {
         m_Assets=&assets;
+        if(!m_World.LoadObjects(dataRoot/"Objects.csv"))
+            std::cerr<<"World objects: definitions missing or invalid; object fallback omitted\n";
         if(!m_Visuals.Load(dataRoot/"VisualClips.csv"))
             for(const auto& error:m_Visuals.Errors()) std::cerr<<"Visual catalog: "<<error<<'\n';
         m_Map=assets.Load("world_garden");
@@ -41,7 +43,8 @@ namespace MyGame
     }
     void DemoScene2D::Reset()
     {
-        m_Player = {760,620};
+        m_Player = m_World.Spawn(Zone::Farm);
+        m_Dog=m_Player+glm::vec2{-70,30};
         m_WalkTime = 0;
         m_NpcTime=m_DogTime=0;m_GameAge=0;
         m_Moving = false;
@@ -66,12 +69,16 @@ namespace MyGame
         m_Facing=FacingFromVelocity(direction.x,direction.y,m_Facing);
         const bool running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
         const float speed = running ? 300.0f : 180.0f;
-        m_Player = MoveWithinBounds(m_Player, direction, speed, deltaTime, WorldSize);
+        const auto proposed=MoveWithinBounds(m_Player,direction,speed,deltaTime,WorldSize);
+        if(m_World.CanMoveTo(proposed)) m_Player=proposed;
         if (m_Moving) m_WalkTime += deltaTime;
         else m_WalkTime = 0;
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) m_Camera.SetZoom(m_Camera.Zoom()/1.15f);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) m_Camera.SetZoom(m_Camera.Zoom()*1.15f);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R)) {Reset();return;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F4)) m_Player=m_World.Spawn(Zone::Town);
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F5)) m_Player=m_World.Spawn(Zone::Farm);
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F6)) m_Player=m_World.Spawn(Zone::LakeForest);
         if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_TAB)) m_Character = 1-m_Character;
         VisualState requested=m_Moving?(running?VisualState::Run:VisualState::Walk):VisualState::Idle;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE)) requested=VisualState::Action;
@@ -140,27 +147,59 @@ namespace MyGame
         const float size=14.0f+static_cast<float>(stage)*7.0f;
         const std::array<std::array<float,4>,4> colors={{{0.48f,0.72f,0.22f,1},{0.31f,0.68f,0.18f,1},
             {0.22f,0.58f,0.15f,1},{0.65f,0.82f,0.25f,1}}};
-        canvas.Rectangle(570-size*0.5f,735-size,size,size,colors[static_cast<std::size_t>(stage)]);
+        canvas.Rectangle(2770-size*0.5f,2135-size,size,size,colors[static_cast<std::size_t>(stage)]);
     }
     void DemoScene2D::Render(MyEngine::Canvas2D& canvas, int width, int height)
     {
         if (!m_Ready) return;
         m_Camera.Resize(width,height);
         canvas.BeginWorld(width,height,m_Camera);
-        // Neutral surround when an unusually wide view extends beyond the painted map.
-        canvas.Rectangle(-4000,-4000,8000,8000,{0.43f,0.57f,0.28f,1});
-        if(m_Map) canvas.Image(*m_Map,0,0,WorldSize.x,WorldSize.y);
-        DrawCrop(canvas);
-        constexpr std::array<glm::vec2,4> objects = {{{650,700},{1010,700},{1090,770},{970,850}}};
+        const auto range=m_World.VisibleTiles(m_Camera.Position(),m_Camera.ViewSize());
+        const auto chunks=m_World.VisibleChunks(m_Camera.Position(),m_Camera.ViewSize());
+        constexpr std::array<std::array<float,4>,5> colors={{{0.43f,0.65f,0.32f,1},
+            {0.78f,0.68f,0.49f,1},{0.55f,0.38f,0.24f,1},{0.21f,0.51f,0.7f,1},
+            {0.23f,0.48f,0.26f,1}}};
+        for(int cy=chunks.top;cy<chunks.bottom;++cy)
+            for(int cx=chunks.left;cx<chunks.right;++cx)
+            {
+                const auto chunk=m_World.ChunkAt(cx,cy);
+                for(int y=std::max(range.top,chunk.tiles.top);y<std::min(range.bottom,chunk.tiles.bottom);++y)
+                    for(int x=std::max(range.left,chunk.tiles.left);x<std::min(range.right,chunk.tiles.right);++x)
+                    {
+                        const auto* cell=m_World.TryCell(x,y);
+                        if(cell) canvas.Rectangle(static_cast<float>(x*WorldMap::TileSize),
+                            static_cast<float>(y*WorldMap::TileSize),WorldMap::TileSize+0.5f,
+                            WorldMap::TileSize+0.5f,colors[static_cast<std::size_t>(cell->terrain)]);
+                    }
+            }
+        const glm::vec2 paintedFarm{2300,1500},paintedSize{1600,1067};
+        const auto visibleOrigin=m_Camera.Position()-m_Camera.ViewSize()*0.5f;
+        if(m_Map && WorldMap::Intersects(paintedFarm,paintedSize,visibleOrigin,m_Camera.ViewSize()))
+            canvas.Image(*m_Map,paintedFarm.x,paintedFarm.y,paintedSize.x,paintedSize.y);
+        if(WorldMap::Intersects({2740,2080},{80,80},visibleOrigin,m_Camera.ViewSize())) DrawCrop(canvas);
+        for(const auto& object:m_World.Objects())
+        {
+            if(!WorldMap::Intersects(object.position,object.size,visibleOrigin,m_Camera.ViewSize())) continue;
+            const std::array<float,4> color=object.visualId=="visual.water.ripple"?
+                std::array<float,4>{0.65f,0.86f,0.96f,0.6f}:
+                (object.blocked?std::array<float,4>{0.35f,0.37f,0.24f,1}:
+                                std::array<float,4>{0.69f,0.52f,0.23f,1});
+            canvas.Rectangle(object.position.x,object.position.y,object.size.x,object.size.y,color);
+        }
+        constexpr std::array<glm::vec2,4> objects = {{{2700,2190},{3070,2190},{3150,2260},{3030,2340}}};
         for (std::size_t i=0; i<objects.size(); ++i)
+        {
+            if(!WorldMap::Intersects(objects[i]-glm::vec2{32,52},{64,64},visibleOrigin,m_Camera.ViewSize())) continue;
             if(m_Items) canvas.Sprite(*m_Items,objects[i].x-32,objects[i].y-52,64,64,m_ItemRegions[i]);
             else canvas.Rectangle(objects[i].x-16,objects[i].y-24,32,32,{0.8f,0.5f,0.2f,1});
-        const glm::vec2 npc{990,600};
+        }
+        const glm::vec2 npc{3190,2020};
         const float bob = m_Moving ? std::sin(m_WalkTime*12.0f)*2.2f : 0;
         // Painter's ordering gives sprites a consistent overlap by their foot Y.
         if (m_Player.y < npc.y) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
-        DrawActor(canvas,1-m_Character,npc,m_NpcAnimation,0);
-        DrawDog(canvas);
+        if(WorldMap::Intersects(npc-glm::vec2{80,160},{160,160},visibleOrigin,m_Camera.ViewSize()))
+            DrawActor(canvas,1-m_Character,npc,m_NpcAnimation,0);
+        if(WorldMap::Intersects(m_Dog-glm::vec2{34,48},{68,48},visibleOrigin,m_Camera.ViewSize())) DrawDog(canvas);
         if (m_Player.y >= npc.y) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
         canvas.End();
 

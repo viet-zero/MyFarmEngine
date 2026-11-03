@@ -11,6 +11,7 @@ namespace MyGame
     enum class Terrain {Grass,Path,Soil,Water,Forest};
     struct WorldCell {Zone zone;Terrain terrain;bool blocked;};
     struct TileRange {int left=0,top=0,right=0,bottom=0;}; // exclusive right/bottom
+    struct WorldChunk {int x=0,y=0;TileRange tiles;};
     struct WorldObject
     {
         std::string gameplayId,visualId;
@@ -28,6 +29,8 @@ namespace MyGame
         const WorldCell* TryCell(int x,int y) const;
         bool CanMoveTo(glm::vec2 point) const;
         TileRange VisibleTiles(glm::vec2 center,glm::vec2 viewSize,int padding=1) const;
+        TileRange VisibleChunks(glm::vec2 center,glm::vec2 viewSize) const;
+        WorldChunk ChunkAt(int x,int y) const;
         Zone ZoneAt(glm::vec2 point) const;
         glm::vec2 Spawn(Zone zone) const;
         const std::vector<WorldObject>& Objects() const {return m_Objects;}

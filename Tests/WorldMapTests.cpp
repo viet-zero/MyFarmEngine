@@ -28,5 +28,10 @@ int main(int argc,char** argv)
     const auto last=map.VisibleTiles(camera.Position(),camera.ViewSize());
     check(last.right==WorldMap::Width && last.bottom==WorldMap::Height && last.left>0,"last viewport culling");
     check((first.right-first.left)*(first.bottom-first.top)<WorldMap::Width*WorldMap::Height/4,"view renders too many tiles");
+    const auto chunks=map.VisibleChunks(camera.Position(),camera.ViewSize());
+    check(chunks.right<=WorldMap::Width/WorldMap::ChunkTiles && chunks.bottom<=WorldMap::Height/WorldMap::ChunkTiles,
+          "visible chunk range escaped world");
+    const auto corner=map.ChunkAt(chunks.right-1,chunks.bottom-1);
+    check(corner.tiles.right==WorldMap::Width && corner.tiles.bottom==WorldMap::Height,"last chunk bounds");
     return failures?1:0;
 }

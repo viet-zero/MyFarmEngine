@@ -80,6 +80,17 @@ namespace MyGame
                 std::clamp(static_cast<int>(std::ceil(high.x/TileSize))+extra,0,Width),
                 std::clamp(static_cast<int>(std::ceil(high.y/TileSize))+extra,0,Height)};
     }
+    TileRange WorldMap::VisibleChunks(glm::vec2 center,glm::vec2 viewSize) const
+    {
+        const auto tiles=VisibleTiles(center,viewSize);
+        return {tiles.left/ChunkTiles,tiles.top/ChunkTiles,
+                (tiles.right+ChunkTiles-1)/ChunkTiles,(tiles.bottom+ChunkTiles-1)/ChunkTiles};
+    }
+    WorldChunk WorldMap::ChunkAt(int x,int y) const
+    {
+        return {x,y,{x*ChunkTiles,y*ChunkTiles,
+                     std::min((x+1)*ChunkTiles,Width),std::min((y+1)*ChunkTiles,Height)}};
+    }
     Zone WorldMap::ZoneAt(glm::vec2 point) const
     {
         const auto* cell=TryCell(static_cast<int>(std::floor(point.x/TileSize)),

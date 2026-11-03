@@ -2,6 +2,7 @@
 #include "Graphics/Canvas2D.h"
 #include "Gameplay/Graphics/AssetTextures.h"
 #include "Gameplay/Graphics/VisualCatalog.h"
+#include "Gameplay/World/WorldMap.h"
 #include <array>
 
 namespace MyGame
@@ -20,6 +21,7 @@ namespace MyGame
         void DrawDog(MyEngine::Canvas2D& canvas) const;
         void DrawCrop(MyEngine::Canvas2D& canvas) const;
         MyEngine::Camera2D m_Camera;
+        WorldMap m_World;
         AssetTextures* m_Assets=nullptr;
         const MyEngine::Texture2D* m_Map=nullptr;
         const MyEngine::Texture2D* m_Items=nullptr;
