@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cập nhật P1-001 — 2026-11-05
+
+**DONE:** cross-validator asset–animation tích hợp AssetAudit/CTest; 62 clips được đối chiếu với 204 assets và 26 khai báo profile/state trong VisualCoverage.csv version 1. Bắt unknown/not-ready reference, kind, PNG/grid/frame window, missing directions và policy/version lỗi. Không dùng Any fallback để giả đủ hướng.
+
+Debug **21/21 PASS** (24.13s), Release **21/21 PASS** (10.15s); bộ cross-validation có 97 checks/0 failures, CLI negative test trả exit 1 đúng diagnostic. 204 Original vẫn khớp SHA256; không sửa ảnh/Assets.csv/VisualClips.csv. Chi tiết: [báo cáo validation](ASSET_ANIMATION_VALIDATION.md).
+
+Tiến độ hiện tại: engine/runtime cơ bản và Gameplay11 đã hoạt động; kiểm tra dữ liệu P1-001 xong. MVP chưa hoàn tất: animation bốn hướng, farming/inventory/NPC/animal còn prototype; tám hướng/outfit, impact events, vòng farm ba crop/tưới/bán, shop/door, SQLite, day/night/lighting chưa xong. Art review P0-001 còn PARTIAL. **Task code tiếp theo: P1-002 animation impact**, rồi fixed timestep.
+
+Các kết quả Gameplay11 bên dưới là lịch sử ngày 04/11; không coi DONE kỹ thuật là game đã hoàn chỉnh.
+
 ## Cập nhật Gameplay11 — 2026-11-04
 
 Đã sửa console Release, scale/ground placement, demo autoplay, pet follow, input ownership, portrait overlay và toolbar. Debug/Release đều build thành công, **19/19 tests PASS** (14.15s / 7.34s); bản Release mở trực tiếp và log Console attached: no, smoke PowerShell/CMD exit 0. NPC/pet/debug mặc định tắt, F9/F10/F11/F12 bật riêng; player/NPC/pet controller độc lập và walk theo dịch chuyển thật.

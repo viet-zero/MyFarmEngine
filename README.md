@@ -8,6 +8,8 @@ Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
 ![Giai đoạn 2 đang chạy](Docs/Screenshots/phase2_world.png)
 
+**Tiến độ 05/11/2026:** hoàn tất cross-validator asset–animation P1-001; Debug/Release **21/21 tests PASS**. [Tiến độ hiện tại](Docs/PROGRESS.md) · [Contract và kiểm thử dữ liệu](Docs/ASSET_ANIMATION_VALIDATION.md). Game vẫn là prototype, chưa hoàn tất vertical slice.
+
 ## Gameplay11 — runtime và demo controls
 
 Release đã dùng Windows GUI subsystem: mở trực tiếp `out/build/phase-f-release/MyFarmEngine.exe` để không có console phụ. Debug giữ console. Log nằm ở `%LOCALAPPDATA%/MyFarmEngine/Logs/`, có thể đổi bằng `MYFARM_LOG_DIR`.

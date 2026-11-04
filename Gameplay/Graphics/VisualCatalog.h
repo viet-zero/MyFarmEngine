@@ -1,5 +1,6 @@
 #pragma once
 #include "Animation/Animator.h"
+#include "Gameplay/Assets/AssetManifest.h"
 #include <filesystem>
 #include <map>
 #include <optional>
@@ -19,6 +20,9 @@ namespace MyGame
         Facing facing=Facing::Any;
         int availableFrames=1;
         bool flipX=false;
+        std::string profile,kind;
+        VisualState state=VisualState::Idle;
+        int sourceRow=0;
     };
 
     class VisualCatalog
@@ -27,6 +31,10 @@ namespace MyGame
         bool Load(const std::filesystem::path& csv);
         const VisualClip* Find(std::string_view profile,VisualState state,Facing facing) const;
         std::vector<std::string> AssetIds() const;
+        std::size_t ClipCount() const { return m_Clips.size(); }
+        // CPU-only pipeline validation; does not alter loaded clips or controller pointers.
+        std::vector<std::string> ValidateAgainst(const AssetManifest& assets,
+            const std::filesystem::path& coverageCsv) const;
         const std::vector<std::string>& Errors() const { return m_Errors; }
     private:
         std::map<std::string,VisualClip> m_Clips;

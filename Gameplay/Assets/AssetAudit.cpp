@@ -1,4 +1,5 @@
 #include "AssetManifest.h"
+#include "Gameplay/Graphics/VisualCatalog.h"
 #include <fstream>
 #include <iostream>
 
@@ -7,12 +8,16 @@ int main(int argc,char** argv)
     std::filesystem::path root=std::filesystem::path(MYFARM_SOURCE_ASSETS);
     std::filesystem::path manifest=std::filesystem::path(MYFARM_SOURCE_MANIFEST);
     std::filesystem::path report;
+    std::filesystem::path visualsPath=std::filesystem::path(MYFARM_SOURCE_VISUALS);
+    std::filesystem::path coveragePath=std::filesystem::path(MYFARM_SOURCE_COVERAGE);
     for(int i=1;i<argc;++i)
     {
         const std::string_view arg=argv[i];
         if(i+1>=argc) return 2;
         if(arg=="--root") root=MyEngine::Utf8Path(argv[++i]);
         else if(arg=="--manifest") manifest=MyEngine::Utf8Path(argv[++i]);
+        else if(arg=="--visuals") visualsPath=MyEngine::Utf8Path(argv[++i]);
+        else if(arg=="--coverage") coveragePath=MyEngine::Utf8Path(argv[++i]);
         else if(arg=="--report") report=MyEngine::Utf8Path(argv[++i]);
         else return 2;
     }
@@ -61,6 +66,12 @@ int main(int argc,char** argv)
     }
     std::cout<<"Assets: "<<catalog.Records().size()<<"; ready="<<ready<<"; needs_review="<<review
              <<"; disabled="<<disabled<<"; errors="<<errors<<'\n';
+    MyGame::VisualCatalog visuals;
+    visuals.Load(visualsPath);
+    const auto issues=visuals.ValidateAgainst(catalog,coveragePath);
+    for(const auto& issue:issues) std::cerr<<"Visual cross-check: "<<issue<<'\n';
+    std::cout<<"Visual cross-check: "<<visuals.ClipCount()<<" clips; errors="<<issues.size()<<'\n';
+    errors+=issues.size();
     if(output.is_open() && !output.good()) return 2;
     return errors==0?0:1;
 }

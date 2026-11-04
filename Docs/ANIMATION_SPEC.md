@@ -1,5 +1,9 @@
 # MyFarmEngine — Animation specification
 
+## Cập nhật P1-001 — 2026-11-05
+
+VisualCatalog có cross-validation CPU qua AssetAudit, đối chiếu 62 clips với AssetManifest và contract VisualCoverage version 1. Kind/state/direction/frame range và pivot/layer policy được kiểm tự động. [Contract và semantics](ASSET_ANIMATION_VALIDATION.md): total_frames=columns×rows, range phải nằm trong asset window; Any không thay cho directional artwork. Runtime vẫn bốn hướng/single sprite, chưa animation events hoặc outfit layers.
+
 ## Cập nhật Gameplay11
 
 NPC không còn fmod timer showcase; patrol chỉ khi demoMode+npcAI, walk khi thực sự đổi vị trí. Pet follow opt-in, bỏ sleep bằng đổi tỷ lệ. Player/NPC/pet controller độc lập; input mất focus bị clear, facing khóa trong one-shot. [Ground placement](CHARACTER_SCALE_STYLE_STANDARD.md) dùng alpha bounds/cache, không đổi model position theo frame. Bốn hướng/FPS/CSV giữ tương thích, chưa frame events. Phần hiện trạng Phase F dưới đây là lịch sử trước thay đổi này.

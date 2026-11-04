@@ -1,5 +1,9 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## Cập nhật P1-001 — 2026-11-05
+
+AssetAudit hiện liên kết MyFarmGameplayAnimation để gọi VisualCatalog::ValidateAgainst; không tạo OpenGL context khi audit. VisualCoverage.csv là contract schema v1 cho authoring/CI; runtime render không đọc/validate lại mỗi frame. Các asset được validate/decode một lần mỗi ID trong một cross-check; không sửa catalog/controller đang chạy. Chi tiết [validation](ASSET_ANIMATION_VALIDATION.md).
+
 ## Cập nhật Gameplay11
 
 [GAMEPLAY11](GAMEPLAY11.md) bổ sung SceneOptions truyền từ CLI/GameConfig, input focus ownership, SpriteGeometry cached alpha bounds dùng chung render/cull, responsive hotbar và mipmap minification. Release Windows dùng GUI/WinMain CRT; Debug giữ console/main; stdout/stderr được tee ra log file. Không có engine/renderer song song. Mô tả Phase F bên dưới giữ làm baseline lịch sử; chi tiết placement hiện hành ở [Character Standard](CHARACTER_SCALE_STYLE_STANDARD.md).

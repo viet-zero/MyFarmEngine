@@ -47,10 +47,12 @@ add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/AssetTextures.cpp Gamepl
 target_link_libraries(MyFarmVisualAssets PUBLIC MyFarmGameplayAnimation)
 
 add_executable(AssetAudit Gameplay/Assets/AssetAudit.cpp)
-target_link_libraries(AssetAudit PRIVATE MyFarmAssetData)
+target_link_libraries(AssetAudit PRIVATE MyFarmGameplayAnimation)
 target_compile_definitions(AssetAudit PRIVATE
     MYFARM_SOURCE_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/Assets"
-    MYFARM_SOURCE_MANIFEST="${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv")
+    MYFARM_SOURCE_MANIFEST="${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv"
+    MYFARM_SOURCE_VISUALS="${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualClips.csv"
+    MYFARM_SOURCE_COVERAGE="${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualCoverage.csv")
 target_include_directories(MyFarmEngineCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 target_include_directories(MyFarmEngineCore SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glm)
 target_include_directories(MyFarmEngineCore SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/stb)
@@ -143,6 +145,15 @@ if(BUILD_TESTING)
     target_link_libraries(GameplayVisualTests PRIVATE MyFarmGameplayAnimation)
     enable_project_warnings(GameplayVisualTests)
     add_test(NAME gameplay.visuals COMMAND GameplayVisualTests ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualClips.csv)
+    add_executable(VisualAssetValidationTests Tests/VisualAssetValidationTests.cpp)
+    target_link_libraries(VisualAssetValidationTests PRIVATE MyFarmGameplayAnimation)
+    enable_project_warnings(VisualAssetValidationTests)
+    add_test(NAME assets.visual_cross_validation COMMAND VisualAssetValidationTests
+        ${CMAKE_CURRENT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Assets.csv
+        ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualClips.csv ${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualCoverage.csv)
+    add_test(NAME assets.visual_audit_cli COMMAND ${CMAKE_COMMAND}
+        -DAUDIT=$<TARGET_FILE:AssetAudit> -DBUILD=${CMAKE_CURRENT_BINARY_DIR}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/VisualAuditCli.cmake)
     add_executable(GameplayRenderOrderTests Tests/RenderOrderTests.cpp)
     target_link_libraries(GameplayRenderOrderTests PRIVATE MyFarmRenderOrder)
     enable_project_warnings(GameplayRenderOrderTests)
