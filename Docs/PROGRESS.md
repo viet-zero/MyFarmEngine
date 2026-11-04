@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cập nhật P1-003 — 2026-11-05
+
+**DONE kỹ thuật:** simulation 60 Hz tách khỏi render; input được lấy một lần/frame, giữ tap qua frame chưa có tick và chỉ consume một lần qua catch-up. Nội suy chân player/NPC/pet và camera dùng cùng vị trí cho draw/culling/Y-sort. Animation/impact chỉ tiến trong fixed update.
+
+**Debug 24/24 PASS (22.51s), Release 24/24 PASS (11.19s)** qua Scripts/Build.ps1, gồm graphics, executable smoke, Windows launch, native minimize/restore và repaint. Trace gameplay 6 giây ở nhịp render giả lập 30/60/144 Hz đều có 360 ticks, cùng vị trí/state/animation và hai lần hái táo; render không đổi model hoặc phát impact. Không phải benchmark FPS; chưa có phiên chơi thủ công kéo dài trong lượt này. 204 Original khớp SHA256, ảnh và dữ liệu asset giữ nguyên.
+
+Tiến độ hiện tại: Gameplay11 và P1-001/002/003 DONE trong phạm vi kỹ thuật đã kiểm. Game vẫn là prototype bốn hướng, action artwork một pose; inventory bộ đếm, một turnip plot và orchard. P0 art review PARTIAL; tám hướng/outfit, ba crop/tưới/bán, NPC/shop hoàn chỉnh, SQLite và day/night/lighting chưa xong. Không coi P1 hoàn tất là MVP hoàn tất.
+
+Ba việc tiếp: P0-001 duyệt artwork/pivots → P2-001 chuẩn bị đủ art tám hướng/layers rồi triển khai controller → P2-002 typed inventory và vòng farm. Chi tiết giới hạn thời gian/pause/interpolation: [Fixed timestep](FIXED_TIMESTEP.md). Các cập nhật bên dưới là lịch sử.
+
 ## Cập nhật P1-002 — 2026-11-05
 
 **DONE kỹ thuật:** animation markers và action transaction đã tích hợp vào luồng F thật. Start chỉ reserve; IMPACT mới kiểm tra lại target ID, tool/state, LOS/range/facing và tài nguyên rồi đổi inventory/stock/health và phát FX cùng actionId. Stable token chặn bấm dồn, copied action và timeline rewind cộng đồ hai lần. C hủy; hurt/teleport/reset/shutdown cancel; preview hoặc mất focus pause.

@@ -23,6 +23,7 @@ namespace MyEngine
             });
         }
     }
+    void Input::ClearPresses() { keyPresses.fill(false); }
     bool Input::IsKeyPressed(int key)
     {
         return s_Window && glfwGetWindowAttrib(s_Window,GLFW_FOCUSED) && key>=GLFW_KEY_SPACE && key<=GLFW_KEY_LAST &&

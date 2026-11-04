@@ -44,7 +44,8 @@ namespace MyEngine
             return;
         unsigned int frames = 0;
         m_Running = true;
-        Time::Reset();
+        Time::Reset();m_FixedClock={};m_WasSuspended=false;
+        m_Game.SynchronizePresentation();
         while (!m_Window.ShouldClose())
         {
             m_Window.PollEvents();
@@ -54,22 +55,49 @@ namespace MyEngine
 
             int width = 0, height = 0;
             m_Window.GetFramebufferSize(width, height);
-            if (width == 0 || height == 0)
+            if(width==0 || height==0 || glfwGetWindowAttrib(m_Window.GetNativeWindow(),GLFW_ICONIFIED))
             {
-                // Sleep in GLFW while minimized instead of spinning on the CPU.
+                AdvanceFrame(0,true);
                 glfwWaitEventsTimeout(0.1);
                 Time::Reset();
                 continue;
             }
             Time::Update();
-            m_InFrame = true;
-            m_Game.Update(Time::GetDeltaTime());
-            DrawFrame();
-            m_InFrame = false;
+            const bool suspended=!glfwGetWindowAttrib(m_Window.GetNativeWindow(),GLFW_FOCUSED);
+            AdvanceFrame(Time::GetFrameDeltaTime(),suspended);
             if (maxFrames != 0 && ++frames >= maxFrames)
                 break;
         }
         m_Running = false;
+    }
+
+    FixedStepPlan Application::AdvanceFrame(double frameSeconds,bool suspended)
+    {
+        if(!m_Initialized || m_InFrame) return {};
+        m_InFrame=true;
+        m_Game.ProcessInput();
+        int width=0,height=0;m_Window.GetFramebufferSize(width,height);
+        const bool minimized=width==0 || height==0 || glfwGetWindowAttrib(m_Window.GetNativeWindow(),GLFW_ICONIFIED);
+        FixedStepPlan plan;
+        if(suspended || minimized || m_Game.SimulationPaused())
+        {
+            m_FixedClock.Reset();m_WasSuspended=true;
+            Input::ClearPresses();m_Game.SynchronizePresentation();
+        }
+        else
+        {
+            if(m_WasSuspended)
+            {
+                frameSeconds=0;m_WasSuspended=false;
+                m_FixedClock.Reset();
+            }
+            plan=m_FixedClock.Advance(frameSeconds);
+            for(int step=0;step<plan.steps;++step)
+                m_Game.Update(static_cast<float>(FixedStepClock::StepSeconds));
+        }
+        if(!minimized) DrawFrame();
+        m_InFrame=false;
+        return plan;
     }
 
     bool Application::DrawFrame()
@@ -78,9 +106,13 @@ namespace MyEngine
         m_Window.GetFramebufferSize(width, height);
         if (width == 0 || height == 0)
             return false;
+        if(width!=m_ViewWidth || height!=m_ViewHeight)
+        {
+            m_Game.ResizeViewport(width,height);m_ViewWidth=width;m_ViewHeight=height;
+        }
         m_Renderer.Resize(width, height);
         m_Renderer.BeginFrame();
-        m_Game.Render();
+        m_Game.Render(m_FixedClock.Alpha());
         m_Renderer.EndFrame();
         m_Window.SwapBuffers();
         return true;
@@ -93,6 +125,7 @@ namespace MyEngine
         if (!m_Initialized || !m_Running || m_InFrame || m_Window.ShouldClose())
             return;
         m_InFrame = true;
+        m_FixedClock.Reset();m_Game.SynchronizePresentation();
         DrawFrame();
         m_InFrame = false;
         // Time spent dragging must not become a simulation jump on release.
@@ -102,6 +135,7 @@ namespace MyEngine
     void Application::Shutdown()
     {
         m_Running = false;
+        m_FixedClock={};m_WasSuspended=false;m_ViewWidth=m_ViewHeight=0;
         if (auto* window = m_Window.GetNativeWindow())
         {
             glfwSetWindowRefreshCallback(window, nullptr);

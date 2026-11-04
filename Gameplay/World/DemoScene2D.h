@@ -9,15 +9,13 @@
 #include "Gameplay/Effects/EffectPool.h"
 #include <array>
 #include "SceneOptions.h"
+#include "Gameplay/Player/SceneInput.h"
 
 namespace MyGame
 {
-    struct SceneInput
+    struct PresentationSnapshot
     {
-        glm::vec2 movement{0,0};
-        bool running=false,interact=false,action=false,hurt=false,reset=false,switchCharacter=false;
-        int teleport=0,zoom=0,selectedItem=-1;
-        bool cancel=false,paused=false;
+        glm::vec2 player{0,0},npc{0,0},pet{0,0},camera{0,0};
     };
     struct SceneSnapshot
     {
@@ -41,11 +39,17 @@ namespace MyGame
         SceneSnapshot Snapshot() const;
         std::optional<InteractionTarget> TargetState(std::string_view id) const;
         bool Initialize(AssetTextures& assets,const std::filesystem::path& dataRoot);
-        void Update(float deltaTime);
-        void Render(MyEngine::Canvas2D& canvas, int width, int height);
+        void CaptureInput();
+        void CaptureInput(const SceneInput& input) { m_Input.Capture(input); }
+        void FixedUpdate(float deltaTime);
+        void SynchronizePresentation();
+        void SetViewport(int width,int height);
+        PresentationSnapshot Presentation(float alpha) const;
+        void Render(MyEngine::Canvas2D& canvas,int width,int height,float alpha=1.0f);
         void Shutdown();
         void Reset();
     private:
+        PresentationSnapshot CurrentPresentation() const;
         void CancelInteraction(InteractionResult reason=InteractionResult::Cancelled);
         struct SpriteDraw
         {
@@ -57,9 +61,11 @@ namespace MyGame
         SpriteDraw ActorSprite(int character,glm::vec2 feet,const AnimationController& animation) const;
         void DrawActor(MyEngine::Canvas2D& canvas,int character,glm::vec2 feet,
                        const AnimationController& animation);
-        void DrawDog(MyEngine::Canvas2D& canvas) const;
+        void DrawDog(MyEngine::Canvas2D& canvas,glm::vec2 feet) const;
         void DrawCrop(MyEngine::Canvas2D& canvas) const;
         MyEngine::Camera2D m_Camera;
+        SceneInputBuffer m_Input;
+        PresentationSnapshot m_Previous;
         WorldMap m_World;
         ForegroundTrees m_Trees;
         RenderOrder m_RenderOrder;

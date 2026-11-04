@@ -8,6 +8,7 @@
 #include <GLFW/glfw3native.h>
 #endif
 #include <iostream>
+#include <cmath>
 
 namespace
 {
@@ -25,7 +26,13 @@ namespace
     public:
         bool failInitialize = false;
         int starts = 0, updates = 0, renders = 0, stops = 0;
-        bool awaitingRender = false;
+        bool awaitingRender=false,pendingEdge=false;
+        int inputFrames=0,presses=0,synchronizations=0;
+        void ProcessInput() override
+        {++inputFrames;pendingEdge|=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F1);}
+        void SynchronizePresentation() override {++synchronizations;pendingEdge=false;}
+        void Render(float alpha) override
+        {Check(alpha>=0 && alpha<=1,"invalid presentation alpha");Render();}
         bool Initialize() override
         {
             ++starts;
@@ -35,9 +42,9 @@ namespace
         void Update(float deltaTime) override
         {
             ++updates;
-            Check(deltaTime >= 0.0f && deltaTime <= MyEngine::Time::MaxDeltaTime,
-                  "game received invalid delta time");
-            Check(!awaitingRender, "previous update was not rendered");
+            Check(std::abs(deltaTime-static_cast<float>(MyEngine::FixedStepClock::StepSeconds))<0.000001f,
+                  "game did not receive fixed delta time");
+            if(pendingEdge){++presses;pendingEdge=false;}
             awaitingRender = true;
             if (updates == 1)
             {
@@ -97,16 +104,46 @@ int main()
             Check(!MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F1), "key tap consumed twice");
         }
         Check(!MyEngine::Input::ConsumeKeyPress(-1), "unknown key accepted");
+        glfwFocusWindow(native);glfwPollEvents();
+        if(keyCallback) keyCallback(native,GLFW_KEY_F1,0,GLFW_PRESS,0);
+        auto plan=app.AdvanceFrame(MyEngine::FixedStepClock::StepSeconds/2);
+        Check(plan.steps==0 && game.updates==0 && game.renders==1,"zero-tick frame failed");
+        plan=app.AdvanceFrame(MyEngine::FixedStepClock::StepSeconds/2);
+        Check(plan.steps==1 && game.updates==1 && game.presses==1,"short tap lost before first tick");
+        plan=app.AdvanceFrame(1.0/30);
+        Check(plan.steps==2 && game.updates==3 && game.presses==1,"catch-up duplicated input or skipped update");
+        const int beforeSuspend=game.updates;
+        if(keyCallback) keyCallback(native,GLFW_KEY_F1,0,GLFW_PRESS,0);
+        plan=app.AdvanceFrame(5,true);
+        Check(plan.steps==0 && game.updates==beforeSuspend && !game.pendingEdge,"suspend retained commands or advanced simulation");
+        if(keyCallback) keyCallback(native,GLFW_KEY_F1,0,GLFW_PRESS,0);
+        plan=app.AdvanceFrame(5);
+        Check(plan.steps==0 && game.pendingEdge,"resume caught up paused time or lost fresh input");
+        plan=app.AdvanceFrame(MyEngine::FixedStepClock::StepSeconds);
+        Check(plan.steps==1 && game.presses==2,"resumed input lost/repeated");
+        plan=app.AdvanceFrame(5);
+        Check(plan.steps==MyEngine::FixedStepClock::MaxSteps && plan.droppedSeconds>4.8,"unbounded frame spike");
+#ifdef _WIN32
+        const int beforeMinimize=game.updates;
+        glfwIconifyWindow(native);glfwPollEvents();
+        Check(glfwGetWindowAttrib(native,GLFW_ICONIFIED)!=0,"native minimize not observed");
+        plan=app.AdvanceFrame(5);
+        Check(plan.steps==0 && game.updates==beforeMinimize,"minimized window advanced simulation");
+        glfwRestoreWindow(native);glfwFocusWindow(native);glfwPollEvents();
+        plan=app.AdvanceFrame(5);Check(plan.steps==0,"restore caught up minimized time");
+#endif
 #ifdef _WIN32
         // WM_PAINT is handled inside PollEvents, before the normal Update.
         Check(PostMessage(glfwGetWin32Window(glfwGetCurrentContext()), WM_PAINT, 0, 0) != 0,
               "could not queue repaint regression test");
 #endif
+        const int rendersBeforeRun=game.renders,inputsBeforeRun=game.inputFrames,updatesBeforeRun=game.updates;
         app.Run(3);
-        Check(game.updates == 3 && game.renders >= 3 && !game.awaitingRender,
-              "frame budget or update/render order was not respected");
+        Check(game.renders>=rendersBeforeRun+3 && game.inputFrames==inputsBeforeRun+3 && !game.awaitingRender,
+              "frame budget or input/render dispatch incorrect");
+        Check(game.updates-updatesBeforeRun<=3*MyEngine::FixedStepClock::MaxSteps,"Run exceeded catch-up budget");
 #ifdef _WIN32
-        Check(game.renders > game.updates, "WM_PAINT did not repaint inside event dispatch");
+        Check(game.renders>rendersBeforeRun+3,"WM_PAINT did not repaint inside event dispatch");
 #endif
         app.Shutdown();
         app.Shutdown();

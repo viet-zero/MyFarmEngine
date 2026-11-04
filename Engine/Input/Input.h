@@ -8,6 +8,7 @@ namespace MyEngine {
 		static bool IsKeyPressed(int key);
         // Consume a press event, including taps released before the next Update.
         static bool ConsumeKeyPress(int key);
+        static void ClearPresses();
 	private:
 		static GLFWwindow* s_Window;
 	};

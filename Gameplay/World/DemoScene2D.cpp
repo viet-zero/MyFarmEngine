@@ -86,6 +86,7 @@ namespace MyGame
         m_Camera.SetWorldSize(WorldSize);
         m_Camera.SetZoom(0.85f);
         m_Camera.SetPosition(m_Player);
+        SynchronizePresentation();
     }
     void DemoScene2D::SetOptions(SceneOptions options)
     {
@@ -111,7 +112,25 @@ namespace MyGame
         m_LastAction=m_Action.result;m_FeedbackTime=0.6f;m_PlayerState=VisualState::Idle;
         m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",VisualState::Idle,m_Facing,true);
     }
-    void DemoScene2D::Update(float deltaTime)
+    PresentationSnapshot DemoScene2D::CurrentPresentation() const
+    {return {m_Player,m_Npc,m_Dog,m_Camera.Position()};}
+    PresentationSnapshot DemoScene2D::Presentation(float alpha) const
+    {
+        const float t=std::isfinite(alpha)?std::clamp(alpha,0.0f,1.0f):1.0f;
+        return {glm::mix(m_Previous.player,m_Player,t),glm::mix(m_Previous.npc,m_Npc,t),
+                glm::mix(m_Previous.pet,m_Dog,t),glm::mix(m_Previous.camera,m_Camera.Position(),t)};
+    }
+    void DemoScene2D::SetViewport(int width,int height)
+    {
+        if(width<=0 || height<=0) return;
+        m_Camera.Resize(width,height);m_Camera.SetPosition(m_Player);
+        m_Previous.camera=m_Camera.Position();
+    }
+    void DemoScene2D::SynchronizePresentation()
+    {m_Previous=CurrentPresentation();m_Input.Clear();}
+    void DemoScene2D::FixedUpdate(float deltaTime)
+    {const auto input=m_Input.Consume();UpdateSimulation(deltaTime,input);}
+    void DemoScene2D::CaptureInput()
     {
         SceneInput input;
         input.movement={
@@ -130,7 +149,7 @@ namespace MyGame
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) input.zoom=-1;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) input.zoom=1;
         for(int i=0;i<4;++i) if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i)) input.selectedItem=i;
-        UpdateSimulation(deltaTime,input);
+        m_Input.Capture(input);
     }
     void DemoScene2D::UpdateSimulation(float deltaTime,const SceneInput& input)
     {
@@ -141,15 +160,17 @@ namespace MyGame
         if(input.paused)
         {
             m_PlayerAnimation.Update(0,true);m_NpcAnimation.Update(0,true);m_DogAnimation.Update(0,true);
+            m_Previous=CurrentPresentation();
             return;
         }
+        m_Previous=CurrentPresentation();
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
         const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
         const bool hurtTriggered=developer && input.hurt;
         if(input.cancel || hurtTriggered || (developer && input.switchCharacter) || teleporting) CancelInteraction();
         InteractionSystem::Tick(m_Actor,m_Targets,dt);
         InteractionSystem::TickAction(m_Actor,m_Action,dt);
-        if(input.zoom) m_Camera.SetZoom(m_Camera.Zoom()*(input.zoom>0?1.15f:1.0f/1.15f));
+        if(input.zoom) m_Camera.SetZoom(m_Camera.Zoom()*std::pow(1.15f,static_cast<float>(std::clamp(input.zoom,-8,8))));
         if(developer && input.switchCharacter) m_Character=1-m_Character;
         if(input.selectedItem>=0 && input.selectedItem<4) m_SelectedItem=input.selectedItem;
         const bool locked=(m_PlayerState==VisualState::Action || m_PlayerState==VisualState::Hurt) &&
@@ -251,6 +272,7 @@ namespace MyGame
                              FacingFromVelocity(m_Dog.x-dogBefore.x,m_Dog.y-dogBefore.y,Facing::Down));
         m_DogAnimation.Update(dt,false);
         m_GameAge+=dt;m_Camera.Follow(m_Player,dt);
+        if(teleporting) m_Previous=CurrentPresentation();
     }
     DemoScene2D::SpriteDraw DemoScene2D::SpriteFor(std::string_view id,int frame,glm::vec2 feet,float height,bool flip) const
     {
@@ -290,9 +312,9 @@ namespace MyGame
         else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.65f,0.5f,0.27f,1});
         if(m_Options.debugOverlay) canvas.Rectangle(feet.x-2,feet.y-2,4,4,{1,0.2f,0.15f,1});
     }
-    void DemoScene2D::DrawDog(MyEngine::Canvas2D& canvas) const
+    void DemoScene2D::DrawDog(MyEngine::Canvas2D& canvas,glm::vec2 feet) const
     {
-        const auto sprite=SpriteFor("dog_walk",m_DogAnimation.Frame(),m_Dog,PetHeight);
+        const auto sprite=SpriteFor("dog_walk",m_DogAnimation.Frame(),feet,PetHeight);
         const auto& p=sprite.placement;
         if(sprite.texture) canvas.Sprite(*sprite.texture,p.origin.x,p.origin.y,p.size.x,p.size.y,sprite.uv);
         else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.55f,0.32f,0.16f,1});
@@ -316,13 +338,15 @@ namespace MyGame
             {0.22f,0.58f,0.15f,1},{0.65f,0.82f,0.25f,1}}};
         canvas.Rectangle(it->position.x-size*0.5f,it->position.y-size,size,size,colors[static_cast<std::size_t>(stage)]);
     }
-    void DemoScene2D::Render(MyEngine::Canvas2D& canvas, int width, int height)
+    void DemoScene2D::Render(MyEngine::Canvas2D& canvas,int width,int height,float interpolationAlpha)
     {
         if (!m_Ready) return;
-        m_Camera.Resize(width,height);
+        const auto presented=Presentation(interpolationAlpha);
         auto renderCamera=m_Camera;
+        renderCamera.Resize(width,height);
+        renderCamera.SetPosition(presented.camera);
         const float shake=m_Effects.Shake();
-        renderCamera.SetPosition(m_Camera.Position()+glm::vec2{
+        renderCamera.SetPosition(renderCamera.Position()+glm::vec2{
             std::sin(static_cast<float>(m_GameAge)*87.0f)*shake,
             std::cos(static_cast<float>(m_GameAge)*71.0f)*shake});
         canvas.BeginWorld(width,height,renderCamera);
@@ -376,15 +400,15 @@ namespace MyGame
                 if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position,object.size,
                                                        object.position.y+object.size.y);
             }
-        const auto player=ActorSprite(m_Character,m_Player,m_PlayerAnimation).placement;
-        m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,m_Player.y);
+        const auto player=ActorSprite(m_Character,presented.player,m_PlayerAnimation).placement;
+        m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,presented.player.y);
         if(m_Options.demoMode)
         {
-            const auto npc=ActorSprite(1,m_Npc,m_NpcAnimation).placement;
-            m_RenderOrder.Submit(RenderKind::Actor,1,npc.visibleOrigin,npc.visibleSize,m_Npc.y);
+            const auto npc=ActorSprite(1,presented.npc,m_NpcAnimation).placement;
+            m_RenderOrder.Submit(RenderKind::Actor,1,npc.visibleOrigin,npc.visibleSize,presented.npc.y);
         }
-        const auto pet=SpriteFor("dog_walk",m_DogAnimation.Frame(),m_Dog,PetHeight).placement;
-        m_RenderOrder.Submit(RenderKind::Animal,0,pet.visibleOrigin,pet.visibleSize,m_Dog.y);
+        const auto pet=SpriteFor("dog_walk",m_DogAnimation.Frame(),presented.pet,PetHeight).placement;
+        m_RenderOrder.Submit(RenderKind::Animal,0,pet.visibleOrigin,pet.visibleSize,presented.pet.y);
         m_RenderOrder.Sort();
         for(const auto& entry:m_RenderOrder.Entries())
         {
@@ -396,10 +420,10 @@ namespace MyGame
                 else canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
                 break;
             case RenderKind::Actor:
-                if(entry.index==0) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation);
-                else DrawActor(canvas,1,m_Npc,m_NpcAnimation);
+                if(entry.index==0) DrawActor(canvas,m_Character,presented.player,m_PlayerAnimation);
+                else DrawActor(canvas,1,presented.npc,m_NpcAnimation);
                 break;
-            case RenderKind::Animal:DrawDog(canvas);break;
+            case RenderKind::Animal:DrawDog(canvas,presented.pet);break;
             case RenderKind::TreeCanopy:
             {
                 const auto& tree=m_Trees.Entries()[entry.index];

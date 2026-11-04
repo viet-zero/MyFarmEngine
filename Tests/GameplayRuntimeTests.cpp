@@ -152,7 +152,7 @@ int main()
     GameplayState state;state.Enter();
     auto* native=window.GetNativeWindow();glfwPollEvents();glfwFocusWindow(native);glfwPollEvents();
     const auto key=glfwSetKeyCallback(native,nullptr);glfwSetKeyCallback(native,key);
-    const auto tap=[&](int code){key(native,code,0,GLFW_PRESS,0);key(native,code,0,GLFW_RELEASE,0);state.Update(0);};
+    const auto tap=[&](int code){key(native,code,0,GLFW_PRESS,0);key(native,code,0,GLFW_RELEASE,0);state.ProcessInput();state.Update(0);};
     Check(key!=nullptr,"input callback missing");
     if(key)
     {

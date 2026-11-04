@@ -1,5 +1,9 @@
 # MyFarmEngine — Animation specification
 
+## Cập nhật P1-003 — 2026-11-05
+
+Animation controller và impact transaction chỉ update trong simulation 60 Hz. Render(alpha) nội suy vị trí chân/camera, không update timer, animation frame, world hoặc events. Reset/teleport/viewport/pause snap presentation để tránh trượt qua map; không dùng chung timer giữa entity. [Fixed timestep](FIXED_TIMESTEP.md). Bốn hướng và artwork một pose cho action vẫn giữ nguyên.
+
 ## Cập nhật P1-002 — 2026-11-05
 
 Animator đã có marker/time và MarkerHits; Action non-loop có IMPACT/COMPLETE, CSV cũ dùng midpoint/end fallback. F live dùng Start → Active → Impact → Complete → Recovery; model/FX đổi đúng một lần tại impact, revalidate target ID/resources. C hủy; preview/mất focus pause. [Contract, CSV và restore policy](ACTION_ANIMATION_EVENTS.md). Tám hướng/per-frame durations/outfit/audio chưa triển khai; các ghi chú “chưa events” bên dưới là lịch sử trước P1-002.

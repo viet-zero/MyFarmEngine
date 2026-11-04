@@ -1,5 +1,9 @@
 # MyFarmEngine — Roadmap sau audit
 
+## Gate P1-003 — 2026-11-05
+
+[P1-003](TASKS/P1-003.md) DONE kỹ thuật: fixed simulation 60 Hz, bounded catch-up, buffered input và actor/camera interpolation; Debug/Release 24/24. [Giới hạn và verification](FIXED_TIMESTEP.md). Tiếp theo P0-001 art review và P2-001 tám hướng/outfit (cần authored art), rồi P2-002 farm/typed inventory. Không mở rộng world trong lượt này. Các gate bên dưới là lịch sử.
+
 ## Gate P1-002 — 2026-11-05
 
 [P1-002](TASKS/P1-002.md) DONE kỹ thuật: F → animation IMPACT → model/FX exactly-once; cancel/pause/retrigger/target invalid được kiểm thử, Debug/Release 22/22. [Contract và giới hạn](ACTION_ANIMATION_EVENTS.md). Tiếp theo P1-003 fixed simulation; P0 artwork vẫn PARTIAL, chưa triển khai tám hướng hoặc world expansion.
@@ -20,7 +24,7 @@ Sửa runtime/console, opt-in behavior, placement/UI: DONE theo [task Gameplay11
 | P0 | [P0-001](TASKS/P0-001.md) frame/alpha/canopy QA | Baseline | Tái hiện lỗi, tách artwork/filter/scale/render; source nguyên vẹn |
 | P1 | [P1-001](TASKS/P1-001.md) asset/clip cross-validator — DONE | Gameplay11 technical baseline | Debug/Release 21/21; references/frame/grid/coverage được kiểm tự động |
 | P1 | [P1-002](TASKS/P1-002.md) animation impact — DONE | P1-001 | Debug/Release 22/22; model/FX tại impact, cancel/pause/retrigger guards |
-| P1 | [P1-003](TASKS/P1-003.md) fixed simulation | P1-002 | Render rates khác nhau cho kết quả gameplay tương đương |
+| P1 | [P1-003](TASKS/P1-003.md) fixed simulation — DONE | P1-002 | Render rates khác nhau cho kết quả gameplay tương đương |
 | P2 | [P2-001](TASKS/P2-001.md) tám hướng/outfit | P1-001, P1-002 | Art đủ coverage, layers aligned, outfit đổi thật |
 | P2 | [P2-002](TASKS/P2-002.md) farm/typed inventory | P2-001, P1-003 | Ba crop, tưới/thu/bán, cây chặt cập nhật hình và collider |
 | P3 | [P3-001](TASKS/P3-001.md) clock/light/shadow | P2-002 | Ngày đêm mượt, shadow proxy/local light có toggle |

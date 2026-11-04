@@ -13,8 +13,13 @@ namespace MyGame
     public:
         explicit GameplayState(SceneOptions options={}) : m_Demo(options) {}
         void Enter() override;
+        void ProcessInput();
+        void SynchronizePresentation() { m_Demo.SynchronizePresentation(); }
+        void ResizeViewport(int width,int height) { m_Demo.SetViewport(width,height); }
+        bool SimulationPaused() const { return m_Mode!=3; }
         void Update(float deltaTime) override;
-        void Render() override;
+        void Render() override { Render(1.0f); }
+        void Render(float alpha);
         void Exit() override;
         bool IsReady() const { return m_Ready; }
         int Mode() const { return m_Mode; }

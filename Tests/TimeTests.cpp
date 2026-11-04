@@ -1,6 +1,7 @@
 #include "Core/Time.h"
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 int main()
 {
@@ -27,5 +28,9 @@ int main()
     expect(0.016f, "long uptime precision");
     Time::Reset(42.0);
     expect(0.0f, "restart reset");
+    Time::Update(43.0);
+    if(Time::GetFrameDeltaTime()!=1.0){std::cerr<<"raw frame delta was clamped\n";++failures;}
+    Time::Update(std::numeric_limits<double>::quiet_NaN());expect(0,"invalid clock");
+    Time::Update(43.016);expect(0.016f,"clock recovered after NaN");
     return failures == 0 ? 0 : 1;
 }

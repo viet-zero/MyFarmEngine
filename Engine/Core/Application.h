@@ -2,6 +2,7 @@
 
 #include "Window.h"
 #include "IGame.h"
+#include "Time.h"
 #include "Graphics/Renderer.h"
 
 namespace MyEngine
@@ -19,6 +20,8 @@ namespace MyEngine
         // Zero runs until ESC or window close; a frame limit supports smoke tests.
         void Run(unsigned int maxFrames = 0);
         void Shutdown();
+        // Same dispatcher used by Run; explicit delta/suspend also support deterministic host tests.
+        FixedStepPlan AdvanceFrame(double frameSeconds,bool suspended=false);
 
     private:
         void Refresh();
@@ -29,6 +32,8 @@ namespace MyEngine
         bool m_GameStarted = false;
         bool m_Initialized = false;
         bool m_Running = false;
-        bool m_InFrame = false;
+        bool m_InFrame = false,m_WasSuspended=false;
+        FixedStepClock m_FixedClock;
+        int m_ViewWidth=0,m_ViewHeight=0;
     };
 }

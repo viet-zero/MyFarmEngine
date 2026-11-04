@@ -1,5 +1,9 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## Cập nhật P1-003 — 2026-11-05
+
+Application sở hữu FixedStepClock 60 Hz: ProcessInput một lần/frame → 0..6 Update(1/60) → Render(alpha). IGame giữ Render() tương thích, thêm hook input/pause/viewport/presentation. SceneInputBuffer giữ command tới tick đầu, không đọc lại GLFW trong catch-up. GameplayState xử lý UI ngay mỗi frame; DemoScene2D lưu previous/current feet và camera, render dùng camera copy. Minimize/focus/preview/refresh reset accumulator và snap presentation; resize thông báo camera riêng. [Contract và bằng chứng](FIXED_TIMESTEP.md).
+
 ## Cập nhật P1-002 — 2026-11-05
 
 Animator/VisualCatalog thêm marker timeline; InteractionSystem sở hữu Start/Impact/Complete/Recovery trên token transient, DemoScene2D chỉ điều phối và consume events. GameEvent có actionId để model/FX chung một transaction. Không giữ target pointer qua frame, không tạo subsystem song song. Pending action bị cancel khi reset/shutdown hoặc restore world theo policy; animation snapshot không phải game save. Chi tiết [action events](ACTION_ANIMATION_EVENTS.md).

@@ -37,8 +37,9 @@ namespace MyGame
         UpdateTitle();
     }
 
-    void GameplayState::Update(float deltaTime)
+    void GameplayState::ProcessInput()
     {
+        const bool wasGameplay=m_Mode==3;
         auto options=m_Demo.Options();
         bool changed=false;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F9)){options.debugOverlay=!options.debugOverlay;changed=true;}
@@ -70,10 +71,11 @@ namespace MyGame
                 }
             }
         }
-        if (m_Mode == 3) m_Demo.Update(deltaTime);
+        if(m_Mode==3 && wasGameplay) m_Demo.CaptureInput();
         else
         {
-            SceneInput paused;paused.paused=true;m_Demo.UpdateSimulation(0,paused);
+            if(m_Mode!=3){SceneInput paused;paused.paused=true;m_Demo.UpdateSimulation(0,paused);}
+            m_Demo.SynchronizePresentation();
             // Preview UI owns these keys. Do not replay a tap after returning to gameplay.
             for(const int key:{GLFW_KEY_F,GLFW_KEY_C,GLFW_KEY_SPACE,GLFW_KEY_H,GLFW_KEY_TAB,GLFW_KEY_R,
                                GLFW_KEY_Q,GLFW_KEY_E,GLFW_KEY_F4,GLFW_KEY_F5,GLFW_KEY_F6,GLFW_KEY_F7,GLFW_KEY_F8,
@@ -82,7 +84,10 @@ namespace MyGame
         }
     }
 
-    void GameplayState::Render()
+    void GameplayState::Update(float deltaTime)
+    {if(m_Mode==3) m_Demo.FixedUpdate(deltaTime);}
+
+    void GameplayState::Render(float alpha)
     {
         if (!m_Ready) return;
         int width = 0, height = 0;
@@ -90,7 +95,7 @@ namespace MyGame
         if (width <= 0 || height <= 0) return;
         if (m_Mode == 3)
         {
-            m_Demo.Render(m_Canvas,width,height);
+            m_Demo.Render(m_Canvas,width,height,alpha);
             return;
         }
         m_Canvas.Begin(width, height);

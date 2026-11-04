@@ -8,9 +8,11 @@ Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
 ![Giai đoạn 2 đang chạy](Docs/Screenshots/phase2_world.png)
 
-**Tiến độ 05/11/2026:** hoàn tất cross-validator P1-001 và animation impact P1-002; Debug/Release **22/22 tests PASS**. [Tiến độ hiện tại](Docs/PROGRESS.md) · [Contract và kiểm thử dữ liệu](Docs/ASSET_ANIMATION_VALIDATION.md). Game vẫn là prototype, chưa hoàn tất vertical slice.
+**Tiến độ 05/11/2026:** hoàn tất cross-validator P1-001, animation impact P1-002 và fixed timestep P1-003; Debug/Release **24/24 tests PASS**. [Tiến độ hiện tại](Docs/PROGRESS.md) · [Contract và kiểm thử dữ liệu](Docs/ASSET_ANIMATION_VALIDATION.md). Game vẫn là prototype, chưa hoàn tất vertical slice.
 
 **P1-002 — animation impact:** F bắt đầu thao tác; item/stock/FX chỉ đổi tại marker IMPACT. **C** hủy; khi mở preview hoặc mất focus game pause. [Cách hoạt động và giới hạn](Docs/ACTION_ANIMATION_EVENTS.md). Animation hiện vẫn bốn hướng và action art một pose.
+
+**P1-003:** gameplay 60 Hz, input không lặp qua catch-up, nội suy actor/camera; pause không fast-forward. [Contract và kiểm thử](Docs/FIXED_TIMESTEP.md).
 
 ## Gameplay11 — runtime và demo controls
 
