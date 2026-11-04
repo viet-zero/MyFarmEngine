@@ -42,6 +42,19 @@ namespace
         if(kind=="crop") return "crop";
         return {};
     }
+    bool ActionMarkersValid(const MyEngine::AnimationClip& clip)
+    {
+        if(clip.loop) return false;
+        int impact=0,complete=0;
+        for(const auto& marker:clip.markers)
+        {
+            if(marker.name=="IMPACT")
+            {if(marker.time<=0 || marker.time>=clip.Duration()) return false;++impact;}
+            if(marker.name=="COMPLETE")
+            {if(std::abs(marker.time-clip.Duration())>clip.Duration()*1e-9) return false;++complete;}
+        }
+        return impact==1 && complete==1;
+    }
     std::string StateName(MyGame::VisualState state)
     {
         constexpr const char* names[]={"idle","walk","run","action","hurt","sleep"};
@@ -67,14 +80,16 @@ namespace MyGame
         constexpr std::string_view header="profile,kind,state,direction,asset_id,first_frame,frame_count,fps,loop,total_frames,flip_x";
         if(line.starts_with("\xEF\xBB\xBF")) line.erase(0,3);
         if(!line.empty() && line.back()=='\r') line.pop_back();
-        const bool hasFlip=line==header;
+        const std::string eventsHeader=std::string(header)+",events";
+        const bool hasEvents=line==eventsHeader;
+        const bool hasFlip=hasEvents || line==header;
         if(!hasFlip && line!=oldHeader){m_Errors.emplace_back("invalid_header");return false;}
         int row=1;
         while(std::getline(file,line))
         {
             ++row;if(!line.empty() && line.back()=='\r') line.pop_back();if(line.empty()) continue;
             const auto fields=Split(line);
-            if(fields.size()!=(hasFlip?11u:10u)){m_Errors.push_back("row_"+std::to_string(row)+":field_count");continue;}
+            if(fields.size()!=(hasEvents?12u:(hasFlip?11u:10u))){m_Errors.push_back("row_"+std::to_string(row)+":field_count");continue;}
             const auto state=State(fields[2]);const auto facing=Direction(fields[3]);
             int first=0,count=0,total=0;float fps=0;int loop=0,flip=0;
             if(fields[0].empty() || !state || !facing || !Number(fields[5],first) || !Number(fields[6],count) ||
@@ -87,6 +102,23 @@ namespace MyGame
             clip.profile=fields[0];clip.kind=fields[1];clip.state=*state;clip.sourceRow=row;
             if(!clip.timeline.IsValid(total))
             {m_Errors.push_back("row_"+std::to_string(row)+":frame_bounds");continue;}
+            if(hasEvents && !fields[11].empty())
+            {
+                bool valid=true;
+                for(const auto& value:Split(fields[11],'|'))
+                {
+                    const auto at=value.find('@');double time=0;
+                    if(at==std::string::npos || at==0 || !Number(std::string_view(value).substr(at+1),time))
+                    {valid=false;break;}
+                    clip.timeline.markers.push_back({value.substr(0,at),time});
+                }
+                if(!valid){m_Errors.push_back("row_"+std::to_string(row)+":invalid_events");continue;}
+            }
+            else if(!hasEvents && *state==VisualState::Action)
+                // Legacy one-pose art still receives a real timeline, never an immediate model mutation.
+                clip.timeline.markers={{"IMPACT",clip.timeline.Duration()*0.5},{"COMPLETE",clip.timeline.Duration()}};
+            if(!clip.timeline.IsValid(total) || (*state==VisualState::Action && !ActionMarkersValid(clip.timeline)))
+            {m_Errors.push_back("row_"+std::to_string(row)+":invalid_events");continue;}
             const auto key=Key(fields[0],*state,*facing);
             if(!m_Clips.emplace(key,std::move(clip)).second)
                 m_Errors.push_back("row_"+std::to_string(row)+":duplicate_clip");

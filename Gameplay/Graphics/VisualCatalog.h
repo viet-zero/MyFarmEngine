@@ -56,6 +56,7 @@ namespace MyGame
                     bool restart=false);
         void Update(float deltaTime,bool paused);
         int Frame() const { return m_Animator.Frame(); }
+        std::span<const MyEngine::AnimationMarkerHit> MarkerHits() const { return m_Animator.MarkerHits(); }
         bool Finished() const { return m_Animator.Finished(); }
         const VisualClip* Clip() const { return m_Clip; }
         VisualState State() const { return m_State; }

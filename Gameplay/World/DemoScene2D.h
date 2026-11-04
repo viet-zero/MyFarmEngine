@@ -17,12 +17,18 @@ namespace MyGame
         glm::vec2 movement{0,0};
         bool running=false,interact=false,action=false,hurt=false,reset=false,switchCharacter=false;
         int teleport=0,zoom=0,selectedItem=-1;
+        bool cancel=false,paused=false;
     };
     struct SceneSnapshot
     {
         glm::vec2 player,npc,pet;
         VisualState playerState,npcState,petState;
         int playerFrame,npcFrame,petFrame;
+        int inventoryCount=0,fruitHarvested=0;
+        std::uint64_t actionId=0;
+        ActionPhase actionPhase=ActionPhase::Idle;
+        InteractionResult actionResult=InteractionResult::NoTarget;
+        std::size_t effects=0;
     };
     class DemoScene2D
     {
@@ -33,12 +39,14 @@ namespace MyGame
         // Same simulation path used by live input and deterministic integration tests.
         void UpdateSimulation(float deltaTime,const SceneInput& input);
         SceneSnapshot Snapshot() const;
+        std::optional<InteractionTarget> TargetState(std::string_view id) const;
         bool Initialize(AssetTextures& assets,const std::filesystem::path& dataRoot);
         void Update(float deltaTime);
         void Render(MyEngine::Canvas2D& canvas, int width, int height);
         void Shutdown();
         void Reset();
     private:
+        void CancelInteraction(InteractionResult reason=InteractionResult::Cancelled);
         struct SpriteDraw
         {
             const MyEngine::Texture2D* texture=nullptr;
@@ -56,6 +64,7 @@ namespace MyGame
         ForegroundTrees m_Trees;
         RenderOrder m_RenderOrder;
         InteractionActor m_Actor;
+        InteractionAction m_Action;
         std::vector<InteractionTarget> m_Targets;
         EventBus m_Events;
         EffectPool m_Effects;

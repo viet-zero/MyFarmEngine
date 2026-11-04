@@ -79,6 +79,20 @@ int main(int argc,char** argv)
     {std::ofstream file(bad);file<<"profile,kind,state,direction,asset_id,first_frame,frame_count,fps,loop,total_frames\n"
         "bad,npc,walk,down,x,3,2,8,1,4\n";}
     VisualCatalog rejected;Check(!rejected.Load(bad) && !rejected.Errors().empty(),"out-of-bounds clip accepted");
+    const std::string eventsHeader="profile,kind,state,direction,asset_id,first_frame,frame_count,fps,loop,total_frames,flip_x,events\n";
+    const std::string eventRow="hero,player,action,down,player_linh,0,1,5,0,1,0,";
+    {std::ofstream file(bad);file<<eventsHeader<<eventRow<<"IMPACT@0.1|COMPLETE@0.2\n";}
+    VisualCatalog eventCatalog;Check(eventCatalog.Load(bad),"explicit event schema rejected");
+    AnimationController eventController;eventController.Select(eventCatalog,"hero",VisualState::Action,Facing::Down);
+    eventController.Update(0.12f,false);
+    Check(eventController.MarkerHits().size()==1 && eventController.MarkerHits()[0].name=="IMPACT","explicit marker not passed through controller");
+    const auto* legacy=catalog.Find("player_linh",VisualState::Action,Facing::Down);
+    Check(legacy && legacy->timeline.markers.size()==2 && legacy->timeline.markers[0].name=="IMPACT","legacy action missing compatible markers");
+    for(const std::string events:{"IMPACT@0.05|IMPACT@0.1|COMPLETE@0.2","IMPACT@0.1","IMPACT@0|COMPLETE@0.2","IMPACT@nan|COMPLETE@0.2","COMPLETE@0.2|IMPACT@0.1","COMPLETE@0.2","IMPACT@bad|COMPLETE@0.2",""})
+    {
+        {std::ofstream file(bad);file<<eventsHeader<<eventRow<<events<<'\n';}
+        VisualCatalog invalidEvents;Check(!invalidEvents.Load(bad),"invalid/ambiguous action event metadata accepted");
+    }
     std::error_code error;std::filesystem::remove(bad,error);
     return failures==0?0:1;
 }

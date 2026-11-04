@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cập nhật P1-002 — 2026-11-05
+
+**DONE kỹ thuật:** animation markers và action transaction đã tích hợp vào luồng F thật. Start chỉ reserve; IMPACT mới kiểm tra lại target ID, tool/state, LOS/range/facing và tài nguyên rồi đổi inventory/stock/health và phát FX cùng actionId. Stable token chặn bấm dồn, copied action và timeline rewind cộng đồ hai lần. C hủy; hurt/teleport/reset/shutdown cancel; preview hoặc mất focus pause.
+
+**Debug 22/22 PASS**, **Release 22/22 PASS** ở bản cuối (19.67s / 9.95s). Test mới gameplay.action_transaction; mở rộng animator/visuals/runtime để kiểm marker boundary/loop/dt/restore/copy, mục tiêu mất hoặc đổi state, hết seed/stamina/stock, full inventory/event queue; đi tuyến farm thật để gieo/chờ/thu và nhặt item. Graphics/smoke/console regression đã chạy. Không có phiên chơi thủ công mới trong lượt này.
+
+Ảnh/các CSV đang dùng giữ nguyên; 204 Original khớp SHA256. CSV cũ tự có midpoint/end markers cho action; artwork hành động vẫn một pose/hướng, không nhận là art hoàn thiện. Inventory vẫn bộ đếm; tám hướng/outfit, fixed timestep, production NPC/shop/door, lighting/day-night/SQLite chưa xong.
+
+Chi tiết: [Action & Animation Events](ACTION_ANIMATION_EVENTS.md). **Task code tiếp: P1-003 fixed-step simulation**. P0 art review vẫn PARTIAL. Các báo cáo P1-001/Gameplay11 dưới đây là mốc lịch sử.
+
 ## Cập nhật P1-001 — 2026-11-05
 
 **DONE:** cross-validator asset–animation tích hợp AssetAudit/CTest; 62 clips được đối chiếu với 204 assets và 26 khai báo profile/state trong VisualCoverage.csv version 1. Bắt unknown/not-ready reference, kind, PNG/grid/frame window, missing directions và policy/version lỗi. Không dùng Any fallback để giả đủ hướng.

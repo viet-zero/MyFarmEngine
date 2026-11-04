@@ -1,5 +1,9 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## Cập nhật P1-002 — 2026-11-05
+
+Animator/VisualCatalog thêm marker timeline; InteractionSystem sở hữu Start/Impact/Complete/Recovery trên token transient, DemoScene2D chỉ điều phối và consume events. GameEvent có actionId để model/FX chung một transaction. Không giữ target pointer qua frame, không tạo subsystem song song. Pending action bị cancel khi reset/shutdown hoặc restore world theo policy; animation snapshot không phải game save. Chi tiết [action events](ACTION_ANIMATION_EVENTS.md).
+
 ## Cập nhật P1-001 — 2026-11-05
 
 AssetAudit hiện liên kết MyFarmGameplayAnimation để gọi VisualCatalog::ValidateAgainst; không tạo OpenGL context khi audit. VisualCoverage.csv là contract schema v1 cho authoring/CI; runtime render không đọc/validate lại mỗi frame. Các asset được validate/decode một lần mỗi ID trong một cross-check; không sửa catalog/controller đang chạy. Chi tiết [validation](ASSET_ANIMATION_VALIDATION.md).

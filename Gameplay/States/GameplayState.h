@@ -18,6 +18,7 @@ namespace MyGame
         void Exit() override;
         bool IsReady() const { return m_Ready; }
         int Mode() const { return m_Mode; }
+        SceneSnapshot Snapshot() const { return m_Demo.Snapshot(); }
         const SceneOptions& Options() const { return m_Demo.Options(); }
 
     private:

@@ -24,15 +24,44 @@ namespace MyGame
         float stamina=20,cooldown=0;
         int inventoryCount=3,inventoryCapacity=12;
         bool busy=false,uiCapturesInput=false;
+        std::uint64_t nextActionId=1,activeActionId=0,lastImpactActionId=0;
     };
     enum class InteractionResult {Success,NoTarget,Inactive,TooFar,WrongFacing,Busy,Cooldown,
-                                  NoStamina,InventoryFull,NoSeeds,WrongTool,NotReady};
+                                  NoStamina,InventoryFull,NoSeeds,WrongTool,NotReady,Cancelled,TargetChanged,Blocked,NoAnimation,EventQueueFull};
+    enum class ActionPhase {Idle,Start,Active,Impact,Complete,Recovery,Finished,Cancelled};
+    // Transient reservation: cancel before replacing/restoring world or inventory state.
+    struct InteractionAction
+    {
+        std::uint64_t id=0;
+        std::string targetId;
+        TargetKind kind=TargetKind::Object;
+        int selectedItem=0;
+        bool cropWasPlanted=false,impactConsumed=false;
+        ActionPhase phase=ActionPhase::Idle;
+        InteractionResult result=InteractionResult::NoTarget;
+        float recoveryRemaining=0;
+        bool Pending() const
+        {return phase==ActionPhase::Start || phase==ActionPhase::Active || phase==ActionPhase::Impact ||
+                phase==ActionPhase::Complete || phase==ActionPhase::Recovery;}
+    };
     class InteractionSystem
     {
     public:
         static constexpr float Range=100.0f,CooldownSeconds=0.35f,StaminaCost=2.0f;
         static InteractionTarget* Nearest(const InteractionActor& actor,std::vector<InteractionTarget>& targets);
+        static InteractionResult Check(const InteractionActor& actor,const InteractionTarget* target,int selectedItem);
+        // Low-level immediate operation; live gameplay commits through Impact below.
         static InteractionResult Use(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events);
         static void Tick(InteractionActor& actor,std::vector<InteractionTarget>& targets,float deltaTime);
+        static InteractionResult Start(InteractionActor& actor,const InteractionTarget* target,int selectedItem,InteractionAction& action);
+        static void Activate(InteractionActor& actor,InteractionAction& action);
+        static InteractionResult Impact(InteractionActor& actor,InteractionAction& action,
+            std::vector<InteractionTarget>& targets,EventBus& events,bool lineOfSight=true);
+        static void Complete(InteractionActor& actor,InteractionAction& action);
+        static void TickAction(InteractionActor& actor,InteractionAction& action,float deltaTime);
+        static void Cancel(InteractionActor& actor,InteractionAction& action,InteractionResult reason=InteractionResult::Cancelled);
+    private:
+        static InteractionResult CheckOwned(const InteractionActor& actor,const InteractionTarget* target,int selectedItem,bool owned);
+        static InteractionResult Apply(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events,std::uint64_t actionId);
     };
 }

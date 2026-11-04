@@ -53,7 +53,9 @@ namespace MyGame
     {
         m_Player = m_World.Spawn(Zone::Farm);
         m_Dog=m_Player+glm::vec2{-70,30};
-        m_Actor={};m_Actor.position=m_Player;
+        CancelInteraction();
+        const auto nextAction=m_Actor.nextActionId;
+        m_Actor={};m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
         m_FruitHarvested=0;
         m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+m_Trees.Entries().size()+2);
         for(const auto& object:m_World.Objects())
@@ -71,7 +73,7 @@ namespace MyGame
         }
         m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{3000,1700}});
         m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
-        m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;
+        m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;m_LastAction=InteractionResult::NoTarget;
         m_Npc=NpcPosition;m_NpcFacing=Facing::Down;m_NpcPatrolRight=true;
         m_GameAge=0;
         m_Moving = false;
@@ -94,7 +96,20 @@ namespace MyGame
     SceneSnapshot DemoScene2D::Snapshot() const
     {
         return {m_Player,m_Npc,m_Dog,m_PlayerState,m_NpcAnimation.State(),m_DogAnimation.State(),
-                m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame()};
+                m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame(),
+                m_Actor.inventoryCount,m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size()};
+    }
+    std::optional<InteractionTarget> DemoScene2D::TargetState(std::string_view id) const
+    {
+        for(const auto& target:m_Targets) if(target.id==id) return target;
+        return std::nullopt;
+    }
+    void DemoScene2D::CancelInteraction(InteractionResult reason)
+    {
+        if(!m_Action.Pending()) return;
+        InteractionSystem::Cancel(m_Actor,m_Action,reason);
+        m_LastAction=m_Action.result;m_FeedbackTime=0.6f;m_PlayerState=VisualState::Idle;
+        m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",VisualState::Idle,m_Facing,true);
     }
     void DemoScene2D::Update(float deltaTime)
     {
@@ -104,6 +119,8 @@ namespace MyGame
             (MyEngine::Input::IsKeyPressed(GLFW_KEY_S)?1.0f:0.0f)-(MyEngine::Input::IsKeyPressed(GLFW_KEY_W)?1.0f:0.0f)};
         input.running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
         input.interact=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F);
+        input.cancel=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_C);
+        if(auto* window=glfwGetCurrentContext()) input.paused=!glfwGetWindowAttrib(window,GLFW_FOCUSED);
         input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
         input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
         input.hurt=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_H);
@@ -120,17 +137,28 @@ namespace MyGame
         if(!m_Ready) return;
         const float dt=std::isfinite(deltaTime)?std::clamp(deltaTime,0.0f,0.1f):0.0f;
         if(input.reset){Reset();return;}
+        m_Actor.uiCapturesInput=input.paused;
+        if(input.paused)
+        {
+            m_PlayerAnimation.Update(0,true);m_NpcAnimation.Update(0,true);m_DogAnimation.Update(0,true);
+            return;
+        }
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
+        const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
+        const bool hurtTriggered=developer && input.hurt;
+        if(input.cancel || hurtTriggered || (developer && input.switchCharacter) || teleporting) CancelInteraction();
+        InteractionSystem::Tick(m_Actor,m_Targets,dt);
+        InteractionSystem::TickAction(m_Actor,m_Action,dt);
         if(input.zoom) m_Camera.SetZoom(m_Camera.Zoom()*(input.zoom>0?1.15f:1.0f/1.15f));
         if(developer && input.switchCharacter) m_Character=1-m_Character;
         if(input.selectedItem>=0 && input.selectedItem<4) m_SelectedItem=input.selectedItem;
         const bool locked=(m_PlayerState==VisualState::Action || m_PlayerState==VisualState::Hurt) &&
                           !m_PlayerAnimation.Finished();
-        if(!locked) m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
+        if(!locked && !m_Action.Pending()) m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
         std::array<DynamicCollider,2> obstacles={{{m_Dog,DogCollider},{m_Npc,NpcCollider}}};
         const std::span<const DynamicCollider> playerObstacles(obstacles.data(),m_Options.demoMode?2u:1u);
         const auto previous=m_Player;
-        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,input.movement,input.running?300.0f:180.0f,
+        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,m_Action.Pending()?glm::vec2{0,0}:input.movement,input.running?300.0f:180.0f,
                                                dt,PlayerCollider,playerObstacles);
         m_Moving=glm::length(m_Player-previous)>0.001f;
         if(developer && input.teleport>=4 && input.teleport<=8)
@@ -149,29 +177,50 @@ namespace MyGame
         case Facing::Up:m_Actor.facing={0,-1};break;
         default:m_Actor.facing={0,1};break;
         }
-        InteractionSystem::Tick(m_Actor,m_Targets,dt);
-        bool actionTriggered=developer && input.action;
-        if(input.interact)
+        bool actionTriggered=developer && input.action && !m_Action.Pending();
+        bool started=false;
+        if(input.interact && !hurtTriggered && !input.cancel && !teleporting)
         {
             auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
             if(target && !m_World.HasLineOfSight(m_Actor.position,target->position)) target=nullptr;
-            m_LastAction=InteractionSystem::Use(m_Actor,target,m_SelectedItem,m_Events);
-            if(m_LastAction==InteractionResult::Success)
-            {
-                actionTriggered=true;
-                if(target && target->kind==TargetKind::FruitTree) ++m_FruitHarvested;
-                if(target && target->kind==TargetKind::Object && !target->active) m_World.SetObjectActive(target->id,false);
-            }
+            const auto* clip=m_Visuals.Find(m_Character==0?"player_linh":"player_an",VisualState::Action,m_Facing);
+            if(m_Action.Pending()) m_LastAction=InteractionResult::Busy;
+            else if(!clip) m_LastAction=InteractionResult::NoAnimation;
+            else m_LastAction=InteractionSystem::Start(m_Actor,target,m_SelectedItem,m_Action);
+            if(m_LastAction==InteractionResult::Success){started=true;actionTriggered=true;}
             m_FeedbackTime=0.6f;
         }
-        m_Effects.Consume(m_Events.Take());m_Effects.Update(dt);
-        m_FeedbackTime=std::max(0.0f,m_FeedbackTime-dt);
-        const bool hurtTriggered=developer && input.hurt;
         m_PlayerState=ResolvePlayerState(m_Moving,input.running,actionTriggered,hurtTriggered,
                                          m_PlayerState,m_PlayerAnimation.Finished());
-        m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",m_PlayerState,m_Facing,
+        const bool selected=m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",m_PlayerState,m_Facing,
             (actionTriggered && m_PlayerState==VisualState::Action) || (hurtTriggered && m_PlayerState==VisualState::Hurt));
-        m_PlayerAnimation.Update(dt,false);
+        if(started && !selected){CancelInteraction(InteractionResult::NoAnimation);started=false;}
+        if(!started) InteractionSystem::Activate(m_Actor,m_Action);
+        // The press frame is Start only. Never mutate the model on the initiating input frame.
+        m_PlayerAnimation.Update(started?0.0f:dt,false);
+        for(const auto& hit:m_PlayerAnimation.MarkerHits())
+        {
+            if(!m_Action.Pending() || m_PlayerState!=VisualState::Action) continue;
+            if(hit.name=="IMPACT")
+            {
+                const auto target=TargetState(m_Action.targetId);
+                const bool visible=target && m_World.HasLineOfSight(m_Actor.position,target->position);
+                m_LastAction=InteractionSystem::Impact(m_Actor,m_Action,m_Targets,m_Events,visible);
+                m_FeedbackTime=0.6f;
+                if(m_LastAction==InteractionResult::Success)
+                {
+                    if(m_Action.kind==TargetKind::FruitTree) ++m_FruitHarvested;
+                    if(m_Action.kind==TargetKind::Object)
+                        if(const auto changed=TargetState(m_Action.targetId);changed && !changed->active)
+                            m_World.SetObjectActive(changed->id,false);
+                }
+            }
+            else if(hit.name=="COMPLETE") InteractionSystem::Complete(m_Actor,m_Action);
+        }
+        if(m_Action.Pending() && m_PlayerAnimation.Finished() && !m_Action.impactConsumed)
+            CancelInteraction(InteractionResult::NoAnimation);
+        m_Effects.Consume(m_Events.Take());m_Effects.Update(dt);
+        m_FeedbackTime=std::max(0.0f,m_FeedbackTime-dt);
 
         // The old walk/action-in-place timer is gone. Patrol is explicit, opt-in demo behavior.
         const auto npcBefore=m_Npc;
@@ -438,6 +487,7 @@ namespace MyGame
     }
     void DemoScene2D::Shutdown()
     {
+        CancelInteraction();
         m_Ready = false;
         m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;
         m_Assets=nullptr;

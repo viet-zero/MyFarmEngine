@@ -71,6 +71,15 @@ namespace MyGame
             }
         }
         if (m_Mode == 3) m_Demo.Update(deltaTime);
+        else
+        {
+            SceneInput paused;paused.paused=true;m_Demo.UpdateSimulation(0,paused);
+            // Preview UI owns these keys. Do not replay a tap after returning to gameplay.
+            for(const int key:{GLFW_KEY_F,GLFW_KEY_C,GLFW_KEY_SPACE,GLFW_KEY_H,GLFW_KEY_TAB,GLFW_KEY_R,
+                               GLFW_KEY_Q,GLFW_KEY_E,GLFW_KEY_F4,GLFW_KEY_F5,GLFW_KEY_F6,GLFW_KEY_F7,GLFW_KEY_F8,
+                               GLFW_KEY_1,GLFW_KEY_2,GLFW_KEY_3,GLFW_KEY_4})
+                MyEngine::Input::ConsumeKeyPress(key);
+        }
     }
 
     void GameplayState::Render()

@@ -6,6 +6,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 namespace
 {
@@ -67,6 +68,74 @@ int main()
     const auto beforeInvalid=scene.Snapshot();scene.UpdateSimulation(std::nanf(""),move);
     Check(Same(beforeInvalid.player,scene.Snapshot().player),"invalid dt moved player");
 
+    // Real F -> animation marker -> model/FX path, including pause, cancellation and spam.
+    scene.Reset();options.demoMode=true;options.npcAI=false;options.petFollow=false;scene.SetOptions(options);
+    SceneInput orchard;orchard.teleport=7;scene.UpdateSimulation(0,orchard);
+    SceneInput interact;interact.interact=true;
+    scene.UpdateSimulation(0,interact);const auto started=scene.Snapshot();
+    Check(started.actionPhase==ActionPhase::Start && started.inventoryCount==3 && started.effects==0 &&
+          scene.TargetState("tree.apple.01")->stock==3,"F press changed model before impact");
+    SceneInput pause;pause.paused=true;
+    scene.UpdateSimulation(10,pause);
+    Check(scene.Snapshot().actionPhase==ActionPhase::Start && scene.Snapshot().inventoryCount==3,"paused action progressed");
+    scene.UpdateSimulation(0.049f,{});
+    SceneInput spam;spam.interact=true;spam.movement={1,0};scene.UpdateSimulation(0.04f,spam);
+    Check(scene.Snapshot().actionId==started.actionId && Same(scene.Snapshot().player,started.player) &&
+          scene.Snapshot().inventoryCount==3,"spam/movement restarted pending action");
+    scene.UpdateSimulation(0.02f,{});const auto impacted=scene.Snapshot();
+    Check(impacted.inventoryCount==4 && impacted.fruitHarvested==1 && impacted.effects>0 &&
+          scene.TargetState("tree.apple.01")->stock==2,"marker did not apply fruit/model/FX together");
+    for(int i=0;i<10;++i)scene.UpdateSimulation(0.1f,{});
+    Check(scene.Snapshot().inventoryCount==4 && scene.TargetState("tree.apple.01")->stock==2 &&
+          scene.Snapshot().actionPhase==ActionPhase::Finished,"fruit impact repeated or recovery stuck");
+    scene.Reset();scene.UpdateSimulation(0,orchard);scene.UpdateSimulation(0,interact);
+    const auto cancelledId=scene.Snapshot().actionId;SceneInput cancel;cancel.cancel=true;
+    scene.UpdateSimulation(0.1f,cancel);
+    Check(scene.Snapshot().inventoryCount==3 && scene.TargetState("tree.apple.01")->stock==3 &&
+          scene.Snapshot().actionPhase==ActionPhase::Cancelled,"C did not cancel before impact");
+    scene.UpdateSimulation(0,interact);
+    Check(scene.Snapshot().actionId>cancelledId,"cancel/retrigger reused ID");
+    SceneInput hurt;hurt.hurt=true;scene.UpdateSimulation(0.1f,hurt);
+    Check(scene.Snapshot().inventoryCount==3 && scene.Snapshot().actionPhase==ActionPhase::Cancelled,"hurt failed to cancel transaction");
+    const auto preResetId=scene.Snapshot().actionId;scene.Reset();scene.UpdateSimulation(0,orchard);scene.UpdateSimulation(0,interact);
+    Check(scene.Snapshot().actionId>preResetId,"scene reset reused stale action ID");
+    SceneInput warp;warp.teleport=8;scene.UpdateSimulation(0.1f,warp);
+    Check(scene.Snapshot().inventoryCount==3 && scene.Snapshot().actionPhase==ActionPhase::Cancelled,"debug warp allowed ghost impact");
+
+    // Reach the real plot through the open south entrance; no test-only target setters.
+    scene.Reset();
+    const auto travel=[&](glm::vec2 destination)
+    {
+        for(int i=0;i<1500;++i)
+        {
+            const auto delta=destination-scene.Snapshot().player;
+            const float distance=glm::length(delta);if(distance<0.5f)return;
+            SceneInput walkingInput;walkingInput.movement=delta;
+            scene.UpdateSimulation(std::min(0.05f,distance/180.0f),walkingInput);
+        }
+        Check(false,"integration route blocked");
+    };
+    travel({2200,2020});travel({3000,2020});travel({3000,1780});
+    SceneInput facePlot;facePlot.movement={0,-1};facePlot.selectedItem=2;scene.UpdateSimulation(0,facePlot);
+    scene.UpdateSimulation(0,interact);
+    Check(scene.Snapshot().inventoryCount==3 && !scene.TargetState("crop.plot.01")->planted,"plant mutated at Start");
+    scene.UpdateSimulation(0.1f,{});
+    Check(scene.Snapshot().inventoryCount==2 && scene.TargetState("crop.plot.01")->planted,"plant impact missing");
+    for(int i=0;i<65;++i)scene.UpdateSimulation(0.1f,{});
+    Check(scene.TargetState("crop.plot.01")->ready,"crop did not grow during simulation");
+    scene.UpdateSimulation(0,interact);
+    Check(scene.Snapshot().inventoryCount==2 && scene.TargetState("crop.plot.01")->active,"harvest mutated at Start");
+    scene.UpdateSimulation(0.1f,{});
+    Check(scene.Snapshot().inventoryCount==3 && !scene.TargetState("crop.plot.01")->active,"harvest impact not applied once");
+    for(int i=0;i<6;++i)scene.UpdateSimulation(0.1f,{});
+    travel({3000,2020});travel({2990,2020});
+    SceneInput facePickup;facePickup.movement={1,0};scene.UpdateSimulation(0,facePickup);
+    scene.UpdateSimulation(0,interact);Check(scene.Snapshot().inventoryCount==3,"pickup mutated at Start");
+    scene.UpdateSimulation(0.1f,{});
+    Check(scene.Snapshot().inventoryCount==4 && !scene.TargetState("item.demo.01")->active,"pickup impact not applied");
+    for(int i=0;i<10;++i)scene.UpdateSimulation(0.1f,{});
+    Check(scene.Snapshot().inventoryCount==4,"pickup replayed after completion");
+
     // Validate the real scene draw path, including the opt-in corner portraits.
     MyEngine::Canvas2D canvas;Check(canvas.Initialize(),"canvas failed");glViewport(0,0,640,360);
     options.debugOverlay=false;scene.SetOptions(options);scene.Render(canvas,640,360);
@@ -89,7 +158,20 @@ int main()
     {
         tap(GLFW_KEY_F1);Check(state.Mode()==3,"gallery accessible in default gameplay");
         tap(GLFW_KEY_F9);Check(state.Options().debugOverlay,"F9 did not enable overlay");
+        tap(GLFW_KEY_F7);tap(GLFW_KEY_F);
+        const auto previewAction=state.Snapshot();
+        Check(previewAction.actionPhase==ActionPhase::Start,"keyboard F did not begin transaction");
         tap(GLFW_KEY_F1);Check(state.Mode()==1,"debug gallery no longer available");
+        state.Update(10);
+        Check(state.Snapshot().inventoryCount==3 && state.Snapshot().actionId==previewAction.actionId &&
+              state.Snapshot().actionPhase==ActionPhase::Start,"preview advanced pending action");
+        tap(GLFW_KEY_F3);tap(GLFW_KEY_C);
+        const auto cancelledPreview=state.Snapshot();
+        Check(cancelledPreview.actionPhase==ActionPhase::Cancelled,"keyboard C failed to cancel resumed action");
+        tap(GLFW_KEY_F1);tap(GLFW_KEY_F);tap(GLFW_KEY_F3);
+        Check(state.Snapshot().actionId==cancelledPreview.actionId && state.Snapshot().inventoryCount==3,
+              "preview key tap replayed into a new interaction");
+        tap(GLFW_KEY_F1);
         tap(GLFW_KEY_F9);Check(state.Mode()==3 && !state.Options().debugOverlay,"overlay off did not dismiss gallery");
         tap(GLFW_KEY_F10);tap(GLFW_KEY_F11);tap(GLFW_KEY_F12);
         Check(state.Options().demoMode && state.Options().npcAI && state.Options().petFollow,"independent runtime toggles failed");

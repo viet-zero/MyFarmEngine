@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace MyGame
         std::string targetId;
         glm::vec2 position{0,0};
         int amount=1;
+        std::uint64_t actionId=0;
     };
     class EventBus
     {
