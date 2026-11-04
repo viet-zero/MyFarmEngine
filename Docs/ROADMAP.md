@@ -1,5 +1,9 @@
 # MyFarmEngine — Roadmap sau audit
 
+## Gate artwork P0-001 — 2026-11-05
+
+Audit xong, P0-001 PARTIAL vì art/root/masks chưa có. [Evidence và handoff](P0-001_ARTWORK_PIVOT_AUDIT.md). P2-001 BLOCKED artwork acceptance: chưa bộ tám hướng/outfit nào đủ; Linh là mẫu pilot đề xuất. Trước tiên [P0-002](TASKS/P0-002.md) sửa 11 rows direction/flip, rồi chốt authored roots và tạo/duyệt layers + diagonals, sau đó implementation P2-001. P1-001/002/003 DONE kỹ thuật; không mở rộng world khi chưa đạt MVP. Các gate dưới là lịch sử.
+
 ## Gate P1-003 — 2026-11-05
 
 [P1-003](TASKS/P1-003.md) DONE kỹ thuật: fixed simulation 60 Hz, bounded catch-up, buffered input và actor/camera interpolation; Debug/Release 24/24. [Giới hạn và verification](FIXED_TIMESTEP.md). Tiếp theo P0-001 art review và P2-001 tám hướng/outfit (cần authored art), rồi P2-002 farm/typed inventory. Không mở rộng world trong lượt này. Các gate bên dưới là lịch sử.

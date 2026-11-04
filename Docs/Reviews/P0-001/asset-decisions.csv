@@ -1,0 +1,33 @@
+asset_id,current_use,p2_eight_direction_ready,p2_outfit_ready,art_review,reason
+library_snhr_v11_characters_character_0001_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0002_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0003_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0004_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0005_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0006_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0007_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0008_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0009_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0010_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0011_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0012_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"pixel art, baked outfit; not cozy painted style"
+library_snhr_v11_characters_character_0055_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"opaque checkerboard, multiple cut poses in one declared frame; baked outfit"
+library_snhr_v11_characters_character_0056_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"opaque checkerboard, multiple cut poses in one declared frame; baked outfit"
+library_snhr_v11_characters_character_0057_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"opaque checkerboard, multiple cut poses in one declared frame; baked outfit"
+library_snhr_v11_characters_character_0058_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"opaque checkerboard, multiple cut poses in one declared frame; baked outfit"
+library_snhr_v11_characters_character_0059_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"opaque checkerboard, multiple cut poses in one declared frame; baked outfit"
+library_snhr_v11_characters_character_0060_sprite,EXCLUDE_GAMEPLAY,NO,NO,NEEDS_ART_REVIEW,"opaque checkerboard, multiple cut poses in one declared frame; baked outfit"
+player_an,STYLE_REFERENCE_ONLY,NO,NO,NEEDS_ART_REVIEW,single composite pose
+player_linh,STYLE_REFERENCE_ONLY,NO,NO,NEEDS_ART_REVIEW,single composite pose; Linh portrait touches top edge
+player_linh_walk,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_an_walk,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+dog_walk,PET_REFERENCE_ONLY,NO,NO,NEEDS_ART_REVIEW,four frames any direction; not human or outfit art
+player_linh_walk_up,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_linh_walk_left,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_linh_walk_right,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_an_walk_up,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_an_walk_side,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_linh_action_dirs,PROTOTYPE_POSE_REFERENCE,NO,NO,NEEDS_ART_REVIEW,"one pose per cardinal direction, composite clothes; authored pivot needed"
+player_an_action_dirs,PROTOTYPE_POSE_REFERENCE,NO,NO,NEEDS_ART_REVIEW,"one pose per cardinal direction, composite clothes; authored pivot needed"
+player_linh_idle_dirs,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required
+player_an_idle_dirs,FOUR_DIRECTION_PROTOTYPE,NO,NO,NEEDS_ART_REVIEW,composite sprite; diagonals/layers/authored pivots missing; direction metadata review required

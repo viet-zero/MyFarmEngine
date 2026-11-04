@@ -1,0 +1,12 @@
+profile,state,direction,asset_id,current_flip_x,proposed_flip_x,status
+player_linh,idle,left,player_linh_idle_dirs,1,0,CONFIRMED_PENDING_FIX
+npc_linh,idle,left,player_linh_idle_dirs,1,0,CONFIRMED_PENDING_FIX
+player_an,idle,left,player_an_idle_dirs,1,0,CONFIRMED_PENDING_FIX
+player_an,walk,left,player_an_walk_side,1,0,CONFIRMED_PENDING_FIX
+player_an,walk,right,player_an_walk_side,0,1,CONFIRMED_PENDING_FIX
+player_an,run,left,player_an_walk_side,1,0,CONFIRMED_PENDING_FIX
+player_an,run,right,player_an_walk_side,0,1,CONFIRMED_PENDING_FIX
+player_an,action,left,player_an_action_dirs,1,0,CONFIRMED_PENDING_FIX
+npc_an,idle,left,player_an_idle_dirs,1,0,CONFIRMED_PENDING_FIX
+npc_an,walk,left,player_an_walk_side,1,0,CONFIRMED_PENDING_FIX
+npc_an,walk,right,player_an_walk_side,0,1,CONFIRMED_PENDING_FIX

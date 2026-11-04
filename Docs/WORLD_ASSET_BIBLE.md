@@ -1,5 +1,9 @@
 # MyFarmEngine — World asset bible
 
+## Audit P0-001 — 2026-11-05
+
+[Artwork/pivot audit](P0-001_ARTWORK_PIVOT_AUDIT.md) ghi quyết định từng character và evidence 68 frames. Không có bộ tám hướng/outfit ready; Linh/An chỉ prototype composite và style reference. 11 direction rows cần sửa metadata; Library0055–0060 opaque checkerboard, giữ needs_review. Ground pivot hiện là bbox bottom-center, chưa authored. Canopy proxy chưa alpha mask. Original/Export/runtime CSV giữ nguyên. Ghi chú kỹ thuật cũ bên dưới chỉ là lịch sử; filtering hiện có mipmaps từ Gameplay11.
+
 ## Cập nhật Gameplay11
 
 Original/Export/CSV không thay đổi. [Character Standard](CHARACTER_SCALE_STYLE_STANDARD.md) định nghĩa scale/pivot, ghi NEEDS_ART_REVIEW cho artwork chưa đồng nhất. AssetTextures cache bounds từng frame; human/pet/icon dùng uniform aspect placement. Texture MIN hiện GL_LINEAR_MIPMAP_LINEAR, MAG GL_LINEAR; không biến pixel art thành painted art hoặc bổ sung chi tiết nền. Các chẩn đoán Phase F bên dưới giữ làm lịch sử trước Gameplay11.

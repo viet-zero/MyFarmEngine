@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cập nhật P0-001 artwork/pivots — 2026-11-05
+
+**Audit DONE; P0-001 tổng thể PARTIAL.** Đã xem/đo 31 character records + dog: 32 inputs, 68 declared frames; có bảng từng asset và ảnh sáng/tối. Linh là mẫu painted chính đề xuất, An mẫu phụ; chưa asset nào đạt tám hướng/outfit. Runtime vẫn composite bốn hướng, không có authored pivots hoặc layers. Library 0001–0012 sai style; 0055–0060 alpha 255 toàn ảnh, caro baked và nhiều pose cắt dính. Giữ needs_review.
+
+Phát hiện 11 rows direction/flip sai (idle-left Linh/An, action-left An, walk/run side An); chưa sửa CSV trong audit, chuyển [P0-002](TASKS/P0-002.md). Auto pivot action đổi X khoảng 16 world units giữa hướng; không gọi đây là đo jitter động. Canopy vẫn ellipse sample nền, cần RGBA masks.
+
+**Debug 24/24 PASS (21.30s)**; đã chạy graphics/smoke, chưa có manual animation soak hoặc Release mới trong lượt này. 204 Original và hash imported/art khớp, không sửa ảnh/asset CSV/runtime. [Báo cáo + evidence](P0-001_ARTWORK_PIVOT_AUDIT.md).
+
+**P2-001 BLOCKED về artwork acceptance**, code vẫn TODO; Gameplay11/P1-001/002/003 đã xong kỹ thuật. Ba việc tiếp: sửa metadata P0-002 → chốt Linh model/root và bàn giao art tám hướng/layers → triển khai loader/controller outfit khi đủ art. MVP/farm/SQLite/lighting vẫn chưa hoàn tất. Các mốc bên dưới là lịch sử.
+
 ## Cập nhật P1-003 — 2026-11-05
 
 **DONE kỹ thuật:** simulation 60 Hz tách khỏi render; input được lấy một lần/frame, giữ tap qua frame chưa có tick và chỉ consume một lần qua catch-up. Nội suy chân player/NPC/pet và camera dùng cùng vị trí cho draw/culling/Y-sort. Animation/impact chỉ tiến trong fixed update.
