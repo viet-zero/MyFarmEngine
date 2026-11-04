@@ -56,6 +56,8 @@ Thoát bằng ESC hoặc nút đóng cửa sổ. Đổi kích thước cửa s�
 
 Nếu PowerShell chặn script, có thể mở Developer PowerShell của Visual Studio với CMake/Ninja trên PATH và dùng các lệnh preset trong tài liệu. Nếu Windows Application Control chặn EXE, việc build thành công không có nghĩa ứng dụng đã chạy được; không tự tắt chính sách bảo mật.
 
+**Audit hiện hành 04/11/2026:** [trạng thái kiểm chứng](Docs/PROGRESS.md), [kiến trúc](Docs/ARCHITECTURE.md), [roadmap và task](Docs/ROADMAP.md). Báo cáo giai đoạn cũ bên dưới giữ làm lịch sử.
+
 ## Tài liệu
 
 - [Phase A: kiểm kê, schema asset, pipeline, kiểm thử và giới hạn](Docs/PhaseA/README.md)
