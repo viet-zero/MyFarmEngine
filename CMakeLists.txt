@@ -43,7 +43,7 @@ add_library(MyFarmWorld STATIC Gameplay/World/WorldMap.cpp Gameplay/World/Foregr
 target_link_libraries(MyFarmWorld PUBLIC MyFarmEngineCore)
 add_library(MyFarmGameplayLogic STATIC Engine/Event/EventBus.cpp Gameplay/Effects/EffectPool.cpp Gameplay/Systems/InteractionSystem.cpp)
 target_link_libraries(MyFarmGameplayLogic PUBLIC MyFarmEngineCore)
-add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/AssetTextures.cpp)
+add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/AssetTextures.cpp Gameplay/Graphics/SpriteGeometry.cpp)
 target_link_libraries(MyFarmVisualAssets PUBLIC MyFarmGameplayAnimation)
 
 add_executable(AssetAudit Gameplay/Assets/AssetAudit.cpp)
@@ -60,10 +60,17 @@ target_link_libraries(MyFarmEngineCore PUBLIC glfw glad)
 
 add_executable(MyFarmEngine
     Game/main.cpp
+    Game/RuntimeLog.cpp
     Game/GameApp/Game.cpp
     Gameplay/States/GameplayState.cpp
     Gameplay/World/DemoScene2D.cpp
 )
+# Only Release is a GUI application. Debug keeps its normal developer console.
+if(WIN32)
+    set_property(TARGET MyFarmEngine PROPERTY WIN32_EXECUTABLE "$<CONFIG:Release>")
+    target_compile_definitions(MyFarmEngine PRIVATE $<$<CONFIG:Release>:MYFARM_WINDOWED_APP>)
+endif()
+
 target_include_directories(MyFarmEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     ThirdParty/glm ThirdParty/stb)
 target_link_libraries(MyFarmEngine PRIVATE MyFarmVisualAssets MyFarmWorld MyFarmGameplayLogic MyFarmRenderOrder)
@@ -161,6 +168,25 @@ if(BUILD_TESTING)
     enable_project_warnings(GameplayInteractionTests)
     add_test(NAME gameplay.interaction COMMAND GameplayInteractionTests)
 
+    add_executable(SpriteGeometryTests Tests/SpriteGeometryTests.cpp)
+    target_link_libraries(SpriteGeometryTests PRIVATE MyFarmVisualAssets)
+    enable_project_warnings(SpriteGeometryTests)
+    add_test(NAME gameplay.sprite_geometry COMMAND SpriteGeometryTests)
+    add_executable(GameplayRuntimeTests Tests/GameplayRuntimeTests.cpp
+        Gameplay/World/DemoScene2D.cpp Gameplay/States/GameplayState.cpp)
+    target_link_libraries(GameplayRuntimeTests PRIVATE MyFarmVisualAssets MyFarmWorld MyFarmGameplayLogic MyFarmRenderOrder)
+    enable_project_warnings(GameplayRuntimeTests)
+    add_dependencies(GameplayRuntimeTests MyFarmRuntimeAssets)
+    add_test(NAME gameplay.runtime COMMAND GameplayRuntimeTests)
+    set_tests_properties(gameplay.runtime PROPERTIES TIMEOUT 60 LABELS "graphics" RUN_SERIAL TRUE)
+
+    if(WIN32)
+        find_program(MYFARM_POWERSHELL NAMES pwsh powershell REQUIRED)
+        add_test(NAME game.windows_launch COMMAND ${MYFARM_POWERSHELL} -NoProfile
+            -File ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WindowsLaunchTests.ps1
+            -Game $<TARGET_FILE:MyFarmEngine> -ExpectedSubsystem $<IF:$<CONFIG:Release>,2,3>)
+        set_tests_properties(game.windows_launch PROPERTIES TIMEOUT 75 LABELS "graphics" RUN_SERIAL TRUE)
+    endif()
     add_executable(EngineLifecycleTests Tests/LifecycleTests.cpp)
     target_link_libraries(EngineLifecycleTests PRIVATE MyFarmEngineCore)
     enable_project_warnings(EngineLifecycleTests)

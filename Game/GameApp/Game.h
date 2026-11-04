@@ -8,6 +8,7 @@ namespace MyGame
     class Game : public MyEngine::IGame
     {
     public:
+        explicit Game(SceneOptions options={}) : m_gameplayState(options) {}
         bool Initialize() override;
         void Update(float deltaTime) override;
         void Render() override;

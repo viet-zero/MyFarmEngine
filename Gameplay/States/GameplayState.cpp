@@ -33,16 +33,30 @@ namespace MyGame
         m_Background=m_Assets.Load("background_morning");
         const auto root=MyEngine::AssetRoot();
         m_Ready = m_Canvas.Initialize() && m_Demo.Initialize(m_Assets,root/"Data");
+        m_Demo.SetOptions(m_Demo.Options());
         UpdateTitle();
     }
 
     void GameplayState::Update(float deltaTime)
     {
+        auto options=m_Demo.Options();
+        bool changed=false;
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F9)){options.debugOverlay=!options.debugOverlay;changed=true;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F10)){options.demoMode=!options.demoMode;changed=true;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F11)){options.npcAI=!options.npcAI;changed=true;}
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F12)){options.petFollow=!options.petFollow;changed=true;}
+        if(changed)
+        {
+            m_Demo.SetOptions(options);
+            if(!options.demoMode && !options.debugOverlay) SetMode(3);
+            UpdateTitle();
+        }
         constexpr std::array keys = {GLFW_KEY_F1, GLFW_KEY_F2, GLFW_KEY_HOME,
                                      GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_F3};
         for (std::size_t i = 0; i < keys.size(); ++i)
         {
-            if (MyEngine::Input::ConsumeKeyPress(keys[i]))
+            if (MyEngine::Input::ConsumeKeyPress(keys[i]) &&
+                (i==5 || options.demoMode || options.debugOverlay))
             {
                 if (i == 0) SetMode(m_Mode == 1 ? 0 : 1);
                 else if (i == 1) SetMode(m_Mode == 2 ? 0 : 2);
@@ -126,7 +140,12 @@ namespace MyGame
     {
         std::string title = "My Farm | Phase E | F1: Artwork | F2: History | F3: World | Esc: Exit";
         if (m_Mode == 3)
-            title = "My Farm - Phase F | F: Interact | F7: Harvest | F8: Depth | R: Reset";
+        {
+            const auto& options=m_Demo.Options();
+            title="My Farm - Gameplay11 | F9: Overlay | F10: Demo | F11: NPC | F12: Follow";
+            title+=" | Demo:"+std::to_string(options.demoMode)+" NPC:"+std::to_string(options.npcAI)+
+                   " Pet:"+std::to_string(options.petFollow)+" Debug:"+std::to_string(options.debugOverlay);
+        }
         if (m_Mode == 1 || m_Mode == 2)
         {
             const auto* path = m_Mode == 1 ? Library[m_Selected] : History[m_Selected];

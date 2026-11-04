@@ -1,5 +1,9 @@
 # MyFarmEngine — Animation specification
 
+## Cập nhật Gameplay11
+
+NPC không còn fmod timer showcase; patrol chỉ khi demoMode+npcAI, walk khi thực sự đổi vị trí. Pet follow opt-in, bỏ sleep bằng đổi tỷ lệ. Player/NPC/pet controller độc lập; input mất focus bị clear, facing khóa trong one-shot. [Ground placement](CHARACTER_SCALE_STYLE_STANDARD.md) dùng alpha bounds/cache, không đổi model position theo frame. Bốn hướng/FPS/CSV giữ tương thích, chưa frame events. Phần hiện trạng Phase F dưới đây là lịch sử trước thay đổi này.
+
 Audit 2026-11-04 dựa trên Animator.*, VisualCatalog.*, VisualClips.csv và DemoScene2D.cpp.
 
 ## Hiện trạng

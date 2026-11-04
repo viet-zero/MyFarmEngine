@@ -1,5 +1,9 @@
 # MyFarmEngine — Roadmap sau audit
 
+## Gate Gameplay11
+
+Sửa runtime/console, opt-in behavior, placement/UI: DONE theo [task Gameplay11](TASKS/GAMEPLAY11.md), Debug/Release 19/19. P0-001 còn PARTIAL do artwork/canopy mask/pivots chưa duyệt đầy đủ. Giữ thứ tự tiếp P0 art review → P1 cross-validator → impact events, chưa mở rộng tám hướng hoặc world.
+
 2026-11-04. Baseline Phase F compile sạch và 16/16 tests pass; chưa đạt vertical slice. Giữ cấu trúc Engine/Game/Gameplay, không dựng dự án mới. Nội dung lịch sử trong tài liệu cũ không thay baseline PROGRESS.md.
 
 | Priority | Task | Dependencies | Acceptance gate |

@@ -1,4 +1,5 @@
 #pragma once
+#include "Gameplay/World/SceneOptions.h"
 
 namespace MyGame
 {
@@ -8,5 +9,6 @@ namespace MyGame
         unsigned int windowHeight = 720;
         const char* title = "My Farm - Cozy Morning";
         bool vsync = true;
+        SceneOptions scene;
     };
 }

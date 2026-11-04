@@ -24,6 +24,7 @@ namespace MyGame
         if(!record) return warn("unknown_or_invalid_id");
         auto validation=m_Manifest.Validate(*record);
         if(!validation.valid) return warn(validation.reason);
+        m_Bounds[name]=MeasureSpriteFrames(validation.image,*record);
         const auto normalized=validation.path.generic_u8string();
         std::string key(normalized.begin(),normalized.end());
         key+='|'+std::to_string(record->columns)+'x'+std::to_string(record->rows);
@@ -41,7 +42,7 @@ namespace MyGame
     }
     void AssetTextures::Shutdown()
     {
-        m_ById.clear();m_Textures.clear();m_Warned.clear();
+        m_ById.clear();m_Textures.clear();m_Warned.clear();m_Bounds.clear();
         m_Manifest={};
     }
 }

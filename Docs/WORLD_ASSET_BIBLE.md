@@ -1,5 +1,9 @@
 # MyFarmEngine — World asset bible
 
+## Cập nhật Gameplay11
+
+Original/Export/CSV không thay đổi. [Character Standard](CHARACTER_SCALE_STYLE_STANDARD.md) định nghĩa scale/pivot, ghi NEEDS_ART_REVIEW cho artwork chưa đồng nhất. AssetTextures cache bounds từng frame; human/pet/icon dùng uniform aspect placement. Texture MIN hiện GL_LINEAR_MIPMAP_LINEAR, MAG GL_LINEAR; không biến pixel art thành painted art hoặc bổ sung chi tiết nền. Các chẩn đoán Phase F bên dưới giữ làm lịch sử trước Gameplay11.
+
 Baseline 2026-11-04. Technical ready không đồng nghĩa art/animation đã hoàn chỉnh. History/concept/placeholder không tính là gameplay assets.
 
 ## Nguồn và pipeline thực tế

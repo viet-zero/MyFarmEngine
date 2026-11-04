@@ -11,11 +11,14 @@ namespace MyGame
     class GameplayState : public GameState
     {
     public:
+        explicit GameplayState(SceneOptions options={}) : m_Demo(options) {}
         void Enter() override;
         void Update(float deltaTime) override;
         void Render() override;
         void Exit() override;
         bool IsReady() const { return m_Ready; }
+        int Mode() const { return m_Mode; }
+        const SceneOptions& Options() const { return m_Demo.Options(); }
 
     private:
         void SetMode(int mode);

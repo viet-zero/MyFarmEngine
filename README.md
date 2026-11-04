@@ -8,6 +8,14 @@ Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
 ![Giai đoạn 2 đang chạy](Docs/Screenshots/phase2_world.png)
 
+## Gameplay11 — runtime và demo controls
+
+Release đã dùng Windows GUI subsystem: mở trực tiếp `out/build/phase-f-release/MyFarmEngine.exe` để không có console phụ. Debug giữ console. Log nằm ở `%LOCALAPPDATA%/MyFarmEngine/Logs/`, có thể đổi bằng `MYFARM_LOG_DIR`.
+
+Mặc định không có NPC demo/corner portraits, pet follow tắt. F9 bật overlay, F10 hiện demo actor, F11 bật patrol NPC (cần F10), F12 bật pet follow. CLI: `--demo --npc-ai --pet-follow --debug-overlay`. Tab/Space/H/F4–F8 và F1/F2/Home chỉ dùng khi F9 hoặc F10 bật. F3 trở về gameplay.
+
+[Nguyên nhân, thay đổi và kiểm thử Gameplay11](Docs/GAMEPLAY11.md) · [Character Scale & Style Standard](Docs/CHARACTER_SCALE_STYLE_STANDARD.md). Bảng điều khiển Phase F bên dưới vẫn áp dụng với debug gate nói trên.
+
 ## Build và chạy trên Windows
 
 Cài Visual Studio có **Desktop development with C++** và **C++ CMake tools for Windows**.

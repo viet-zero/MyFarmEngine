@@ -11,8 +11,8 @@
 namespace
 {
     const glm::vec2 WorldSize=MyGame::WorldMap::Size();
-    constexpr std::array<const char*,4> ItemNames = {"Watering can", "Garden hoe", "Seeds", "Strawberry cake"};
-    constexpr glm::vec2 NpcPosition{3190,2020};
+
+    constexpr glm::vec2 NpcPosition{2360,1950};
     constexpr MyGame::ColliderComponent PlayerCollider{{18,12}};
     constexpr MyGame::ColliderComponent DogCollider{{22,13}};
     constexpr MyGame::ColliderComponent NpcCollider{{18,12}};
@@ -45,9 +45,6 @@ namespace MyGame
                 if(uv) m_ItemRegions[static_cast<std::size_t>(i)]=*uv;
                 else {m_Items=nullptr;std::cerr<<"Asset fallback [items_farm]: four_item_regions_required\n";}
             }
-        for(int i=0;i<2;++i)
-            if(const auto* character=assets.Record(i==0?"player_linh":"player_an"))
-                m_Anchors[static_cast<std::size_t>(i)]={character->anchorX,character->anchorY};
         m_Ready=true; // Missing artwork uses geometric placeholders, not a fatal game error.
         Reset();
         return m_Ready;
@@ -75,10 +72,11 @@ namespace MyGame
         m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{3000,1700}});
         m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
         m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;
-        m_WalkTime = 0;
-        m_NpcTime=m_DogTime=0;m_GameAge=0;
+        m_Npc=NpcPosition;m_NpcFacing=Facing::Down;m_NpcPatrolRight=true;
+        m_GameAge=0;
         m_Moving = false;
         m_Facing=Facing::Down;m_PlayerState=VisualState::Idle;
+        m_PlayerAnimation={};m_NpcAnimation={};m_DogAnimation={};m_CropAnimation={};
         m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",m_PlayerState,m_Facing);
         m_NpcAnimation.Select(m_Visuals,"npc_an",VisualState::Idle,Facing::Down);
         m_DogAnimation.Select(m_Visuals,"dog",VisualState::Idle,Facing::Down);
@@ -87,45 +85,61 @@ namespace MyGame
         m_Camera.SetZoom(0.85f);
         m_Camera.SetPosition(m_Player);
     }
+    void DemoScene2D::SetOptions(SceneOptions options)
+    {
+        m_Options=options;
+        std::cout<<"Scene options: demo="<<options.demoMode<<" npcAI="<<options.npcAI
+                 <<" petFollow="<<options.petFollow<<" overlay="<<options.debugOverlay<<'\n';
+    }
+    SceneSnapshot DemoScene2D::Snapshot() const
+    {
+        return {m_Player,m_Npc,m_Dog,m_PlayerState,m_NpcAnimation.State(),m_DogAnimation.State(),
+                m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame()};
+    }
     void DemoScene2D::Update(float deltaTime)
     {
-        if(!std::isfinite(deltaTime) || deltaTime<0.0f) deltaTime=0.0f;
-        glm::vec2 direction{
-            (MyEngine::Input::IsKeyPressed(GLFW_KEY_D) ? 1.0f : 0.0f) -
-            (MyEngine::Input::IsKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f),
-            (MyEngine::Input::IsKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f) -
-            (MyEngine::Input::IsKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f)};
-        m_Facing=FacingFromVelocity(direction.x,direction.y,m_Facing);
-        const bool running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
-        const float speed = running ? 300.0f : 180.0f;
-        const std::array<DynamicCollider,2> playerObstacles={{{NpcPosition,NpcCollider},{m_Dog,DogCollider}}};
+        SceneInput input;
+        input.movement={
+            (MyEngine::Input::IsKeyPressed(GLFW_KEY_D)?1.0f:0.0f)-(MyEngine::Input::IsKeyPressed(GLFW_KEY_A)?1.0f:0.0f),
+            (MyEngine::Input::IsKeyPressed(GLFW_KEY_S)?1.0f:0.0f)-(MyEngine::Input::IsKeyPressed(GLFW_KEY_W)?1.0f:0.0f)};
+        input.running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
+        input.interact=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F);
+        input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
+        input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
+        input.hurt=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_H);
+        input.switchCharacter=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_TAB);
+        for(int key=GLFW_KEY_F4;key<=GLFW_KEY_F8;++key)
+            if(MyEngine::Input::ConsumeKeyPress(key)) input.teleport=key-GLFW_KEY_F4+4;
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) input.zoom=-1;
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) input.zoom=1;
+        for(int i=0;i<4;++i) if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i)) input.selectedItem=i;
+        UpdateSimulation(deltaTime,input);
+    }
+    void DemoScene2D::UpdateSimulation(float deltaTime,const SceneInput& input)
+    {
+        if(!m_Ready) return;
+        const float dt=std::isfinite(deltaTime)?std::clamp(deltaTime,0.0f,0.1f):0.0f;
+        if(input.reset){Reset();return;}
+        const bool developer=m_Options.demoMode || m_Options.debugOverlay;
+        if(input.zoom) m_Camera.SetZoom(m_Camera.Zoom()*(input.zoom>0?1.15f:1.0f/1.15f));
+        if(developer && input.switchCharacter) m_Character=1-m_Character;
+        if(input.selectedItem>=0 && input.selectedItem<4) m_SelectedItem=input.selectedItem;
+        const bool locked=(m_PlayerState==VisualState::Action || m_PlayerState==VisualState::Hurt) &&
+                          !m_PlayerAnimation.Finished();
+        if(!locked) m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
+        std::array<DynamicCollider,2> obstacles={{{m_Dog,DogCollider},{m_Npc,NpcCollider}}};
+        const std::span<const DynamicCollider> playerObstacles(obstacles.data(),m_Options.demoMode?2u:1u);
         const auto previous=m_Player;
-        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,direction,speed,deltaTime,
-                                               PlayerCollider,playerObstacles);
+        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,input.movement,input.running?300.0f:180.0f,
+                                               dt,PlayerCollider,playerObstacles);
         m_Moving=glm::length(m_Player-previous)>0.001f;
-        if (m_Moving) m_WalkTime += deltaTime;
-        else m_WalkTime = 0;
-        if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) m_Camera.SetZoom(m_Camera.Zoom()/1.15f);
-        if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) m_Camera.SetZoom(m_Camera.Zoom()*1.15f);
-        if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R)) {Reset();return;}
-        bool teleported=false;
-        glm::vec2 teleportDogOffset{-70,30};
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F4)){m_Player=m_World.Spawn(Zone::Town);teleported=true;}
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F5)){m_Player=m_World.Spawn(Zone::Farm);teleported=true;}
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F6)){m_Player=m_World.Spawn(Zone::LakeForest);teleported=true;}
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F7))
+        if(developer && input.teleport>=4 && input.teleport<=8)
         {
-            m_Player={1990,1740};m_Facing=Facing::Up;teleported=true;
-        }
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F8))
-        {
-            m_Player={2140,1450};m_Facing=Facing::Left;
-            teleportDogOffset={100,30};teleported=true;
-        }
-        if(teleported)
-        {
-            m_Dog=m_Player+teleportDogOffset;
-            m_Camera.SetPosition(m_Player);
+            glm::vec2 offset{-70,30};
+            if(input.teleport<=6) m_Player=m_World.Spawn(static_cast<Zone>(input.teleport-4));
+            else if(input.teleport==7){m_Player={1990,1740};m_Facing=Facing::Up;}
+            else {m_Player={2140,1450};m_Facing=Facing::Left;offset={100,30};}
+            m_Dog=m_Player+offset;m_Camera.SetPosition(m_Player);m_Moving=false;
         }
         m_Actor.position=m_Player;
         switch(m_Facing)
@@ -135,113 +149,104 @@ namespace MyGame
         case Facing::Up:m_Actor.facing={0,-1};break;
         default:m_Actor.facing={0,1};break;
         }
-        InteractionSystem::Tick(m_Actor,m_Targets,deltaTime);
-        bool actionTriggered=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
-        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F))
+        InteractionSystem::Tick(m_Actor,m_Targets,dt);
+        bool actionTriggered=developer && input.action;
+        if(input.interact)
         {
             auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
             if(target && !m_World.HasLineOfSight(m_Actor.position,target->position)) target=nullptr;
             m_LastAction=InteractionSystem::Use(m_Actor,target,m_SelectedItem,m_Events);
-            if(m_LastAction==InteractionResult::Success) actionTriggered=true;
-            m_FeedbackTime=0.6f;
-            if(m_LastAction==InteractionResult::Success && target && target->kind==TargetKind::FruitTree)
+            if(m_LastAction==InteractionResult::Success)
             {
-                ++m_FruitHarvested;
-                if(auto* window=glfwGetCurrentContext())
-                {
-                    const std::string title="My Farm - Phase F | Apples: "+std::to_string(m_FruitHarvested)+
-                        " | F: Harvest | F7: Orchard | F8: Depth";
-                    glfwSetWindowTitle(window,title.c_str());
-                }
+                actionTriggered=true;
+                if(target && target->kind==TargetKind::FruitTree) ++m_FruitHarvested;
+                if(target && target->kind==TargetKind::Object && !target->active) m_World.SetObjectActive(target->id,false);
             }
-            if(m_LastAction==InteractionResult::Success && target &&
-               target->kind==TargetKind::Object && !target->active)
-                m_World.SetObjectActive(target->id,false);
+            m_FeedbackTime=0.6f;
         }
-        m_Effects.Consume(m_Events.Take());m_Effects.Update(deltaTime);
-        m_FeedbackTime=std::max(0.0f,m_FeedbackTime-deltaTime);
-        if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_TAB)) m_Character = 1-m_Character;
-        const bool hurtTriggered=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_H);
-        m_PlayerState=ResolvePlayerState(m_Moving,running,actionTriggered,hurtTriggered,
+        m_Effects.Consume(m_Events.Take());m_Effects.Update(dt);
+        m_FeedbackTime=std::max(0.0f,m_FeedbackTime-dt);
+        const bool hurtTriggered=developer && input.hurt;
+        m_PlayerState=ResolvePlayerState(m_Moving,input.running,actionTriggered,hurtTriggered,
                                          m_PlayerState,m_PlayerAnimation.Finished());
         m_PlayerAnimation.Select(m_Visuals,m_Character==0?"player_linh":"player_an",m_PlayerState,m_Facing,
-                                 actionTriggered && m_PlayerState==VisualState::Action);
-        m_PlayerAnimation.Update(deltaTime,false);
+            (actionTriggered && m_PlayerState==VisualState::Action) || (hurtTriggered && m_PlayerState==VisualState::Hurt));
+        m_PlayerAnimation.Update(dt,false);
 
-        m_NpcTime+=deltaTime;
-        const auto npcState=std::fmod(m_NpcTime,8.0f)>5.5f?VisualState::Action:
-                            (std::fmod(m_NpcTime,8.0f)>2.5f?VisualState::Walk:VisualState::Idle);
-        const auto npcFacing=std::fmod(m_NpcTime,8.0f)>4.0f?Facing::Left:Facing::Right;
-        const char* npcProfile=m_Character==0?"npc_an":"npc_linh";
-        if(!m_NpcAnimation.Select(m_Visuals,npcProfile,npcState,npcState==VisualState::Walk?npcFacing:Facing::Down))
-            m_NpcAnimation.Select(m_Visuals,npcProfile,VisualState::Idle,Facing::Down);
-        m_NpcAnimation.Update(deltaTime,false);
-
-        m_DogTime+=deltaTime;
-        const float dogDistance=glm::length(m_Player-m_Dog);
-        const auto dogState=dogDistance>180?VisualState::Run:(dogDistance>80?VisualState::Walk:
-                            (std::fmod(m_DogTime,12.0f)>8?VisualState::Sleep:VisualState::Idle));
-        m_DogAnimation.Select(m_Visuals,"dog",dogState,FacingFromVelocity(m_Player.x-m_Dog.x,m_Player.y-m_Dog.y,Facing::Down));
-        m_DogAnimation.Update(deltaTime,false);
-        if(dogState==VisualState::Walk || dogState==VisualState::Run)
+        // The old walk/action-in-place timer is gone. Patrol is explicit, opt-in demo behavior.
+        const auto npcBefore=m_Npc;
+        if(m_Options.demoMode && m_Options.npcAI)
         {
-            const std::array<DynamicCollider,2> dogObstacles={{{NpcPosition,NpcCollider},{m_Player,PlayerCollider}}};
-            m_Dog=CollisionSystem::MoveAndSlide(m_World,m_Dog,m_Player-m_Dog,
-                dogState==VisualState::Run?210.0f:120.0f,deltaTime,DogCollider,dogObstacles);
+            const glm::vec2 goal=NpcPosition+glm::vec2{m_NpcPatrolRight?160.0f:0.0f,0};
+            const auto direction=goal-m_Npc;
+            const std::array<DynamicCollider,2> blocked={{{m_Player,PlayerCollider},{m_Dog,DogCollider}}};
+            m_Npc=CollisionSystem::MoveAndSlide(m_World,m_Npc,direction,65.0f,dt,NpcCollider,blocked);
+            if(glm::length(goal-m_Npc)<8) m_NpcPatrolRight=!m_NpcPatrolRight;
         }
-        m_GameAge+=deltaTime;
-        for (int i=0; i<4; ++i)
-            if (MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i))
-            {
-                m_SelectedItem = i;
-                if (auto* window = glfwGetCurrentContext())
-                {
-                    const std::string title = std::string("My Farm - Phase F | ") + ItemNames[i] +
-                        " | Apples: " + std::to_string(m_FruitHarvested) +
-                        " | WASD: Move | F: Interact | F7: Orchard | F8: Depth";
-                    glfwSetWindowTitle(window, title.c_str());
-                }
-            }
-        m_Camera.Follow(m_Player, deltaTime);
+        const bool npcMoving=glm::length(m_Npc-npcBefore)>0.001f;
+        if(npcMoving) m_NpcFacing=FacingFromVelocity(m_Npc.x-npcBefore.x,m_Npc.y-npcBefore.y,m_NpcFacing);
+        m_NpcAnimation.Select(m_Visuals,"npc_an",npcMoving?VisualState::Walk:VisualState::Idle,m_NpcFacing);
+        m_NpcAnimation.Update(dt,false);
+
+        const auto dogBefore=m_Dog;
+        const float distance=glm::length(m_Player-m_Dog);
+        const bool dogRunning=distance>180;
+        if(m_Options.petFollow && distance>80)
+        {
+            const std::array<DynamicCollider,2> blocked={{{m_Player,PlayerCollider},{m_Npc,NpcCollider}}};
+            m_Dog=CollisionSystem::MoveAndSlide(m_World,m_Dog,m_Player-m_Dog,dogRunning?210.0f:120.0f,
+                dt,DogCollider,std::span<const DynamicCollider>(blocked.data(),m_Options.demoMode?2u:1u));
+        }
+        const bool dogMoving=glm::length(m_Dog-dogBefore)>0.001f;
+        m_DogAnimation.Select(m_Visuals,"dog",dogMoving?(dogRunning?VisualState::Run:VisualState::Walk):VisualState::Idle,
+                             FacingFromVelocity(m_Dog.x-dogBefore.x,m_Dog.y-dogBefore.y,Facing::Down));
+        m_DogAnimation.Update(dt,false);
+        m_GameAge+=dt;m_Camera.Follow(m_Player,dt);
     }
-    void DemoScene2D::DrawActor(MyEngine::Canvas2D& canvas,int character,glm::vec2 feet,
-                                const AnimationController& animation,float bob)
+    DemoScene2D::SpriteDraw DemoScene2D::SpriteFor(std::string_view id,int frame,glm::vec2 feet,float height,bool flip) const
     {
-        // The selected clip owns its texture and UV; gameplay never depends on sprite dimensions.
-        canvas.Rectangle(feet.x-22, feet.y-4, 44, 9, {0.08f,0.16f,0.09f,0.19f});
-        const auto* texture=m_Characters[static_cast<std::size_t>(character)];
-        const auto anchor=m_Anchors[static_cast<std::size_t>(character)];
-        std::array<float,4> uv{0,0,1,1};
-        if(const auto* clip=animation.Clip();clip && m_Assets)
+        SpriteDraw sprite;
+        if(!m_Assets) return sprite;
+        sprite.texture=m_Assets->Loaded(id);
+        const auto* record=m_Assets->Record(id);
+        const auto* bounds=m_Assets->FrameBounds(id,frame);
+        if(sprite.texture && record && bounds)
         {
-            if(const auto* loaded=m_Assets->Loaded(clip->assetId))
-                if(const auto* record=m_Assets->Record(clip->assetId))
-                    if(const auto region=AssetManifest::FrameUv(*record,animation.Frame()-record->firstFrame))
-                    {
-                        texture=loaded;uv=*region;
-                        if(clip->flipX){uv[0]+=uv[2];uv[2]=-uv[2];}
-                    }
+            if(const auto uv=AssetManifest::FrameUv(*record,frame))
+            {
+                sprite.uv=*uv;
+                if(flip){sprite.uv[0]+=sprite.uv[2];sprite.uv[2]=-sprite.uv[2];}
+                sprite.placement=PlaceSprite(*bounds,feet,height,flip);
+                return sprite;
+            }
         }
-        if(texture) canvas.Sprite(*texture, feet.x-156*anchor.x, feet.y-156*anchor.y-bob, 156,156,uv);
-        else canvas.Rectangle(feet.x-22,feet.y-78-bob,44,78,
-            character==0?std::array<float,4>{0.85f,0.65f,0.22f,1}:std::array<float,4>{0.28f,0.5f,0.8f,1});
+        sprite.texture=nullptr;
+        sprite.placement={feet-glm::vec2{height*0.2f,height},{height*0.4f,height},
+                          feet-glm::vec2{height*0.2f,height},{height*0.4f,height}};
+        return sprite;
+    }
+    DemoScene2D::SpriteDraw DemoScene2D::ActorSprite(int character,glm::vec2 feet,const AnimationController& animation) const
+    {
+        if(const auto* clip=animation.Clip();clip && m_Assets)
+            if(const auto* record=m_Assets->Record(clip->assetId);record && m_Assets->Loaded(clip->assetId))
+                return SpriteFor(clip->assetId,animation.Frame()-record->firstFrame,feet,HumanHeight,clip->flipX);
+        return SpriteFor(character==0?"player_linh":"player_an",0,feet,HumanHeight);
+    }
+    void DemoScene2D::DrawActor(MyEngine::Canvas2D& canvas,int character,glm::vec2 feet,const AnimationController& animation)
+    {
+        const auto sprite=ActorSprite(character,feet,animation);
+        const auto& p=sprite.placement;
+        canvas.Rectangle(feet.x-22,feet.y-4,44,9,{0.08f,0.16f,0.09f,0.19f});
+        if(sprite.texture) canvas.Sprite(*sprite.texture,p.origin.x,p.origin.y,p.size.x,p.size.y,sprite.uv);
+        else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.65f,0.5f,0.27f,1});
+        if(m_Options.debugOverlay) canvas.Rectangle(feet.x-2,feet.y-2,4,4,{1,0.2f,0.15f,1});
     }
     void DemoScene2D::DrawDog(MyEngine::Canvas2D& canvas) const
     {
-        const auto state=m_DogAnimation.State();
-        if(m_DogTexture && m_Assets)
-        {
-            std::array<float,4> uv{0,0,0.5f,0.5f};
-            if(const auto* record=m_Assets->Record("dog_walk"))
-                if(const auto region=AssetManifest::FrameUv(*record,
-                   state==VisualState::Walk || state==VisualState::Run?m_DogAnimation.Frame():0)) uv=*region;
-            canvas.Sprite(*m_DogTexture,m_Dog.x-52,m_Dog.y-87,104,
-                          state==VisualState::Sleep?88.0f:104.0f,uv);
-            return;
-        }
-        const float height=state==VisualState::Sleep?24.0f:42.0f;
-        canvas.Rectangle(m_Dog.x-25,m_Dog.y-height,50,height,{0.55f,0.32f,0.16f,1});
-        canvas.Rectangle(m_Dog.x+16,m_Dog.y-height-5,18,18,{0.68f,0.43f,0.22f,1});
+        const auto sprite=SpriteFor("dog_walk",m_DogAnimation.Frame(),m_Dog,PetHeight);
+        const auto& p=sprite.placement;
+        if(sprite.texture) canvas.Sprite(*sprite.texture,p.origin.x,p.origin.y,p.size.x,p.size.y,sprite.uv);
+        else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.55f,0.32f,0.16f,1});
     }
     void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas) const
     {
@@ -322,11 +327,16 @@ namespace MyGame
                 if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position,object.size,
                                                        object.position.y+object.size.y);
             }
-        m_RenderOrder.Submit(RenderKind::Actor,0,m_Player-glm::vec2{78,156},{156,156},m_Player.y);
-        m_RenderOrder.Submit(RenderKind::Actor,1,NpcPosition-glm::vec2{78,156},{156,156},NpcPosition.y);
-        m_RenderOrder.Submit(RenderKind::Animal,0,m_Dog-glm::vec2{52,87},{104,104},m_Dog.y);
+        const auto player=ActorSprite(m_Character,m_Player,m_PlayerAnimation).placement;
+        m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,m_Player.y);
+        if(m_Options.demoMode)
+        {
+            const auto npc=ActorSprite(1,m_Npc,m_NpcAnimation).placement;
+            m_RenderOrder.Submit(RenderKind::Actor,1,npc.visibleOrigin,npc.visibleSize,m_Npc.y);
+        }
+        const auto pet=SpriteFor("dog_walk",m_DogAnimation.Frame(),m_Dog,PetHeight).placement;
+        m_RenderOrder.Submit(RenderKind::Animal,0,pet.visibleOrigin,pet.visibleSize,m_Dog.y);
         m_RenderOrder.Sort();
-        const float bob = m_Moving ? std::sin(m_WalkTime*12.0f)*2.2f : 0;
         for(const auto& entry:m_RenderOrder.Entries())
         {
             switch(entry.kind)
@@ -337,8 +347,8 @@ namespace MyGame
                 else canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
                 break;
             case RenderKind::Actor:
-                if(entry.index==0) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation,bob);
-                else DrawActor(canvas,1-m_Character,NpcPosition,m_NpcAnimation,0);
+                if(entry.index==0) DrawActor(canvas,m_Character,m_Player,m_PlayerAnimation);
+                else DrawActor(canvas,1,m_Npc,m_NpcAnimation);
                 break;
             case RenderKind::Animal:DrawDog(canvas);break;
             case RenderKind::TreeCanopy:
@@ -374,32 +384,55 @@ namespace MyGame
 
         // Screen UI uses a different projection and therefore does not zoom with the world.
         canvas.Begin(width,height);
-        const float size = std::min(78.0f, static_cast<float>(width)/5.5f);
-        const float gap = size*0.12f;
-        const float start = (static_cast<float>(width) - (size*4+gap*3))*0.5f;
-        const float y = std::max(0.0f, static_cast<float>(height)-size-20);
-        for (int i=0; i<4; ++i)
+        const auto bar=HotbarLayout::ForViewport(width,height);
+        const float unit=bar.slot/64.0f;
+        canvas.Rectangle(bar.x,bar.y,bar.width,bar.height,{0.20f,0.24f,0.16f,0.94f});
+        canvas.Rectangle(bar.x+2*unit,bar.y+2*unit,bar.width-4*unit,bar.height-4*unit,{0.89f,0.85f,0.69f,0.98f});
+        for(int i=0;i<4;++i)
         {
-            const float x = start+static_cast<float>(i)*(size+gap);
-            canvas.Rectangle(x-3,y-3,size+6,size+6,
-                             i==m_SelectedItem ? std::array<float,4>{0.95f,0.74f,0.32f,1} : std::array<float,4>{0.18f,0.28f,0.18f,0.7f});
-            canvas.Rectangle(x,y,size,size,{0.99f,0.97f,0.88f,0.94f});
-            if(m_Items) canvas.Sprite(*m_Items,x+5,y+5,size-10,size-10,m_ItemRegions[static_cast<std::size_t>(i)]);
-            else canvas.Rectangle(x+10,y+10,size-20,size-20,{0.65f,0.35f,0.16f,1});
+            const float x=bar.x+bar.padding+i*(bar.slot+bar.gap),y=bar.y+bar.padding;
+            const bool selected=i==m_SelectedItem;
+            canvas.Rectangle(x,y,bar.slot,bar.slot,selected?
+                std::array<float,4>{0.69f,0.47f,0.20f,1}:std::array<float,4>{0.57f,0.62f,0.43f,1});
+            canvas.Rectangle(x+2*unit,y+2*unit,bar.slot-4*unit,bar.slot-4*unit,
+                             selected?std::array<float,4>{1,0.96f,0.79f,1}:std::array<float,4>{0.95f,0.93f,0.82f,1});
+            const float inset=10*unit;
+            if(m_Items && m_Assets)
+            {
+                if(const auto* frame=m_Assets->FrameBounds("items_farm",i))
+                {
+                    const auto icon=FitSprite(*frame,{x+inset,y+inset},{bar.slot-2*inset,bar.slot-2*inset});
+                    canvas.Sprite(*m_Items,icon.origin.x,icon.origin.y,icon.size.x,icon.size.y,m_ItemRegions[static_cast<std::size_t>(i)]);
+                }
+            }
+            else canvas.Rectangle(x+inset,y+inset,bar.slot-2*inset,bar.slot-2*inset,{0.65f,0.35f,0.16f,1});
+            // Small index marks remain readable without introducing an unrelated font renderer.
+            for(int mark=0;mark<=i;++mark)
+                canvas.Rectangle(x+5*unit+mark*4*unit,y+bar.slot-6*unit,2*unit,2*unit,{0.39f,0.37f,0.23f,1});
         }
-        canvas.Rectangle(16,16,132,76,{0.99f,0.97f,0.88f,0.92f});
-        canvas.Rectangle(16,105,132,8,{0.17f,0.22f,0.14f,1});
-        canvas.Rectangle(16,105,132.0f*std::clamp(m_Actor.stamina/20.0f,0.0f,1.0f),8,{0.3f,0.7f,0.3f,1});
+        const float meterWidth=bar.width*0.4f,meterX=bar.x+(bar.width-meterWidth)*0.5f;
+        canvas.Rectangle(meterX,bar.y-9*unit,meterWidth,5*unit,{0.17f,0.22f,0.14f,1});
+        canvas.Rectangle(meterX,bar.y-9*unit,meterWidth*std::clamp(m_Actor.stamina/20.0f,0.0f,1.0f),5*unit,{0.42f,0.67f,0.36f,1});
         if(m_FeedbackTime>0)
-            canvas.Rectangle(static_cast<float>(width)-44,16,28,28,
+            canvas.Rectangle(bar.x+bar.width-6*unit,bar.y-9*unit,6*unit,5*unit,
                 m_LastAction==InteractionResult::Success?std::array<float,4>{0.25f,0.78f,0.35f,m_FeedbackTime}:
                                                          std::array<float,4>{0.85f,0.25f,0.19f,m_FeedbackTime});
-        for (int i=0; i<2; ++i)
+        if(m_Options.debugOverlay)
         {
-            const float x=20+static_cast<float>(i)*62;
-            const auto* portrait=m_Characters[static_cast<std::size_t>(i)];
-            if(portrait) canvas.Image(*portrait,x,20,58,58);
-            if (i==m_Character) canvas.Rectangle(x,82,58,3,{0.71f,0.46f,0.14f,1});
+            canvas.Rectangle(16,16,132,76,{0.99f,0.97f,0.88f,0.92f});
+            for(int i=0;i<2;++i)
+            {
+                const float x=20+i*62.0f;
+                const char* id=i==0?"player_linh":"player_an";
+                const auto* portrait=m_Characters[static_cast<std::size_t>(i)];
+                const auto* frame=m_Assets?m_Assets->FrameBounds(id,0):nullptr;
+                if(portrait && frame)
+                {
+                    const auto p=FitSprite(*frame,{x,20},{58,58});
+                    canvas.Sprite(*portrait,p.origin.x,p.origin.y,p.size.x,p.size.y);
+                }
+                if(i==m_Character) canvas.Rectangle(x,82,58,3,{0.71f,0.46f,0.14f,1});
+            }
         }
         canvas.End();
     }

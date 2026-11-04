@@ -1,5 +1,17 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cập nhật Gameplay11 — 2026-11-04
+
+Đã sửa console Release, scale/ground placement, demo autoplay, pet follow, input ownership, portrait overlay và toolbar. Debug/Release đều build thành công, **19/19 tests PASS** (14.15s / 7.34s); bản Release mở trực tiếp và log Console attached: no, smoke PowerShell/CMD exit 0. NPC/pet/debug mặc định tắt, F9/F10/F11/F12 bật riêng; player/NPC/pet controller độc lập và walk theo dịch chuyển thật.
+
+Đo 50 frames của 14 human/animal textures; 1 frame portrait Linh chạm mép trên, artwork NEEDS_ART_REVIEW. 204 Original vẫn khớp hash. Animation vẫn bốn hướng; chưa impact events/fixed-step/SQLite/day-night. UI là hotbar, chưa inventory hoàn chỉnh. Không đo FPS.
+
+Chi tiết nguyên nhân, file và evidence: [GAMEPLAY11](GAMEPLAY11.md), [Character Scale & Style Standard](CHARACTER_SCALE_STYLE_STANDARD.md), [task](TASKS/GAMEPLAY11.md). Manual Release đã quan sát NPC idle/patrol toggle, pet follow, overlay và F7/F8; held-WASD/full loop nhiều FPS chưa kiểm thủ công, movement/state được kiểm bằng integration test.
+
+## Baseline Phase F trước Gameplay11 (lịch sử)
+
+Các bảng/kết quả bên dưới mô tả thời điểm audit ban đầu, không ghi đè cập nhật Gameplay11 trên đây.
+
 2026-11-04. Cwd/Git root D:/my_code/MyFarmEngine; branch feat/gameplay10-phase-f-depth-directional-harvest; HEAD eac0715. Git sạch trước thay đổi. Không tìm thấy AGENTS.md trong repo ngoài vendor/output, D:/ hoặc D:/my_code/. Lỗi Git work-tree ở lần đọc sandbox đầu đã hết khi chạy với quyền truy cập đúng repo; core.bare=false, repo không hỏng.
 
 Commit gần đây: eac0715 docs Phase F; 92b3a22 presets; 33c0419 orchard/directional actors; 851dc3d retrigger one-shot; cc38534 canopy mask.

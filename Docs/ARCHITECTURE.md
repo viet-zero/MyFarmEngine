@@ -1,5 +1,9 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## Cập nhật Gameplay11
+
+[GAMEPLAY11](GAMEPLAY11.md) bổ sung SceneOptions truyền từ CLI/GameConfig, input focus ownership, SpriteGeometry cached alpha bounds dùng chung render/cull, responsive hotbar và mipmap minification. Release Windows dùng GUI/WinMain CRT; Debug giữ console/main; stdout/stderr được tee ra log file. Không có engine/renderer song song. Mô tả Phase F bên dưới giữ làm baseline lịch sử; chi tiết placement hiện hành ở [Character Standard](CHARACTER_SCALE_STYLE_STANDARD.md).
+
 Audit 2026-11-04, HEAD eac0715, branch feat/gameplay10-phase-f-depth-directional-harvest. Kết luận thiếu source ở Documents/ChatGPT trước đây không áp dụng cho repo D:/my_code/MyFarmEngine.
 
 ## Cấu trúc và integration
