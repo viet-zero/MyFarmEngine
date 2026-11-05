@@ -207,6 +207,20 @@ int main()
     Check(canvas.DrawCalls()>0 && canvas.DrawCalls()<=2,"market text did not batch in screen pass");
     scene.UpdateSimulation(0,market);
     Check(!scene.Snapshot().marketOpen,"M did not close market");
+    const auto snapshot=DecodeSave(EncodeSave(scene.CaptureSave()));
+    Check(snapshot.has_value(),"live farm snapshot failed validation");
+    if(snapshot)
+    {
+        scene.Reset();
+        auto bad=*snapshot;
+        bad.targets.pop_back();
+        Check(!scene.RestoreSave(bad) && scene.Snapshot().money==20,"invalid save changed live scene");
+        Check(scene.RestoreSave(*snapshot) && scene.Snapshot().money==15 &&
+              scene.SelectedItem()==ItemId::CarrotSeed &&
+              scene.Storage().items.Count(ItemId::Turnip)==1 &&
+              scene.TargetState("crop.plot.01")->planted,"scene did not restore inventory, money, storage and planted crop");
+    }
+
 
     Check(glGetError()==GL_NO_ERROR,"OpenGL error in Gameplay11 rendering");
     canvas.Shutdown();scene.Shutdown();assets.Shutdown();

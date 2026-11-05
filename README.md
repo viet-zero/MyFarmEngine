@@ -1,5 +1,7 @@
 # MyFarmEngine
 
+**Lưu game SQL Express local.** Trong gameplay, nhấn **J** để lưu, **L** để tải. Thao tác khi đã đóng menu mua bán và nhân vật hoàn tất tương tác. Trên máy mới, chạy `./Scripts/SetupLocalSave.ps1` với SQL Express `.\SQLEXPRESS` và ODBC Driver 18. [Hướng dẫn và phạm vi](Docs/TASKS/P4-002.md).
+
 **P2-002C.** Nhấn **M** mở menu mua/bán. **1–4** chọn sản phẩm, **F** mua hạt, **C** bán từ túi, **K** bán từ kho trong vườn, **Space** chọn hạt đã có. **M** đóng menu. [Tiến độ](Docs/PROGRESS.md).
 
 **P2-002B — 05/11/2026:** plot củ cải trồng lại được, cần tưới mới lớn; thu hoạch trong vườn tự vào kho. **K** mở/đóng bảng số lượng kho trong vườn; hotbar 4 ô tự ẩn sau 4s không thao tác. Chọn **3/F** gieo, **1/F** tưới, chín thì **F** thu. Debug/Release **26/26 PASS**. Kho hiện chỉ RAM, chưa giữ qua Reset/tắt game. [Luật và giới hạn](Docs/FARMING_HOME_STORAGE.md) · [Tiến độ](Docs/PROGRESS.md). Các mốc cập nhật bên dưới là lịch sử.

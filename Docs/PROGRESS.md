@@ -1,5 +1,17 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## P4-002A — Lưu và tải SQL Express local — 2026-11-05
+
+**J** chụp snapshot và lưu, **L** tải snapshot trong gameplay khi menu mua bán đã đóng và thao tác hiện tại đã kết thúc. Luồng nền chạy ODBC qua Windows Authentication tới SQL Express local. Tải tạm dừng mô phỏng trong lúc chờ. Game kiểm phiên bản, định dạng, target và vị trí trước khi áp dụng dữ liệu. Khởi động lại game rồi nhấn L để tiếp tục bản lưu.
+
+Snapshot v1 lưu tiền, vị trí, hạt đang chọn, vật phẩm trong ba lô và kho, vùng/chủ kho, cây, táo và trạng thái các đối tượng tương tác. Inventory được dựng lại theo loại và số lượng. NPC/pet, animation và các bộ đếm tạm khởi tạo lại từ scene. Phạm vi là một slot thủ công. Công cụ tự lưu, migration và phục hồi bản dự phòng từ UI còn ở backlog.
+
+Database MyFarmEngineLocal đã được tạo trên .\SQLEXPRESS. Slot 1 dành cho game và slot 2 dành cho kiểm thử. Mỗi UPDATE lưu snapshot mới và bản trước trong cùng câu lệnh. Kiểm SQL thật chạy ghi/đọc bằng hai tiến trình Debug và đọc lại bằng Release. Một UPDATE vi phạm ràng buộc trên slot 2 bị từ chối, dữ liệu trước đó vẫn đọc được. Slot 1 còn trống sau test. Runtime test kiểm khôi phục snapshot vào scene OpenGL và từ chối snapshot thiếu target.
+
+Debug và Release 27/27 PASS, gồm codec, scene restore và smoke. 204 Original khớp SHA256. Việc nhấn phím J/L trong phiên chơi thủ công còn cần kiểm tại máy người chơi.
+
+Máy mới chạy Scripts/SetupLocalSave.ps1 một lần với SQL Express .\SQLEXPRESS và ODBC Driver 18. Xem [task lưu game](TASKS/P4-002.md).
+
 ## P2-002C — Giao dịch và giảm chi phí render — 2026-11-05
 
 Mở menu bằng M. Dùng 1–4 chọn củ cải, cà rốt, khoai tây hoặc táo. F mua một hạt và gắn vào ô 3. Space gắn hạt đã có. C bán một sản phẩm từ túi, K bán từ kho khi ở trong vườn sở hữu. M đóng menu. Đây là menu prototype mở ở mọi vị trí, với 20 tiền ban đầu và giá mua/bán 3/6, 5/10, 7/14 cho ba loại cây. Táo bán 4. Mỗi tick xử lý tối đa một lệnh giao dịch đã buffer. Tiền và vật phẩm thay đổi cùng nhau sau kiểm tra giới hạn, quyền kho và request ID.

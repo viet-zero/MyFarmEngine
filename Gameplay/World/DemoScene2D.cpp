@@ -5,6 +5,7 @@
 #include "Resources/AssetPath.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <string>
 #include <iostream>
@@ -142,6 +143,8 @@ namespace MyGame
         input.cancel=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_C);
         input.toggleStorage=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_K);
         input.toggleMarket=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_M);
+        input.save=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_J);
+        input.load=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_L);
         if(auto* window=glfwGetCurrentContext()) input.paused=!glfwGetWindowAttrib(window,GLFW_FOCUSED);
         input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
         input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
@@ -154,11 +157,63 @@ namespace MyGame
         for(int i=0;i<4;++i) if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i)) input.selectedItem=i;
         m_Input.Capture(input);
     }
+    FarmSave DemoScene2D::CaptureSave() const
+    {
+        return {m_Player,m_Actor.money,m_SelectedItem,m_Actor.hotbar[2],m_Actor.inventory,m_Actor.home,m_Targets};
+    }
+
+    bool DemoScene2D::RestoreSave(const FarmSave& save)
+    {
+        auto restored=m_Targets;
+        const auto world=WorldMap::Size();
+        if(!m_Ready || save.money<0 || !CropFromSeed(save.seed) ||
+           save.selectedSlot<0 || save.selectedSlot>=4 ||
+           !std::isfinite(save.position.x) || !std::isfinite(save.position.y) ||
+           restored.size()!=save.targets.size() ||
+           save.position.x<0 || save.position.y<0 || save.position.x>=world.x || save.position.y>=world.y ||
+           save.home.origin.x<0 || save.home.origin.y<0 || save.home.origin.x+save.home.size.x>world.x ||
+           save.home.origin.y+save.home.size.y>world.y) return false;
+        for(auto& target:restored)
+        {
+            const auto it=std::find_if(save.targets.begin(),save.targets.end(),[&](const auto& value){return value.id==target.id;});
+            if(it==save.targets.end() || it->kind!=target.kind || it->stock>target.maxStock ||
+               (target.kind==TargetKind::Crop && !it->active) ||
+               (target.kind==TargetKind::Object && it->active!=(it->health>0))) return false;
+            target.active=it->active;
+            target.health=it->health;
+            target.tilled=it->tilled;
+            target.planted=it->planted;
+            target.ready=it->ready;
+            target.crop=it->crop;
+            target.age=it->age;
+            target.moisture=it->moisture;
+            target.revision=it->revision;
+            target.stock=it->stock;
+        }
+        auto restoredWorld=m_World;
+        for(const auto& target:restored)
+            if(target.kind==TargetKind::Object) restoredWorld.SetObjectActive(target.id,target.active);
+        if(!restoredWorld.CanOccupy(save.position,PlayerCollider)) return false;
+        Reset();
+        m_World=std::move(restoredWorld);
+        m_Targets=std::move(restored);
+        m_Player=m_Actor.position=save.position;
+        m_Dog=m_Player+glm::vec2{-70,30};
+        m_Actor.money=save.money;
+        m_Actor.inventory=save.bag;
+        m_Actor.home=save.home;
+        m_Actor.hotbar[2]=save.seed;
+        m_SelectedItem=save.selectedSlot;
+        m_Camera.SetPosition(m_Player);
+        SynchronizePresentation();
+        return true;
+    }
+
     void DemoScene2D::UpdateSimulation(float deltaTime,const SceneInput& input)
     {
         if(!m_Ready) return;
         const float dt=std::isfinite(deltaTime)?std::clamp(deltaTime,0.0f,0.1f):0.0f;
-        if(input.reset){Reset();return;}
+        if(input.reset && !m_Loading){Reset();return;}
         m_Actor.uiCapturesInput=input.paused;
         if(input.paused)
         {
@@ -167,6 +222,36 @@ namespace MyGame
             return;
         }
         m_Previous=CurrentPresentation();
+        m_SaveMessageTime=std::max(0.0f,m_SaveMessageTime-dt);
+        if(m_SaveJob.valid() && m_SaveJob.wait_for(std::chrono::seconds(0))==std::future_status::ready)
+        {
+            try
+            {
+                auto result=m_SaveJob.get();
+                m_SaveMessage=result.message;
+                if(result.state && !RestoreSave(*result.state)) m_SaveMessage="SAVE INVALID";
+            }
+            catch(const std::exception&) {m_SaveMessage="SQL ERROR";}
+            m_Loading=false;
+            m_SaveMessageTime=4;
+            return;
+        }
+        if(m_Loading) return;
+        if((input.save || input.load) && !m_SaveJob.valid() && !m_Action.Pending() && !m_MarketOpen)
+        {
+            try
+            {
+                if(input.load)
+                    m_SaveJob=std::async(std::launch::async,[]{return SaveManager::Read();});
+                else
+                    m_SaveJob=std::async(std::launch::async,[state=CaptureSave()]{return SaveManager::Write(state);});
+                m_Loading=input.load;
+                m_SaveMessage=input.load?"DANG TAI":"DANG LUU";
+            }
+            catch(const std::exception&) {m_SaveMessage="SQL ERROR";}
+            m_SaveMessageTime=4;
+            return;
+        }
         if(input.toggleMarket && !m_Action.Pending())
         {
             m_MarketOpen=!m_MarketOpen;
@@ -604,10 +689,20 @@ namespace MyGame
                 if(i==m_Character) canvas.Rectangle(x,82,58,3,{0.71f,0.46f,0.14f,1});
             }
         }
+        if(m_SaveMessageTime>0)
+        {
+            const float scale=std::min(1.5f,static_cast<float>(width)/300.0f);
+            canvas.Rectangle(8,8,146*scale,15*scale,{0.94f,0.93f,0.83f,0.95f});
+            HudText(canvas,m_SaveMessage,12,12,scale);
+        }
         canvas.End();
     }
     void DemoScene2D::Shutdown()
     {
+        if(m_SaveJob.valid()) m_SaveJob.wait();
+        m_SaveJob={};
+        m_Loading=false;
+        m_SaveMessageTime=0;
         CancelInteraction();
         m_Ready = false;
         m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;

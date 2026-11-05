@@ -10,6 +10,8 @@
 #include "Gameplay/Systems/InteractionSystem.h"
 #include "Gameplay/Effects/EffectPool.h"
 #include <array>
+#include <future>
+#include "Gameplay/Save/Save.h"
 #include "SceneOptions.h"
 #include "Gameplay/Player/SceneInput.h"
 
@@ -59,6 +61,8 @@ namespace MyGame
         void Render(MyEngine::Canvas2D& canvas,int width,int height,float alpha=1.0f);
         void Shutdown();
         void Reset();
+        FarmSave CaptureSave() const;
+        bool RestoreSave(const FarmSave& save);
     private:
         PresentationSnapshot CurrentPresentation() const;
         void CancelInteraction(InteractionResult reason=InteractionResult::Cancelled);
@@ -87,6 +91,10 @@ namespace MyGame
         std::size_t m_MarketRow=0;
         TradeResult m_TradeResult=TradeResult::None;
         InteractionAction m_Action;
+        std::future<SaveResult> m_SaveJob;
+        bool m_Loading=false;
+        std::string m_SaveMessage;
+        float m_SaveMessageTime=0;
         std::vector<InteractionTarget> m_Targets;
         EventBus m_Events;
         EffectPool m_Effects;
