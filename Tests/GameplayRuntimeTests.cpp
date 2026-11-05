@@ -32,6 +32,16 @@ int main()
     const auto starterPlot=scene.TargetState("crop.home.1");
     Check(starterPlot && starterPlot->planted && scene.Bag().Count(ItemId::TurnipSeed)==2,
           "starter grid did not accept 3/F without walking");
+    Check(scene.TargetState("crop.home.2") && !scene.TargetState("crop.home.2")->planted,
+          "adjacent tile was planted instead of the front tile");
+    scene.Reset();
+    SceneInput faceSide;
+    faceSide.movement={1,0};
+    faceSide.selectedItem=2;
+    faceSide.interact=true;
+    scene.UpdateSimulation(0,faceSide);
+    Check(scene.Snapshot().actionResult==InteractionResult::NoTarget &&
+          scene.Bag().Count(ItemId::TurnipSeed)==3,"interact selected a plot off the facing row");
     scene.Reset();
     auto initial=scene.Snapshot();
     Check(scene.Bag().Count(ItemId::TurnipSeed)==3 && scene.Bag().Count(ItemId::Axe)==1 &&

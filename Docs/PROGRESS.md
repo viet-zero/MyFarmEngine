@@ -1,5 +1,11 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Lưới thao tác 64×64 — 2026-11-05
+
+Sáu luống đầu game nằm trên sáu ô liền kề của WorldMap. Đối tượng tương tác được lập chỉ mục theo ô khi dựng hoặc tải scene. Cùng một hàm xác định ô nhắm cho viền và phím F, chỉ xét hàng hoặc cột theo hướng nhìn, tầm với và đường nhìn. Khi chưa có mục tiêu, viền chỉ ô ngay phía trước. Ô có mục tiêu hiện viền vàng và gợi ý thao tác đối với luống và vật phẩm rơi.
+
+G bật hoặc tắt đường lưới ở vùng nhìn thấy. Hình cây trong cụm luống thu nhỏ để vừa ô. Đường và nước dùng dữ liệu terrain hiện hành, vùng trồng hiện dùng các luống đã định nghĩa. Save cũ giữ cây theo ID, sáu luống mới vẫn tương thích bản lưu trước khi thêm cụm luống.
+
 ## Chuyển nông sản giữa kho và túi — 2026-11-05
 
 Mở K trong vườn sở hữu. Phím 1–4 chọn củ cải, cà rốt, khoai tây hoặc táo. F rút một món vào túi và C cất một món vào kho. Bảng hiện số lượng túi/kho và hàng đang chọn. K đóng bảng. Rời vườn tự đóng bảng và kho chỉ chuyển hàng khi đúng chủ, có vật phẩm và nơi nhận còn chỗ. Bảng K giữ quyền xử lý phím chuyển đồ, nên F khi bảng mở tác động vào hàng đang chọn.

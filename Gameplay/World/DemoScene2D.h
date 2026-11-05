@@ -11,6 +11,7 @@
 #include "Gameplay/Effects/EffectPool.h"
 #include <array>
 #include <future>
+#include <unordered_map>
 #include "Gameplay/Save/Save.h"
 #include "SceneOptions.h"
 #include "Gameplay/Player/SceneInput.h"
@@ -64,6 +65,13 @@ namespace MyGame
         FarmSave CaptureSave() const;
         bool RestoreSave(const FarmSave& save);
     private:
+        struct TileFocus
+        {
+            glm::ivec2 cell;
+            InteractionTarget* target=nullptr;
+        };
+        std::optional<TileFocus> FocusedTile();
+        void IndexTargetTiles();
         PresentationSnapshot CurrentPresentation() const;
         void CancelInteraction(InteractionResult reason=InteractionResult::Cancelled);
         struct SpriteDraw
@@ -98,6 +106,8 @@ namespace MyGame
         std::string m_SaveMessage;
         float m_SaveMessageTime=0;
         std::vector<InteractionTarget> m_Targets;
+        std::unordered_map<int,std::vector<std::size_t>> m_TargetTiles;
+        bool m_ShowTileGrid=false;
         EventBus m_Events;
         EffectPool m_Effects;
         InteractionResult m_LastAction=InteractionResult::NoTarget;

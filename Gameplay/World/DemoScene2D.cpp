@@ -16,8 +16,19 @@ namespace
 
     constexpr glm::vec2 NpcPosition{2360,1950};
     constexpr std::array<glm::vec2,6> GardenCells{{
-        {2200,2020},{2328,2020},{2456,2020},{2200,2148},{2328,2148},{2456,2148}
+        {2208,2016},{2272,2016},{2336,2016},{2208,2080},{2272,2080},{2336,2080}
     }};
+    std::optional<glm::ivec2> TileAt(glm::vec2 position)
+    {
+        const auto bounds=MyGame::WorldMap::Size();
+        if(!std::isfinite(position.x) || !std::isfinite(position.y) ||
+           position.x<0 || position.y<0 || position.x>=bounds.x || position.y>=bounds.y) return std::nullopt;
+        return glm::ivec2{position/static_cast<float>(MyGame::WorldMap::TileSize)};
+    }
+    int TileKey(glm::ivec2 cell)
+    {
+        return cell.y*MyGame::WorldMap::Width+cell.x;
+    }
     std::string GardenCellId(std::size_t index)
     {
         return "crop.home."+std::to_string(index+1);
@@ -97,6 +108,7 @@ namespace MyGame
         for(std::size_t i=0;i<GardenCells.size();++i)
             m_Targets.push_back({GardenCellId(i),TargetKind::Crop,GardenCells[i]});
         m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
+        IndexTargetTiles();
         m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;m_LastAction=InteractionResult::NoTarget;
         m_Npc=NpcPosition;m_NpcFacing=Facing::Down;m_NpcPatrolRight=true;
         m_GameAge=0;
@@ -167,6 +179,7 @@ namespace MyGame
         input.toggleMarket=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_M);
         input.save=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_J);
         input.load=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_L);
+        input.toggleTileGrid=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_G);
         if(auto* window=glfwGetCurrentContext()) input.paused=!glfwGetWindowAttrib(window,GLFW_FOCUSED);
         input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
         input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
@@ -227,6 +240,7 @@ namespace MyGame
         Reset();
         m_World=std::move(restoredWorld);
         m_Targets=std::move(restored);
+        IndexTargetTiles();
         m_Player=m_Actor.position=save.position;
         m_Dog=m_Player+glm::vec2{-70,30};
         m_Actor.money=save.money;
@@ -237,6 +251,48 @@ namespace MyGame
         m_Camera.SetPosition(m_Player);
         SynchronizePresentation();
         return true;
+    }
+
+    void DemoScene2D::IndexTargetTiles()
+    {
+        m_TargetTiles.clear();
+        for(std::size_t i=0;i<m_Targets.size();++i)
+            if(const auto tile=TileAt(m_Targets[i].position))
+                m_TargetTiles[TileKey(*tile)].push_back(i);
+    }
+
+    std::optional<DemoScene2D::TileFocus> DemoScene2D::FocusedTile()
+    {
+        const auto start=TileAt(m_Actor.position);
+        if(!start) return std::nullopt;
+        const glm::ivec2 step{m_Actor.facing};
+        const auto front=*start+step;
+        std::optional<TileFocus> empty;
+        if(m_World.TryCell(front.x,front.y)) empty=TileFocus{front};
+        constexpr int reach=static_cast<int>(InteractionSystem::Range)/WorldMap::TileSize+1;
+        for(int offset=1;offset<=reach;++offset)
+        {
+            const auto cell=*start+step*offset;
+            const auto* terrain=m_World.TryCell(cell.x,cell.y);
+            if(!terrain || terrain->blocked) break;
+            const auto bucket=m_TargetTiles.find(TileKey(cell));
+            if(bucket==m_TargetTiles.end()) continue;
+            InteractionTarget* best=nullptr;
+            float limit=InteractionSystem::Range;
+            for(const auto index:bucket->second)
+            {
+                auto& target=m_Targets[index];
+                if(!target.active) continue;
+                const auto delta=target.position-m_Actor.position;
+                const float distance=glm::length(delta);
+                if(distance>limit || (distance>1 && glm::dot(delta,m_Actor.facing)<0.5f*distance) ||
+                   !m_World.HasLineOfSight(m_Actor.position,target.position)) continue;
+                limit=distance;
+                best=&target;
+            }
+            if(best) return TileFocus{cell,best};
+        }
+        return empty;
     }
 
     void DemoScene2D::UpdateSimulation(float deltaTime,const SceneInput& input)
@@ -267,6 +323,7 @@ namespace MyGame
             return;
         }
         if(m_Loading) return;
+        if(input.toggleTileGrid) m_ShowTileGrid=!m_ShowTileGrid;
         if((input.save || input.load) && !m_SaveJob.valid() && !m_Action.Pending() && !m_MarketOpen)
         {
             try
@@ -364,8 +421,8 @@ namespace MyGame
         bool started=false;
         if(input.interact && !storageInput && !hurtTriggered && !input.cancel && !teleporting)
         {
-            auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
-            if(target && !m_World.HasLineOfSight(m_Actor.position,target->position)) target=nullptr;
+            const auto focus=FocusedTile();
+            auto* target=focus?focus->target:nullptr;
             const auto* clip=m_Visuals.Find(m_Character==0?"player_linh":"player_an",VisualState::Action,m_Facing);
             if(m_Action.Pending()) m_LastAction=InteractionResult::Busy;
             else if(!clip) m_LastAction=InteractionResult::NoAnimation;
@@ -486,6 +543,7 @@ namespace MyGame
     void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const
     {
         const auto* it=&plot;
+        const float scale=it->id.starts_with("crop.home.")?0.55f:1.0f;
         const auto* crop=FindCrop(it->crop);
         const double visualAge=crop?it->age*5.0/crop->growthSeconds:0;
         static const std::vector<double> stageDurations{1,1,1,2};
@@ -496,9 +554,9 @@ namespace MyGame
             if(texture.Id())
             {
                 // The three reviewed 192 px frames share an alpha bottom at pixel 180.
-                canvas.Sprite(texture,it->position.x-56,it->position.y-105,112,112);
+                canvas.Sprite(texture,it->position.x-56*scale,it->position.y-105*scale,112*scale,112*scale);
                 if(it->ready && m_LocalCarrotIcon.Id())
-                    canvas.Sprite(m_LocalCarrotIcon,it->position.x+26,it->position.y-91,28,28);
+                    canvas.Sprite(m_LocalCarrotIcon,it->position.x+26*scale,it->position.y-91*scale,28*scale,28*scale);
                 return;
             }
         }
@@ -506,10 +564,10 @@ namespace MyGame
             if(const auto* record=m_Assets->Record("turnip_growth"))
                 if(const auto uv=AssetManifest::FrameUv(*record,stage))
                 {
-                    canvas.Sprite(*m_CropTexture,it->position.x-56,it->position.y-94,112,112,*uv);
+                    canvas.Sprite(*m_CropTexture,it->position.x-56*scale,it->position.y-94*scale,112*scale,112*scale,*uv);
                     return;
                 }
-        const float size=14.0f+static_cast<float>(stage)*7.0f;
+        const float size=(14.0f+static_cast<float>(stage)*7.0f)*scale;
         const std::array<std::array<float,4>,4> colors={{{0.48f,0.72f,0.22f,1},{0.31f,0.68f,0.18f,1},
             {0.22f,0.58f,0.15f,1},{0.65f,0.82f,0.25f,1}}};
         canvas.Rectangle(it->position.x-size*0.5f,it->position.y-size,size,size,colors[static_cast<std::size_t>(stage)]);
@@ -542,8 +600,22 @@ namespace MyGame
         }
         const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
         m_RenderOrder.Begin(visibleOrigin,renderCamera.ViewSize());
-        auto* focusedTarget=InteractionSystem::Nearest(m_Actor,m_Targets);
-        if(focusedTarget && !m_World.HasLineOfSight(m_Actor.position,focusedTarget->position)) focusedTarget=nullptr;
+        const auto focus=FocusedTile();
+        const auto* focusedTarget=focus?focus->target:nullptr;
+        constexpr float tileSize=static_cast<float>(WorldMap::TileSize);
+        if(m_ShowTileGrid)
+        {
+            const auto range=m_World.VisibleTiles(renderCamera.Position(),renderCamera.ViewSize());
+            constexpr std::array<float,4> grid{0.98f,0.93f,0.71f,0.48f};
+            const float left=static_cast<float>(range.left)*tileSize;
+            const float top=static_cast<float>(range.top)*tileSize;
+            const float widthWorld=static_cast<float>(range.right-range.left)*tileSize;
+            const float heightWorld=static_cast<float>(range.bottom-range.top)*tileSize;
+            for(int x=range.left;x<=range.right;++x)
+                canvas.Rectangle(static_cast<float>(x)*tileSize,top,1,heightWorld,grid);
+            for(int y=range.top;y<=range.bottom;++y)
+                canvas.Rectangle(left,static_cast<float>(y)*tileSize,widthWorld,1,grid);
+        }
         for(std::size_t i=0;i<m_Targets.size();++i)
         {
             const auto& target=m_Targets[i];
@@ -552,14 +624,15 @@ namespace MyGame
             {
                 const auto feet=target.position;
                 if(!WorldMap::Intersects(feet-glm::vec2{60,105},{120,140},visibleOrigin,renderCamera.ViewSize())) continue;
-                const auto border=&target==focusedTarget?std::array<float,4>{1,0.93f,0.53f,1}:
-                    std::array<float,4>{0.91f,0.78f,0.49f,1};
-                const auto soil=target.moisture>0?std::array<float,4>{0.30f,0.26f,0.19f,1}:
-                    std::array<float,4>{0.49f,0.33f,0.21f,1};
-                canvas.Rectangle(feet.x-60,feet.y-35,120,70,border);
-                canvas.Rectangle(feet.x-57,feet.y-32,114,64,soil);
+                const auto tile=TileAt(feet);
+                if(!tile) continue;
+                const auto origin=glm::vec2(*tile)*tileSize;
+                const auto soil=target.moisture>0?std::array<float,4>{0.30f,0.26f,0.19f,0.95f}:
+                    std::array<float,4>{0.49f,0.33f,0.21f,0.95f};
+                canvas.Rectangle(origin.x+1,origin.y+1,tileSize-2,tileSize-2,{0.91f,0.78f,0.49f,1});
+                canvas.Rectangle(origin.x+3,origin.y+3,tileSize-6,tileSize-6,soil);
                 const char* label=!target.planted?"O TRONG":target.ready?"DA CHIN":target.moisture>0?"DANG LON":"CAN TUOI";
-                HudText(canvas,label,feet.x-48,feet.y+20,1.65f,{1,0.94f,0.78f,1});
+                HudText(canvas,label,origin.x+5,origin.y+tileSize-13,1.05f,{1,0.94f,0.78f,1});
                 if(target.planted)
                     m_RenderOrder.Submit(RenderKind::Crop,i,feet-glm::vec2{56,105},{112,123},feet.y);
             }
@@ -581,6 +654,18 @@ namespace MyGame
                 if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position,object.size,
                                                        object.position.y+object.size.y);
             }
+        if(focus && !m_MarketOpen && !m_StorageOpen)
+        {
+            const auto origin=glm::vec2(focus->cell)*tileSize;
+            const auto* cell=m_World.TryCell(focus->cell.x,focus->cell.y);
+            const auto color=focusedTarget?std::array<float,4>{1,0.93f,0.53f,1}:
+                cell && cell->blocked?std::array<float,4>{0.95f,0.35f,0.28f,0.9f}:
+                std::array<float,4>{0.95f,0.93f,0.84f,0.65f};
+            canvas.Rectangle(origin.x,origin.y,tileSize,3,color);
+            canvas.Rectangle(origin.x,origin.y+tileSize-3,tileSize,3,color);
+            canvas.Rectangle(origin.x,origin.y,3,tileSize,color);
+            canvas.Rectangle(origin.x+tileSize-3,origin.y,3,tileSize,color);
+        }
         const auto player=ActorSprite(m_Character,presented.player,m_PlayerAnimation).placement;
         m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,presented.player.y);
         if(m_Options.demoMode)
@@ -777,10 +862,10 @@ namespace MyGame
                 if(i==m_Character) canvas.Rectangle(x,82,58,3,{0.71f,0.46f,0.14f,1});
             }
         }
-        if(focusedTarget && focusedTarget->kind==TargetKind::Crop && !m_MarketOpen && !m_StorageOpen)
+        if(focusedTarget && (focusedTarget->kind==TargetKind::Crop || focusedTarget->kind==TargetKind::Pickup) && !m_MarketOpen && !m_StorageOpen)
         {
             const float scale=std::min(1.5f,static_cast<float>(width)/340.0f);
-            const char* hint=!focusedTarget->planted?"3 CHON HAT - F GIEO":
+            const char* hint=focusedTarget->kind==TargetKind::Pickup?"F NHAT VAT PHAM":!focusedTarget->planted?"3 CHON HAT - F GIEO":
                 focusedTarget->ready?"F THU HOACH":focusedTarget->moisture>0?"DANG LON":"1 CHON BINH - F TUOI";
             const float left=static_cast<float>(width)*0.5f-72*scale;
             canvas.Rectangle(left,8,144*scale,15*scale,{0.95f,0.90f,0.77f,0.98f});
