@@ -9,6 +9,9 @@ namespace MyGame
     {
         switch(c)
         {
+        case 'B':return {30,17,17,30,17,17,30};case 'E':return {31,16,16,30,16,16,31};
+        case 'F':return {31,16,16,30,16,16,16};case 'L':return {16,16,16,16,16,16,31};
+        case 'M':return {17,27,21,21,17,17,17};case 'P':return {30,17,17,30,16,16,16};
         case 'A':return {14,17,17,31,17,17,17};case 'C':return {14,17,16,16,16,17,14};
         case 'D':return {30,17,17,17,17,17,30};case 'G':return {14,17,16,23,17,17,15};
         case 'H':return {17,17,17,31,17,17,17};case 'I':return {31,4,4,4,4,4,31};
@@ -31,9 +34,22 @@ namespace MyGame
         for(char c:text)
         {
             const auto rows=HudGlyph(c);
-            for(int row=0;row<7;++row)for(int col=0;col<5;++col)
-                if(rows[static_cast<std::size_t>(row)]&(1u<<(4-col)))
-                    canvas.Rectangle(x+col*scale,y+row*scale,scale,scale,color);
+            for(std::size_t row=0;row<rows.size();++row)
+            {
+                int column=0;
+                while(column<5)
+                {
+                    if(!(rows[row] & (1u<<(4-column))))
+                    {
+                        ++column;
+                        continue;
+                    }
+                    const int start=column++;
+                    while(column<5 && (rows[row] & (1u<<(4-column)))) ++column;
+                    canvas.Rectangle(x+start*scale,y+static_cast<float>(row)*scale,
+                                     (column-start)*scale,scale,color);
+                }
+            }
             x+=6*scale;
         }
     }

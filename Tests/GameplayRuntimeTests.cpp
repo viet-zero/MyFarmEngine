@@ -189,6 +189,24 @@ int main()
     options.demoMode=true;scene.SetOptions(options);scene.UpdateSimulation(0,leave);
     Check(!scene.Snapshot().storageOpen,"leaving home did not close storage");
     scene.UpdateSimulation(0,openStorage);Check(!scene.Snapshot().storageOpen,"storage opened outside own property");
+    SceneInput market;
+    market.toggleMarket=true;
+    scene.CaptureInput(market);
+    scene.FixedUpdate(1.0f/60);
+    Check(scene.Snapshot().marketOpen,"M did not open market");
+    SceneInput buy;
+    buy.selectedItem=1;
+    buy.interact=true;
+    scene.CaptureInput(buy);
+    scene.FixedUpdate(1.0f/60);
+    scene.FixedUpdate(1.0f/60);
+    Check(scene.Bag().Count(ItemId::CarrotSeed)==1 && scene.SelectedItem()==ItemId::CarrotSeed &&
+          scene.Snapshot().money==15,"buffered purchase repeated or did not bind seed");
+    scene.Render(canvas,640,360);
+    std::cout<<"Market screen GL draw calls: "<<canvas.DrawCalls()<<'\n';
+    Check(canvas.DrawCalls()>0 && canvas.DrawCalls()<=2,"market text did not batch in screen pass");
+    scene.UpdateSimulation(0,market);
+    Check(!scene.Snapshot().marketOpen,"M did not close market");
 
     Check(glGetError()==GL_NO_ERROR,"OpenGL error in Gameplay11 rendering");
     canvas.Shutdown();scene.Shutdown();assets.Shutdown();

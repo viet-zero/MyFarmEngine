@@ -26,16 +26,19 @@ namespace MyGame
     InteractionTarget* InteractionSystem::Nearest(const InteractionActor& actor,std::vector<InteractionTarget>& targets)
     {
         if(!std::isfinite(actor.position.x) || !std::isfinite(actor.position.y)) return nullptr;
+        const float facingLength=glm::length(actor.facing);
+        if(facingLength<=0 || !std::isfinite(facingLength)) return nullptr;
+        const auto forward=actor.facing/facingLength;
         InteractionTarget* nearest=nullptr;float best=Range*Range;
         for(auto& target:targets)
         {
             if(!target.active || !std::isfinite(target.position.x) || !std::isfinite(target.position.y)) continue;
             const glm::vec2 delta=target.position-actor.position;
             const float distance2=glm::dot(delta,delta);
-            const float facingLength=glm::length(actor.facing);
-            if(facingLength<=0 || !std::isfinite(facingLength)) return nullptr;
-            if(distance2>1 && glm::dot(delta/std::sqrt(distance2),actor.facing/facingLength)<0.5f) continue;
-            if(distance2<=best){best=distance2;nearest=&target;}
+            if(distance2>best || !std::isfinite(distance2)) continue;
+            if(distance2>1 && glm::dot(delta,forward)<0.5f*std::sqrt(distance2)) continue;
+            best=distance2;
+            nearest=&target;
         }
         return nearest;
     }
@@ -108,15 +111,13 @@ namespace MyGame
         const std::size_t needed=target->kind==TargetKind::Pickup?1u:2u;
         if(events.Pending()+needed>EventBus::MaxPending) return InteractionResult::EventQueueFull;
         const bool home=ToStorage(actor,*target);
-        auto inventory=actor.inventory;auto storage=actor.home.items;
         if(operation==FarmOperation::Plant)
-        {if(!inventory.TryRemove(actor.SelectedItem(selectedItem),1)) return InteractionResult::NoSeeds;}
+        {if(!actor.inventory.TryRemove(actor.SelectedItem(selectedItem),1)) return InteractionResult::NoSeeds;}
         else if(operation==FarmOperation::Harvest || operation==FarmOperation::Pickup || operation==FarmOperation::FruitHarvest)
         {
-            auto& destination=home?storage:inventory;
+            auto& destination=home?actor.home.items:actor.inventory;
             if(!destination.TryAdd(Reward(*target),1)) return home?InteractionResult::StorageFull:InteractionResult::InventoryFull;
         }
-        actor.inventory=inventory;actor.home.items=storage;
         actor.stamina-=StaminaCost;actor.cooldown=CooldownSeconds;
         if(target->kind!=TargetKind::Pickup)
             events.Publish({GameEventKind::ToolUsed,target->id,target->position,1,actionId});

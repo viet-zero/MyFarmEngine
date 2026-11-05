@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <span>
 
 namespace MyGame
 {
@@ -23,6 +24,7 @@ namespace MyGame
         EventBus(){m_Events.reserve(MaxPending);}
         bool Publish(GameEvent event);
         std::vector<GameEvent> Take();
+        std::span<const GameEvent> Events() const { return m_Events; }
         std::size_t Pending() const {return m_Events.size();}
         void Clear(){m_Events.clear();}
     private:

@@ -1,4 +1,4 @@
-#include "Gameplay/Systems/InteractionSystem.h"
+#include "Gameplay/Systems/Trade.h"
 #include "Gameplay/Graphics/HotbarVisibility.h"
 #include "Core/Time.h"
 #include <cmath>
@@ -180,5 +180,46 @@ int main()
     Check(hud.Alpha()==0,"idle hotbar not hidden");hud.Update(0,true);Check(hud.Alpha()==1,"selection did not reveal four-slot hotbar");
     hud.Update(std::numeric_limits<double>::quiet_NaN(),false);Check(hud.Alpha()==1,"invalid dt corrupted UI timer");
     for(int hz:{30,60,144}){HotbarVisibility h;for(int i=0;i<hz*5;++i)h.Update(1.0/hz,false);Check(h.Alpha()==0,"HUD hide cadence mismatch");}
+    auto trader=Actor();
+    Home(trader);
+    Check(Trade(trader,TradeKind::Buy,ItemId::CarrotSeed,1,1)==TradeResult::Success &&
+          trader.money==15 && trader.inventory.Count(ItemId::CarrotSeed)==1,"seed purchase failed");
+    Check(Trade(trader,TradeKind::Buy,ItemId::CarrotSeed,1,1)==TradeResult::Replay &&
+          trader.money==15,"replay charged twice");
+    const auto bought=trader.inventory;
+    Check(Trade(trader,TradeKind::Buy,ItemId::PotatoSeed,std::numeric_limits<int>::max(),2)==TradeResult::NoFunds &&
+          Trade(trader,TradeKind::Buy,ItemId::None,1,2)==TradeResult::Invalid &&
+          Trade(trader,TradeKind::Buy,ItemId::PotatoSeed,-1,2)==TradeResult::Invalid &&
+          trader.inventory==bought && trader.money==15,"invalid purchase mutated state");
+    trader.hotbar[2]=ItemId::CarrotSeed;
+    std::vector<InteractionTarget> tradePlot{Plot()};
+    EventBus tradeEvents;
+    Check(InteractionSystem::Use(trader,&tradePlot[0],2,tradeEvents)==InteractionResult::Success,"purchased seed could not plant");
+    for(int cycle=0;cycle<2;++cycle)
+    {
+        for(int i=0;i<6;++i) InteractionSystem::Tick(trader,tradePlot,0.1f);
+        Check(InteractionSystem::Use(trader,&tradePlot[0],0,tradeEvents)==InteractionResult::Success,"trade crop watering failed");
+        for(int i=0;i<60;++i) InteractionSystem::Tick(trader,tradePlot,0.1f);
+    }
+    Check(InteractionSystem::Use(trader,&tradePlot[0],0,tradeEvents)==InteractionResult::Success &&
+          trader.home.items.Count(ItemId::Carrot)==1,"trade crop did not reach home storage");
+    trader.ownerId=2;
+    Check(Trade(trader,TradeKind::SellHome,ItemId::Carrot,1,2)==TradeResult::Outside,"foreign warehouse sale accepted");
+    trader.ownerId=1;
+    trader.position={200,0};
+    Check(Trade(trader,TradeKind::SellHome,ItemId::Carrot,1,2)==TradeResult::Outside,"sale accepted on exclusive boundary");
+    trader.position={0,0};
+    Check(Trade(trader,TradeKind::SellBag,ItemId::Carrot,1,2)==TradeResult::NoItems,"bag sale debited warehouse");
+    Check(Trade(trader,TradeKind::SellHome,ItemId::Carrot,1,2)==TradeResult::Success && trader.money==25 &&
+          trader.home.items.Count(ItemId::Carrot)==0,"home sale failed");
+    Check(Trade(trader,TradeKind::Buy,ItemId::PotatoSeed,1,3)==TradeResult::Success && trader.money==18,
+          "sale could not fund new seed");
+    trader.inventory=Inventory(1);
+    trader.inventory.TryAdd(ItemId::Apple,1);
+    Check(Trade(trader,TradeKind::Buy,ItemId::PotatoSeed,1,4)==TradeResult::Full && trader.money==18,
+          "full bag charged money");
+    trader.money=std::numeric_limits<int>::max();
+    Check(Trade(trader,TradeKind::SellBag,ItemId::Apple,1,4)==TradeResult::Overflow &&
+          trader.inventory.Count(ItemId::Apple)==1,"overflow sale lost produce");
     return failures?1:0;
 }

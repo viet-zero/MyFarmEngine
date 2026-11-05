@@ -2,12 +2,12 @@
 in vec2 uv;
 in vec2 localUv;
 uniform sampler2D image;
-uniform vec4 tint;
+in vec4 instanceTint;
 uniform int ellipseMask;
 out vec4 color;
 void main()
 {
-    color = texture(image, uv) * tint;
+    color = texture(image, uv) * instanceTint;
     if(ellipseMask != 0)
     {
         vec2 centered=(localUv-vec2(0.5))*2.0;

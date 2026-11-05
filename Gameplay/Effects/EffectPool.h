@@ -20,7 +20,7 @@ namespace MyGame
         static constexpr std::size_t Capacity=128;
         EffectPool(){m_Active.reserve(Capacity);}
         bool Spawn(Effect effect);
-        void Consume(const std::vector<GameEvent>& events);
+        void Consume(std::span<const GameEvent> events);
         void Update(float deltaTime);
         void Clear();
         const std::vector<Effect>& Active() const {return m_Active;}

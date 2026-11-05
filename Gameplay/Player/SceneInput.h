@@ -8,7 +8,7 @@ namespace MyGame
         glm::vec2 movement{0,0};
         bool running=false,interact=false,action=false,hurt=false,reset=false,switchCharacter=false;
         int teleport=0,zoom=0,selectedItem=-1;
-        bool cancel=false,paused=false,toggleStorage=false;
+        bool cancel=false,paused=false,toggleStorage=false,toggleMarket=false;
     };
     // Held state is sampled once per frame. Edge commands survive zero-tick frames,
     // then are consumed only by the first fixed tick; no raw GLFW polling in a catch-up loop.
@@ -22,6 +22,7 @@ namespace MyGame
             m_Pending.interact|=input.interact;m_Pending.action|=input.action;m_Pending.hurt|=input.hurt;
             m_Pending.reset|=input.reset;m_Pending.switchCharacter|=input.switchCharacter;m_Pending.cancel|=input.cancel;
             m_Pending.toggleStorage|=input.toggleStorage;
+            m_Pending.toggleMarket|=input.toggleMarket;
             if(input.teleport) m_Pending.teleport=input.teleport;
             if(input.selectedItem>=0) m_Pending.selectedItem=input.selectedItem;
             m_Pending.zoom=std::clamp(m_Pending.zoom+std::clamp(input.zoom,-8,8),-8,8);

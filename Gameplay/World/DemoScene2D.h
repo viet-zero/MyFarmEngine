@@ -6,6 +6,7 @@
 #include "Gameplay/World/ForegroundTrees.h"
 #include "Gameplay/Graphics/RenderOrder.h"
 #include "Gameplay/Graphics/HotbarVisibility.h"
+#include "Gameplay/Systems/Trade.h"
 #include "Gameplay/Systems/InteractionSystem.h"
 #include "Gameplay/Effects/EffectPool.h"
 #include <array>
@@ -31,6 +32,8 @@ namespace MyGame
         int storedItemCount=0;
         float hotbarAlpha=1;
         bool storageOpen=false;
+        int money=0;
+        bool marketOpen=false;
     };
     class DemoScene2D
     {
@@ -80,6 +83,9 @@ namespace MyGame
         InteractionActor m_Actor;
         HotbarVisibility m_Hotbar;
         bool m_StorageOpen=false;
+        bool m_MarketOpen=false;
+        std::size_t m_MarketRow=0;
+        TradeResult m_TradeResult=TradeResult::None;
         InteractionAction m_Action;
         std::vector<InteractionTarget> m_Targets;
         EventBus m_Events;

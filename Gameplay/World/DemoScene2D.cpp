@@ -56,7 +56,7 @@ namespace MyGame
         m_Dog=m_Player+glm::vec2{-70,30};
         CancelInteraction();
         const auto nextAction=m_Actor.nextActionId;
-        m_Actor={};m_Actor.home=HomeStorage::PlayerGarden();m_Hotbar={};m_StorageOpen=false;m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
+        m_Actor={};m_Actor.home=HomeStorage::PlayerGarden();m_Hotbar={};m_StorageOpen=false;m_MarketOpen=false;m_MarketRow=0;m_TradeResult=TradeResult::None;m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
         m_FruitHarvested=0;
         m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+m_Trees.Entries().size()+2);
         for(const auto& object:m_World.Objects())
@@ -99,7 +99,7 @@ namespace MyGame
     {
         return {m_Player,m_Npc,m_Dog,m_PlayerState,m_NpcAnimation.State(),m_DogAnimation.State(),
                 m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame(),
-                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size(),m_Actor.home.items.TotalCount(),m_Hotbar.Alpha(),m_StorageOpen};
+                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size(),m_Actor.home.items.TotalCount(),m_Hotbar.Alpha(),m_StorageOpen,m_Actor.money,m_MarketOpen};
     }
     std::optional<InteractionTarget> DemoScene2D::TargetState(std::string_view id) const
     {
@@ -141,6 +141,7 @@ namespace MyGame
         input.interact=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F);
         input.cancel=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_C);
         input.toggleStorage=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_K);
+        input.toggleMarket=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_M);
         if(auto* window=glfwGetCurrentContext()) input.paused=!glfwGetWindowAttrib(window,GLFW_FOCUSED);
         input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
         input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
@@ -166,6 +167,33 @@ namespace MyGame
             return;
         }
         m_Previous=CurrentPresentation();
+        if(input.toggleMarket && !m_Action.Pending())
+        {
+            m_MarketOpen=!m_MarketOpen;
+            m_StorageOpen=false;
+            m_TradeResult=TradeResult::None;
+            m_Hotbar.Update(0,true);
+            return;
+        }
+        if(m_MarketOpen)
+        {
+            if(input.selectedItem>=0 && input.selectedItem<static_cast<int>(Market.size()))
+                m_MarketRow=static_cast<std::size_t>(input.selectedItem);
+            const auto& row=Market[m_MarketRow];
+            if(input.interact || input.cancel || input.toggleStorage)
+            {
+                const auto kind=input.interact?TradeKind::Buy:input.cancel?TradeKind::SellBag:TradeKind::SellHome;
+                m_TradeResult=Trade(m_Actor,kind,input.interact?row.seed:row.produce,1,m_Actor.lastTradeId+1);
+            }
+            if(row.seed!=ItemId::None && m_Actor.inventory.Count(row.seed)>0 &&
+               (input.action || (input.interact && m_TradeResult==TradeResult::Success)))
+            {
+                m_Actor.hotbar[2]=row.seed;
+                m_SelectedItem=2;
+                m_Hotbar.Update(0,true);
+            }
+            return;
+        }
         m_Hotbar.Update(dt,input.toggleStorage || input.selectedItem>=0 || input.interact || input.cancel || glm::length(input.movement)>0);
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
         const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
@@ -246,7 +274,9 @@ namespace MyGame
         }
         if(m_Action.Pending() && m_PlayerAnimation.Finished() && !m_Action.impactConsumed)
             CancelInteraction(InteractionResult::NoAnimation);
-        m_Effects.Consume(m_Events.Take());m_Effects.Update(dt);
+        m_Effects.Consume(m_Events.Events());
+        m_Events.Clear();
+        m_Effects.Update(dt);
         m_FeedbackTime=std::max(0.0f,m_FeedbackTime-dt);
 
         // The old walk/action-in-place timer is gone. Patrol is explicit, opt-in demo behavior.
@@ -333,7 +363,8 @@ namespace MyGame
         if(!it->planted) return;
         const auto* crop=FindCrop(it->crop);
         const double visualAge=crop?it->age*5.0/crop->growthSeconds:0;
-        const int stage=GrowthFrame(visualAge,{1,1,1,2});
+        static const std::vector<double> stageDurations{1,1,1,2};
+        const int stage=GrowthFrame(visualAge,stageDurations);
         if(m_CropTexture && m_Assets)
             if(const auto* record=m_Assets->Record("turnip_growth"))
                 if(const auto uv=AssetManifest::FrameUv(*record,stage))
@@ -358,33 +389,20 @@ namespace MyGame
             std::sin(static_cast<float>(m_GameAge)*87.0f)*shake,
             std::cos(static_cast<float>(m_GameAge)*71.0f)*shake});
         canvas.BeginWorld(width,height,renderCamera);
-        const auto range=m_World.VisibleTiles(renderCamera.Position(),renderCamera.ViewSize());
-        const auto chunks=m_World.VisibleChunks(renderCamera.Position(),renderCamera.ViewSize());
-        constexpr std::array<std::array<float,4>,5> colors={{{0.43f,0.65f,0.32f,1},
-            {0.78f,0.68f,0.49f,1},{0.55f,0.38f,0.24f,1},{0.21f,0.51f,0.7f,1},
-            {0.23f,0.48f,0.26f,1}}};
-        for(int cy=chunks.top;cy<chunks.bottom;++cy)
-            for(int cx=chunks.left;cx<chunks.right;++cx)
-            {
-                const auto chunk=m_World.ChunkAt(cx,cy);
-                if(m_Map)
-                {
-                    const float x=static_cast<float>(chunk.tiles.left*WorldMap::TileSize);
-                    const float y=static_cast<float>(chunk.tiles.top*WorldMap::TileSize);
-                    const float w=static_cast<float>((chunk.tiles.right-chunk.tiles.left)*WorldMap::TileSize);
-                    const float h=static_cast<float>((chunk.tiles.bottom-chunk.tiles.top)*WorldMap::TileSize);
-                    canvas.Sprite(*m_Map,x,y,w,h,{x/WorldSize.x,y/WorldSize.y,w/WorldSize.x,h/WorldSize.y});
-                    continue;
-                }
-                for(int y=std::max(range.top,chunk.tiles.top);y<std::min(range.bottom,chunk.tiles.bottom);++y)
-                    for(int x=std::max(range.left,chunk.tiles.left);x<std::min(range.right,chunk.tiles.right);++x)
-                    {
-                        const auto* cell=m_World.TryCell(x,y);
-                        if(cell) canvas.Rectangle(static_cast<float>(x*WorldMap::TileSize),
+        if(m_Map)
+            canvas.Sprite(*m_Map,0,0,WorldSize.x,WorldSize.y);
+        else
+        {
+            const auto range=m_World.VisibleTiles(renderCamera.Position(),renderCamera.ViewSize());
+            constexpr std::array<std::array<float,4>,5> colors={{{0.43f,0.65f,0.32f,1},
+                {0.78f,0.68f,0.49f,1},{0.55f,0.38f,0.24f,1},{0.21f,0.51f,0.7f,1},{0.23f,0.48f,0.26f,1}}};
+            for(int y=range.top;y<range.bottom;++y)
+                for(int x=range.left;x<range.right;++x)
+                    if(const auto* cell=m_World.TryCell(x,y))
+                        canvas.Rectangle(static_cast<float>(x*WorldMap::TileSize),
                             static_cast<float>(y*WorldMap::TileSize),WorldMap::TileSize+0.5f,
                             WorldMap::TileSize+0.5f,colors[static_cast<std::size_t>(cell->terrain)]);
-                    }
-            }
+        }
         const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
         m_RenderOrder.Begin(visibleOrigin,renderCamera.ViewSize());
         const auto crop=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
@@ -466,7 +484,7 @@ namespace MyGame
         // Screen UI uses a different projection and therefore does not zoom with the world.
         canvas.Begin(width,height);
         const float opacity=m_Hotbar.Alpha();
-        if(opacity>0)
+        if(opacity>0 && !m_MarketOpen)
         {
         const auto rectangle=[&](float x,float y,float w,float h,std::array<float,4> color)
         {color[3]*=opacity;canvas.Rectangle(x,y,w,h,color);};
@@ -528,6 +546,30 @@ namespace MyGame
             rectangle(bar.x+bar.width-6*unit,bar.y-9*unit,6*unit,5*unit,
                 m_LastAction==InteractionResult::Success?std::array<float,4>{0.25f,0.78f,0.35f,m_FeedbackTime}:
                                                          std::array<float,4>{0.85f,0.25f,0.19f,m_FeedbackTime});
+        }
+        if(m_MarketOpen)
+        {
+            const float scale=std::min(static_cast<float>(width)/640,static_cast<float>(height)/360);
+            const float x=static_cast<float>(width)*0.5f-150*scale;
+            const float y=static_cast<float>(height)*0.5f-91*scale;
+            canvas.Rectangle(x,y,300*scale,182*scale,{0.94f,0.93f,0.83f,0.98f});
+            const auto label=[&](std::string_view value,float left,float top)
+            {HudText(canvas,value,x+left*scale,y+top*scale,1.5f*scale);};
+            label("TIEN "+std::to_string(m_Actor.money)+"     M DONG",12,10);
+            label("MUA / BAN",182,29);
+            for(std::size_t i=0;i<Market.size();++i)
+            {
+                const auto& row=Market[i];
+                const float top=45+static_cast<float>(i)*17;
+                if(i==m_MarketRow) canvas.Rectangle(x+8*scale,y+(top-2)*scale,284*scale,15*scale,{0.75f,0.84f,0.60f,1});
+                label(std::to_string(i+1)+" "+row.label,12,top);
+                label((row.seed==ItemId::None?std::string("-"):std::to_string(row.buyPrice))+" / "+std::to_string(row.sellPrice),182,top);
+            }
+            label("F MUA   C BAN TUI   K BAN KHO",12,117);
+            label("SPACE CHON HAT",12,134);
+            constexpr std::array results{"","DA GIAO DICH","SAI MAT HANG","DA GIAO DICH",
+                "DANG BAN","NGOAI VUON","THIEU TIEN","TUI DAY","THIEU DO","TIEN DAY"};
+            label(results[static_cast<std::size_t>(m_TradeResult)],12,155);
         }
         if(m_StorageOpen)
         {

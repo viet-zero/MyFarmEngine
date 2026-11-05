@@ -12,7 +12,7 @@ namespace MyGame
            effect.lifetime<=0 || effect.lifetime>10) return false;
         effect.age=0;m_Active.push_back(effect);return true;
     }
-    void EffectPool::Consume(const std::vector<GameEvent>& events)
+    void EffectPool::Consume(std::span<const GameEvent> events)
     {
         for(const auto& event:events)
         {

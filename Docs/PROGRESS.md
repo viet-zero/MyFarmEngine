@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## P2-002C — Giao dịch và giảm chi phí render — 2026-11-05
+
+Mở menu bằng M. Dùng 1–4 chọn củ cải, cà rốt, khoai tây hoặc táo. F mua một hạt và gắn vào ô 3. Space gắn hạt đã có. C bán một sản phẩm từ túi, K bán từ kho khi ở trong vườn sở hữu. M đóng menu. Đây là menu prototype mở ở mọi vị trí, với 20 tiền ban đầu và giá mua/bán 3/6, 5/10, 7/14 cho ba loại cây. Táo bán 4. Mỗi tick xử lý tối đa một lệnh giao dịch đã buffer. Tiền và vật phẩm thay đổi cùng nhau sau kiểm tra giới hạn, quyền kho và request ID.
+
+Canvas dùng instancing OpenGL 3.3 cho các quad liền kề cùng texture và mask, giữ thứ tự alpha/Y-sort. HUD gộp nét ngang theo hàng, nền ảnh dùng một quad và nền dự phòng chỉ duyệt tile trong tầm nhìn. EffectPool đọc trực tiếp event span rồi clear để giữ dung lượng buffer. Tìm tương tác lọc khoảng cách trước góc và chuẩn hóa hướng một lần. Plant/harvest tái sử dụng kiểm tra all-or-nothing của Inventory, thao tác trên đúng container thay vì copy cả hai.
+
+Debug 26/26 PASS (20.39s), Release 26/26 PASS (11.31s). Kiểm thử OpenGL đo 1.050 quad liên tiếp thành 2 draw call. Menu mẫu trong runtime có 1 draw call ở pass màn hình. Đây là số lệnh gửi GPU, chưa có phép đo FPS/frame time. CTest kiểm cả màu alpha, mask, mua–trồng–tưới–thu–bán kho–mua tiếp, chống replay, full bag, thiếu tiền/đồ, overflow và biên quyền kho. 204 Original khớp hash.
+
+Tiếp theo là snapshot lưu tiền, ba lô, kho và cây qua SQL Server. Dữ liệu gameplay hiện nằm trong RAM. Collision vẫn duyệt các tập collider hiện tại và sẽ cần profiling khi mật độ đối tượng tăng.
+
 ## P2-002B — Cây, kho vườn nhà và HUD gọn — 2026-11-05
 
 **DONE kỹ thuật trong phạm vi slice.** Plot củ cải thật có gieo → khô → tưới → tăng trưởng → chín → thu → gieo lại trên cùng ID. CropId/seed/produce definitions cho turnip/carrot/potato đã kiểm đủ logic; scene hiện chỉ có starter/plot củ cải, chưa UI mua/chọn hai loại hạt kia. Cây chỉ lớn khi ẩm; thời gian dev 5/8/12s, mỗi lần tưới cấp 6s ẩm. Dùng fixed simulation; pause giữ age/moisture.

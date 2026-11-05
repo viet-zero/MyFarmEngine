@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "Camera2D.h"
 #include <array>
+#include <vector>
 
 namespace MyEngine
 {
@@ -28,13 +29,21 @@ namespace MyEngine
         void Rectangle(float x, float y, float width, float height,
                        const std::array<float, 4>& color);
         void End();
+        unsigned int DrawCalls() const { return m_DrawCalls; }
     private:
         void Draw(unsigned int texture, float x, float y, float width, float height,
                   const std::array<float, 4>& color, float uvX = 1.0f, float uvY = 1.0f);
+        struct Instance { std::array<float,4> rect, uv, tint; };
+        static constexpr int BatchCapacity = 1024;
+        void Submit(unsigned int texture, const Instance& instance, bool ellipse = false);
+        void Flush();
         void SetProjection(const glm::mat4& projection);
         Shader m_Shader;
         unsigned int m_Vao = 0, m_Vbo = 0, m_White = 0;
-        int m_Rect = -1, m_Color = -1, m_Uv = -1, m_Projection = -1, m_EllipseMask = -1;
+        unsigned int m_InstanceBuffer = 0, m_Texture = 0, m_DrawCalls = 0;
+        bool m_Ellipse = false;
+        std::vector<Instance> m_Batch;
+        int m_Projection = -1, m_EllipseMask = -1;
         int m_Width = 0, m_Height = 0;
     };
 }

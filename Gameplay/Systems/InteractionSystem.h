@@ -35,6 +35,8 @@ namespace MyGame
         Inventory inventory=Inventory::Starter();
         HomeStorage home;
         std::uint64_t ownerId=1;
+        int money=20;
+        std::uint64_t lastTradeId=0;
         std::array<ItemId,4> hotbar=DefaultHotbar;
         ItemId SelectedItem(int slot) const
         {return slot>=0 && slot<static_cast<int>(hotbar.size())?hotbar[static_cast<std::size_t>(slot)]:ItemId::None;}

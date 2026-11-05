@@ -83,6 +83,7 @@ int main()
     canvas.Rectangle(0, 0, 32, 32, {0,0,1,1});
     canvas.Rectangle(0, 0, 32, 32, {1,0,0,0.5f});
     canvas.End();
+    Check(canvas.DrawCalls()==1,"adjacent rectangles did not share a draw");
     const auto blended = Read(16,16);
     Check(std::abs(static_cast<int>(blended[0])-128) <= 1 &&
           std::abs(static_cast<int>(blended[2])-127) <= 1, "alpha blend mismatch");
@@ -95,6 +96,11 @@ int main()
     canvas.Rectangle(0,0,2,2,{1,0,0,1});
     canvas.End();
     Check(Read(0,31)[0]==255,"ellipse state leaked into next pass");
+
+    canvas.Begin(32,32);
+    for(int i=0;i<1050;++i) canvas.Rectangle(0,0,1,1,{1,1,1,1});
+    canvas.End();
+    Check(canvas.DrawCalls()==2,"bounded instance batch did not flush at capacity");
 
     // The world pass uses the actual camera matrix rather than screen coordinates.
     MyEngine::Camera2D camera;
