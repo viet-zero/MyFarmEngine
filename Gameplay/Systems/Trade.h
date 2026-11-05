@@ -1,6 +1,7 @@
 #pragma once
 #include "InteractionSystem.h"
 #include <limits>
+#include <algorithm>
 
 namespace MyGame
 {
@@ -18,6 +19,20 @@ namespace MyGame
     }};
     enum class TradeKind {Buy,SellBag,SellHome};
     enum class TradeResult {None,Success,Invalid,Replay,Busy,Outside,NoFunds,Full,NoItems,Overflow};
+
+    inline TradeResult TransferProduce(InteractionActor& actor,ItemId item,bool withdraw)
+    {
+        if(actor.busy || actor.activeActionId || actor.uiCapturesInput) return TradeResult::Busy;
+        if(!actor.home.Receives(actor.ownerId,actor.position,actor.position)) return TradeResult::Outside;
+        if(std::none_of(Market.begin(),Market.end(),[item](const auto& row){return row.produce==item;}))
+            return TradeResult::Invalid;
+        auto& source=withdraw?actor.home.items:actor.inventory;
+        auto& destination=withdraw?actor.inventory:actor.home.items;
+        if(!source.CanRemove(item,1)) return TradeResult::NoItems;
+        if(!destination.TryAdd(item,1)) return TradeResult::Full;
+        source.TryRemove(item,1);
+        return TradeResult::Success;
+    }
 
     inline TradeResult Trade(InteractionActor& actor,TradeKind kind,ItemId item,int quantity,std::uint64_t request)
     {

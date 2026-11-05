@@ -193,6 +193,19 @@ int main()
     scene.FixedUpdate(1.0f/60);Check(scene.Snapshot().storageOpen,"catch-up replayed K and closed storage");
     scene.Render(canvas,640,360);unsigned char openedPanel[4]={};glReadPixels(415,340,1,1,GL_RGBA,GL_UNSIGNED_BYTE,openedPanel);
     Check(closedPanel[0]!=openedPanel[0] || closedPanel[1]!=openedPanel[1] || closedPanel[2]!=openedPanel[2],"on-demand warehouse panel not rendered");
+    SceneInput withdraw;
+    withdraw.selectedItem=0;
+    withdraw.interact=true;
+    scene.CaptureInput(withdraw);
+    scene.FixedUpdate(1.0f/60);
+    scene.FixedUpdate(1.0f/60);
+    Check(scene.Bag().Count(ItemId::Turnip)==1 && scene.Storage().items.Count(ItemId::Turnip)==0,
+          "warehouse withdrawal did not transfer exactly once");
+    SceneInput deposit;
+    deposit.cancel=true;
+    scene.UpdateSimulation(0,deposit);
+    Check(scene.Bag().Count(ItemId::Turnip)==0 && scene.Storage().items.Count(ItemId::Turnip)==1,
+          "warehouse deposit did not restore both counts");
     scene.UpdateSimulation(0,openStorage);Check(!scene.Snapshot().storageOpen,"K did not close storage");
     scene.UpdateSimulation(0,openStorage);SceneInput leave;leave.teleport=6;
     options.demoMode=true;scene.SetOptions(options);scene.UpdateSimulation(0,leave);

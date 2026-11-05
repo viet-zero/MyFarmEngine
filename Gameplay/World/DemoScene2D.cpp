@@ -77,7 +77,7 @@ namespace MyGame
         m_Dog=m_Player+glm::vec2{-70,30};
         CancelInteraction();
         const auto nextAction=m_Actor.nextActionId;
-        m_Actor={};m_Actor.home=HomeStorage::PlayerGarden();m_Hotbar={};m_StorageOpen=false;m_MarketOpen=false;m_MarketRow=0;m_TradeResult=TradeResult::None;m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
+        m_Actor={};m_Actor.home=HomeStorage::PlayerGarden();m_Hotbar={};m_StorageOpen=false;m_StorageRow=0;m_StorageResult=TradeResult::None;m_MarketOpen=false;m_MarketRow=0;m_TradeResult=TradeResult::None;m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
         m_FruitHarvested=0;
         m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+m_Trees.Entries().size()+2);
         for(const auto& object:m_World.Objects())
@@ -313,12 +313,13 @@ namespace MyGame
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
         const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
         const bool hurtTriggered=developer && input.hurt;
-        if(input.cancel || hurtTriggered || (developer && input.switchCharacter) || teleporting) CancelInteraction();
+        if((input.cancel && !m_StorageOpen) || hurtTriggered || (developer && input.switchCharacter) || teleporting) CancelInteraction();
         InteractionSystem::Tick(m_Actor,m_Targets,dt);
         InteractionSystem::TickAction(m_Actor,m_Action,dt);
         if(input.zoom) m_Camera.SetZoom(m_Camera.Zoom()*std::pow(1.15f,static_cast<float>(std::clamp(input.zoom,-8,8))));
         if(developer && input.switchCharacter) m_Character=1-m_Character;
-        if(input.selectedItem>=0 && input.selectedItem<4) m_SelectedItem=input.selectedItem;
+        if(!m_StorageOpen && !input.toggleStorage && input.selectedItem>=0 && input.selectedItem<4)
+            m_SelectedItem=input.selectedItem;
         const bool locked=(m_PlayerState==VisualState::Action || m_PlayerState==VisualState::Hurt) &&
                           !m_PlayerAnimation.Finished();
         if(!locked && !m_Action.Pending()) m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
@@ -338,8 +339,20 @@ namespace MyGame
         }
         m_Actor.position=m_Player;
         const bool atHome=m_Actor.home.Receives(m_Actor.ownerId,m_Player,m_Player);
+        const bool storageInput=m_StorageOpen || input.toggleStorage;
         if(!atHome) m_StorageOpen=false;
-        else if(input.toggleStorage) m_StorageOpen=!m_StorageOpen;
+        else if(input.toggleStorage)
+        {
+            m_StorageOpen=!m_StorageOpen;
+            m_StorageResult=TradeResult::None;
+        }
+        else if(m_StorageOpen && !teleporting)
+        {
+            if(input.selectedItem>=0 && input.selectedItem<static_cast<int>(Market.size()))
+                m_StorageRow=static_cast<std::size_t>(input.selectedItem);
+            if(input.interact!=input.cancel)
+                m_StorageResult=TransferProduce(m_Actor,Market[m_StorageRow].produce,input.interact);
+        }
         switch(m_Facing)
         {
         case Facing::Left:m_Actor.facing={-1,0};break;
@@ -349,7 +362,7 @@ namespace MyGame
         }
         bool actionTriggered=developer && input.action && !m_Action.Pending();
         bool started=false;
-        if(input.interact && !hurtTriggered && !input.cancel && !teleporting)
+        if(input.interact && !storageInput && !hurtTriggered && !input.cancel && !teleporting)
         {
             auto* target=InteractionSystem::Nearest(m_Actor,m_Targets);
             if(target && !m_World.HasLineOfSight(m_Actor.position,target->position)) target=nullptr;
@@ -727,17 +740,25 @@ namespace MyGame
         {
             const float scale=std::min(1.0f,std::min(static_cast<float>(width)/640.0f,static_cast<float>(height)/360.0f));
             const float x=width-230*scale,y=16*scale;
-            canvas.Rectangle(x,y,214*scale,124*scale,{0.94f,0.93f,0.83f,0.97f});
+            canvas.Rectangle(x,y,214*scale,156*scale,{0.94f,0.93f,0.83f,0.97f});
             HudText(canvas,"KHO - K DONG",x+10*scale,y+10*scale,1.5f*scale);
-            const std::array<std::pair<ItemId,const char*>,4> rows{{{ItemId::Turnip,"CU CAI"},
-                {ItemId::Carrot,"CA ROT"},{ItemId::Potato,"KHOAI TAY"},{ItemId::Apple,"TAO"}}};
-            for(std::size_t i=0;i<rows.size();++i)
+            HudText(canvas,"TUI/KHO",x+141*scale,y+24*scale,1.25f*scale);
+            for(std::size_t i=0;i<Market.size();++i)
             {
-                const float rowY=y+(32+static_cast<float>(i)*16)*scale;
-                HudText(canvas,rows[i].second,x+10*scale,rowY,1.5f*scale);
-                HudText(canvas,std::to_string(m_Actor.home.items.Count(rows[i].first)),x+163*scale,rowY,1.5f*scale);
+                const float rowY=y+(39+static_cast<float>(i)*16)*scale;
+                const auto& row=Market[i];
+                if(i==m_StorageRow)
+                    canvas.Rectangle(x+7*scale,rowY-2*scale,200*scale,15*scale,{0.75f,0.84f,0.60f,1});
+                HudText(canvas,std::to_string(i+1)+" "+row.label,x+10*scale,rowY,1.4f*scale);
+                const auto counts=std::to_string(m_Actor.inventory.Count(row.produce))+"/"+std::to_string(m_Actor.home.items.Count(row.produce));
+                HudText(canvas,counts,x+141*scale,rowY,1.4f*scale);
             }
-            HudText(canvas,"SO O "+std::to_string(m_Actor.home.items.UsedSlots())+"/"+std::to_string(m_Actor.home.items.SlotCount()),x+10*scale,y+104*scale,1.3f*scale);
+            HudText(canvas,"F RUT - C CAT",x+10*scale,y+107*scale,1.4f*scale);
+            const char* feedback=m_StorageResult==TradeResult::Success?"DA CHUYEN":
+                m_StorageResult==TradeResult::Full?"HET CHO":
+                m_StorageResult==TradeResult::NoItems?"THIEU DO":
+                m_StorageResult==TradeResult::Busy?"DANG BAN":"";
+            HudText(canvas,feedback,x+10*scale,y+130*scale,1.4f*scale);
         }
         if(m_Options.debugOverlay)
         {

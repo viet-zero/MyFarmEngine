@@ -1,5 +1,11 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Chuyển nông sản giữa kho và túi — 2026-11-05
+
+Mở K trong vườn sở hữu. Phím 1–4 chọn củ cải, cà rốt, khoai tây hoặc táo. F rút một món vào túi và C cất một món vào kho. Bảng hiện số lượng túi/kho và hàng đang chọn. K đóng bảng. Rời vườn tự đóng bảng và kho chỉ chuyển hàng khi đúng chủ, có vật phẩm và nơi nhận còn chỗ. Bảng K giữ quyền xử lý phím chuyển đồ, nên F khi bảng mở tác động vào hàng đang chọn.
+
+Bản lưu SQL dùng lại hai container hiện có, nên J lưu số lượng sau khi chuyển. Runtime test đi qua input buffer để rút rồi cất lại. Logic test kiểm túi đầy và ngoài vườn giữ nguyên kho.
+
 ## Ô trồng nhìn thấy và gieo từ điểm xuất phát — 2026-11-05
 
 Sáu ô trồng 2×3 nằm phía dưới điểm xuất phát. Mỗi ô có viền và nhãn O TRONG, CAN TUOI, DANG LON hoặc DA CHIN. Viền sáng và gợi ý phím chỉ ô trong tầm tương tác theo hướng nhìn. Vật phẩm nhặt có nền và nhãn VAT PHAM. Đây là lớp ô tương tác đặt trên ảnh bản đồ, với các trạng thái thật của từng plot.

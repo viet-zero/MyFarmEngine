@@ -221,5 +221,15 @@ int main()
     trader.money=std::numeric_limits<int>::max();
     Check(Trade(trader,TradeKind::SellBag,ItemId::Apple,1,4)==TradeResult::Overflow &&
           trader.inventory.Count(ItemId::Apple)==1,"overflow sale lost produce");
+    auto keeper=Actor();
+    Home(keeper);
+    keeper.home.items.TryAdd(ItemId::Apple,2);
+    keeper.inventory=Inventory(1);
+    keeper.inventory.TryAdd(ItemId::Cake,1);
+    Check(TransferProduce(keeper,ItemId::Apple,true)==TradeResult::Full &&
+          keeper.home.items.Count(ItemId::Apple)==2,"full bag lost warehouse item");
+    keeper.position={200,0};
+    Check(TransferProduce(keeper,ItemId::Apple,true)==TradeResult::Outside &&
+          keeper.home.items.Count(ItemId::Apple)==2,"outside transfer changed storage");
     return failures?1:0;
 }

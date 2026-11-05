@@ -87,6 +87,8 @@ namespace MyGame
         InteractionActor m_Actor;
         HotbarVisibility m_Hotbar;
         bool m_StorageOpen=false;
+        std::size_t m_StorageRow=0;
+        TradeResult m_StorageResult=TradeResult::None;
         bool m_MarketOpen=false;
         std::size_t m_MarketRow=0;
         TradeResult m_TradeResult=TradeResult::None;
