@@ -15,6 +15,13 @@ namespace
     const glm::vec2 WorldSize=MyGame::WorldMap::Size();
 
     constexpr glm::vec2 NpcPosition{2360,1950};
+    constexpr std::array<glm::vec2,6> GardenCells{{
+        {2200,2020},{2328,2020},{2456,2020},{2200,2148},{2328,2148},{2456,2148}
+    }};
+    std::string GardenCellId(std::size_t index)
+    {
+        return "crop.home."+std::to_string(index+1);
+    }
     constexpr MyGame::ColliderComponent PlayerCollider{{18,12}};
     constexpr MyGame::ColliderComponent DogCollider{{22,13}};
     constexpr MyGame::ColliderComponent NpcCollider{{18,12}};
@@ -87,6 +94,8 @@ namespace MyGame
             m_Targets.push_back(std::move(target));
         }
         m_Targets.push_back({"crop.plot.01",TargetKind::Crop,{3000,1700}});
+        for(std::size_t i=0;i<GardenCells.size();++i)
+            m_Targets.push_back({GardenCellId(i),TargetKind::Crop,GardenCells[i]});
         m_Targets.push_back({"item.demo.01",TargetKind::Pickup,{3070,2020}});
         m_Events.Clear();m_Effects.Clear();m_FeedbackTime=0;m_LastAction=InteractionResult::NoTarget;
         m_Npc=NpcPosition;m_NpcFacing=Facing::Down;m_NpcPatrolRight=true;
@@ -182,12 +191,20 @@ namespace MyGame
         if(!m_Ready || save.money<0 || !CropFromSeed(save.seed) ||
            save.selectedSlot<0 || save.selectedSlot>=4 ||
            !std::isfinite(save.position.x) || !std::isfinite(save.position.y) ||
-           restored.size()!=save.targets.size() ||
+           (restored.size()!=save.targets.size() && restored.size()!=save.targets.size()+GardenCells.size()) ||
            save.position.x<0 || save.position.y<0 || save.position.x>=world.x || save.position.y>=world.y ||
            save.home.origin.x<0 || save.home.origin.y<0 || save.home.origin.x+save.home.size.x>world.x ||
            save.home.origin.y+save.home.size.y>world.y) return false;
+        const bool legacy=restored.size()!=save.targets.size();
+        if(legacy && std::any_of(save.targets.begin(),save.targets.end(),[](const auto& target)
+           {return target.id.starts_with("crop.home.");})) return false;
         for(auto& target:restored)
         {
+            if(legacy && target.id.starts_with("crop.home."))
+            {
+                target={target.id,TargetKind::Crop,target.position};
+                continue;
+            }
             const auto it=std::find_if(save.targets.begin(),save.targets.end(),[&](const auto& value){return value.id==target.id;});
             if(it==save.targets.end() || it->kind!=target.kind || it->stock>target.maxStock ||
                (target.kind==TargetKind::Crop && !it->active) ||
@@ -453,12 +470,9 @@ namespace MyGame
         if(sprite.texture) canvas.Sprite(*sprite.texture,p.origin.x,p.origin.y,p.size.x,p.size.y,sprite.uv);
         else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.55f,0.32f,0.16f,1});
     }
-    void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas) const
+    void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const
     {
-        const auto it=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
-            return target.id=="crop.plot.01";});
-        if(it==m_Targets.end() || !it->active) return;
-        if(!it->planted) return;
+        const auto* it=&plot;
         const auto* crop=FindCrop(it->crop);
         const double visualAge=crop?it->age*5.0/crop->growthSeconds:0;
         static const std::vector<double> stageDurations{1,1,1,2};
@@ -515,14 +529,32 @@ namespace MyGame
         }
         const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
         m_RenderOrder.Begin(visibleOrigin,renderCamera.ViewSize());
-        const auto crop=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
-            return target.id=="crop.plot.01";});
-        if(crop!=m_Targets.end() && crop->active && crop->planted)
-            m_RenderOrder.Submit(RenderKind::Crop,0,crop->position-glm::vec2{56,105},{112,123},crop->position.y);
-        const auto pickup=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
-            return target.id=="item.demo.01";});
-        if(pickup!=m_Targets.end() && pickup->active)
-            m_RenderOrder.Submit(RenderKind::Pickup,0,pickup->position-glm::vec2{26,40},{52,52},pickup->position.y);
+        auto* focusedTarget=InteractionSystem::Nearest(m_Actor,m_Targets);
+        if(focusedTarget && !m_World.HasLineOfSight(m_Actor.position,focusedTarget->position)) focusedTarget=nullptr;
+        for(std::size_t i=0;i<m_Targets.size();++i)
+        {
+            const auto& target=m_Targets[i];
+            if(!target.active) continue;
+            if(target.kind==TargetKind::Crop)
+            {
+                const auto feet=target.position;
+                if(!WorldMap::Intersects(feet-glm::vec2{60,105},{120,140},visibleOrigin,renderCamera.ViewSize())) continue;
+                const auto border=&target==focusedTarget?std::array<float,4>{1,0.93f,0.53f,1}:
+                    std::array<float,4>{0.91f,0.78f,0.49f,1};
+                const auto soil=target.moisture>0?std::array<float,4>{0.30f,0.26f,0.19f,1}:
+                    std::array<float,4>{0.49f,0.33f,0.21f,1};
+                canvas.Rectangle(feet.x-60,feet.y-35,120,70,border);
+                canvas.Rectangle(feet.x-57,feet.y-32,114,64,soil);
+                const char* label=!target.planted?"O TRONG":target.ready?"DA CHIN":target.moisture>0?"DANG LON":"CAN TUOI";
+                HudText(canvas,label,feet.x-48,feet.y+20,1.65f,{1,0.94f,0.78f,1});
+                if(target.planted)
+                    m_RenderOrder.Submit(RenderKind::Crop,i,feet-glm::vec2{56,105},{112,123},feet.y);
+            }
+            else if(target.kind==TargetKind::Pickup)
+            {
+                m_RenderOrder.Submit(RenderKind::Pickup,i,target.position-glm::vec2{42,44},{84,76},target.position.y);
+            }
+        }
         if(m_Map)
             for(std::size_t i=0;i<m_Trees.Entries().size();++i)
             {
@@ -550,11 +582,17 @@ namespace MyGame
         {
             switch(entry.kind)
             {
-            case RenderKind::Crop:DrawCrop(canvas);break;
+            case RenderKind::Crop:DrawCrop(canvas,m_Targets[entry.index]);break;
             case RenderKind::Pickup:
-                if(m_Items) canvas.Sprite(*m_Items,pickup->position.x-26,pickup->position.y-40,52,52,m_ItemRegions[2]);
-                else canvas.Rectangle(pickup->position.x-12,pickup->position.y-12,24,24,{0.94f,0.78f,0.3f,1});
+            {
+                const auto& pickup=m_Targets[entry.index];
+                const auto feet=pickup.position;
+                canvas.Rectangle(feet.x-42,feet.y-8,84,36,{0.23f,0.31f,0.38f,0.94f});
+                if(m_Items) canvas.Sprite(*m_Items,feet.x-26,feet.y-40,52,52,m_ItemRegions[2]);
+                else canvas.Rectangle(feet.x-12,feet.y-12,24,24,{0.94f,0.78f,0.3f,1});
+                HudText(canvas,"VAT PHAM",feet.x-36,feet.y+13,1.5f,{1,1,1,1});
                 break;
+            }
             case RenderKind::Actor:
                 if(entry.index==0) DrawActor(canvas,m_Character,presented.player,m_PlayerAnimation);
                 else DrawActor(canvas,1,presented.npc,m_NpcAnimation);
@@ -717,6 +755,15 @@ namespace MyGame
                 }
                 if(i==m_Character) canvas.Rectangle(x,82,58,3,{0.71f,0.46f,0.14f,1});
             }
+        }
+        if(focusedTarget && focusedTarget->kind==TargetKind::Crop && !m_MarketOpen && !m_StorageOpen)
+        {
+            const float scale=std::min(1.5f,static_cast<float>(width)/340.0f);
+            const char* hint=!focusedTarget->planted?"3 CHON HAT - F GIEO":
+                focusedTarget->ready?"F THU HOACH":focusedTarget->moisture>0?"DANG LON":"1 CHON BINH - F TUOI";
+            const float left=static_cast<float>(width)*0.5f-72*scale;
+            canvas.Rectangle(left,8,144*scale,15*scale,{0.95f,0.90f,0.77f,0.98f});
+            HudText(canvas,hint,left+5*scale,12,scale);
         }
         if(m_SaveMessageTime>0)
         {

@@ -1,5 +1,11 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Ô trồng nhìn thấy và gieo từ điểm xuất phát — 2026-11-05
+
+Sáu ô trồng 2×3 nằm phía dưới điểm xuất phát. Mỗi ô có viền và nhãn O TRONG, CAN TUOI, DANG LON hoặc DA CHIN. Viền sáng và gợi ý phím chỉ ô trong tầm tương tác theo hướng nhìn. Vật phẩm nhặt có nền và nhãn VAT PHAM. Đây là lớp ô tương tác đặt trên ảnh bản đồ, với các trạng thái thật của từng plot.
+
+Từ lúc vào game, chọn 3 rồi nhấn F để gieo vào ô ngay phía trước. Chọn 1 rồi F để tưới, F để thu khi chín. Ô cũ vẫn dùng được. Bản lưu trước khi có sáu ô mới được tải với sáu ô khởi tạo trống. Runtime test kiểm gieo ngay tại spawn và tải bản lưu kiểu cũ.
+
 ## Bản thử ảnh cà rốt từ 04_Curated — 2026-11-05
 
 Bản thử lấy ba frame cà rốt sprout, young, mature và hai icon carrot, seed_bag. Hai frame seed và harvestable của bộ nguồn bị cắt hình. Trong game, giai đoạn đầu dùng sprout và cây chín dùng mature kèm icon cà rốt. Ba frame 192 px có cùng đáy alpha y=180, được căn với điểm luống. Icon túi hạt dùng ở ô 3, icon cà rốt xuất hiện trong menu M.

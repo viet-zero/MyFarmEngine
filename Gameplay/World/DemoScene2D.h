@@ -77,7 +77,7 @@ namespace MyGame
         void DrawActor(MyEngine::Canvas2D& canvas,int character,glm::vec2 feet,
                        const AnimationController& animation);
         void DrawDog(MyEngine::Canvas2D& canvas,glm::vec2 feet) const;
-        void DrawCrop(MyEngine::Canvas2D& canvas) const;
+        void DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const;
         MyEngine::Camera2D m_Camera;
         SceneInputBuffer m_Input;
         PresentationSnapshot m_Previous;

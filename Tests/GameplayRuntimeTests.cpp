@@ -24,6 +24,15 @@ int main()
     Check(assets.Initialize(MyEngine::AssetRoot()),"asset manifest initialization failed");
     DemoScene2D scene;
     Check(scene.Initialize(assets,MyEngine::AssetRoot()/"Data"),"scene failed");
+    SceneInput sowAtSpawn;
+    sowAtSpawn.selectedItem=2;
+    sowAtSpawn.interact=true;
+    scene.CaptureInput(sowAtSpawn);
+    for(int tick=0;tick<12;++tick) scene.FixedUpdate(1.0f/60);
+    const auto starterPlot=scene.TargetState("crop.home.1");
+    Check(starterPlot && starterPlot->planted && scene.Bag().Count(ItemId::TurnipSeed)==2,
+          "starter grid did not accept 3/F without walking");
+    scene.Reset();
     auto initial=scene.Snapshot();
     Check(scene.Bag().Count(ItemId::TurnipSeed)==3 && scene.Bag().Count(ItemId::Axe)==1 &&
           scene.Bag().Count(ItemId::Apple)==0,"scene starter typed inventory invalid");
@@ -211,6 +220,11 @@ int main()
     Check(snapshot.has_value(),"live farm snapshot failed validation");
     if(snapshot)
     {
+        scene.Reset();
+        auto legacy=*snapshot;
+        std::erase_if(legacy.targets,[](const auto& target){return target.id.starts_with("crop.home.");});
+        Check(scene.RestoreSave(legacy) && scene.TargetState("crop.home.1").has_value() &&
+              !scene.TargetState("crop.home.1")->planted,"pre-grid save did not initialize new empty plots");
         scene.Reset();
         auto bad=*snapshot;
         bad.targets.pop_back();
