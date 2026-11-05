@@ -33,13 +33,13 @@ int main()
     clock.Reset();Check(clock.Alpha()==0 && clock.Advance(0).steps==0,"pause/reset retained accumulator");
 
     MyGame::SceneInputBuffer input;
-    MyGame::SceneInput sample;sample.interact=true;sample.movement={1,0};sample.zoom=1;
+    MyGame::SceneInput sample;sample.interact=true;sample.toggleStorage=true;sample.movement={1,0};sample.zoom=1;
     input.Capture(sample);clock.Advance(FixedStepClock::StepSeconds/4);
     sample={};sample.movement={0,1};sample.running=true;sample.selectedItem=2;
     input.Capture(sample);clock.Advance(FixedStepClock::StepSeconds/4);
     const auto first=input.Consume(),second=input.Consume();
-    Check(first.interact && first.selectedItem==2 && first.zoom==1 && first.running && first.movement.y==1,"zero-tick frames lost edge or latest held input");
-    Check(!second.interact && second.selectedItem==-1 && second.zoom==0 && second.running && second.movement.y==1,"catch-up replayed an edge or lost held input");
+    Check(first.interact && first.toggleStorage && first.selectedItem==2 && first.zoom==1 && first.running && first.movement.y==1,"zero-tick frames lost edge or latest held input");
+    Check(!second.interact && !second.toggleStorage && second.selectedItem==-1 && second.zoom==0 && second.running && second.movement.y==1,"catch-up replayed an edge or lost held input");
     sample={};sample.interact=true;sample.cancel=true;sample.reset=true;sample.switchCharacter=true;sample.teleport=7;
     input.Capture(sample);const auto edges=input.Consume();const auto consumed=input.Consume();
     Check(edges.interact && edges.cancel && edges.reset && edges.switchCharacter && edges.teleport==7,"command buffer dropped edges");

@@ -37,17 +37,18 @@ int main()
           targets[1].planted && actor.inventory.ResourceCount()==beforeSeeds-1,"crop planting failed");
     for(int i=0;i<4;++i) InteractionSystem::Tick(actor,targets,0.1f);
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::NotReady,"early harvest accepted");
+    check(InteractionSystem::Use(actor,&targets[1],0,events)==InteractionResult::Success,"watering planted crop failed");
     for(int i=0;i<50;++i) InteractionSystem::Tick(actor,targets,0.1f);
     check(targets[1].ready,"crop did not mature");
     actor.inventory=Inventory(1);actor.inventory.TryAdd(ItemId::Cake,10);
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::InventoryFull,"full bag harvested crop");
     actor.inventory=Inventory::Starter();
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::Success &&
-          !targets[1].active && actor.inventory.ResourceCount()==4,"harvest failed");
+          targets[1].active && !targets[1].planted && actor.inventory.ResourceCount()==4,"harvest failed");
     for(int i=0;i<4;++i) InteractionSystem::Tick(actor,targets,0.1f);
     check(InteractionSystem::Use(actor,&targets[2],0,events)==InteractionResult::Success,"pickup failed");
     check(actor.inventory.ResourceCount()==5 && !targets[2].active,"pickup state failed");
-    check(InteractionSystem::Nearest(actor,targets)==nullptr,"inactive target chosen");
+    check(InteractionSystem::Nearest(actor,targets)==&targets[1],"harvested plot should remain reusable");
     InteractionActor harvester;harvester.position={0,0};harvester.facing={1,0};
     InteractionTarget fruit{"tree.apple.01",TargetKind::FruitTree,{60,0}};
     fruit.stock=fruit.maxStock=2;fruit.regrowSeconds=0.3f;

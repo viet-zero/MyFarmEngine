@@ -4,10 +4,11 @@ namespace MyGame
 {
     namespace
     {
-        constexpr std::array<ItemDefinition,7> Items{{
+        constexpr std::array<ItemDefinition,11> Items{{
             {ItemId::TurnipSeed,"seed.turnip",20,false},{ItemId::Turnip,"crop.turnip",20,false},
             {ItemId::Apple,"fruit.apple",20,false},{ItemId::Cake,"food.cake",10,false},
-            {ItemId::Wood,"resource.wood",20,false},{ItemId::WateringCan,"tool.watering_can",1,true},
+            {ItemId::Wood,"resource.wood",20,false},{ItemId::CarrotSeed,"seed.carrot",20,false},
+            {ItemId::Carrot,"crop.carrot",20,false},{ItemId::PotatoSeed,"seed.potato",20,false},{ItemId::Potato,"crop.potato",20,false},{ItemId::WateringCan,"tool.watering_can",1,true},
             {ItemId::Axe,"tool.axe",1,true}}};
     }
     const ItemDefinition* FindItem(ItemId id)

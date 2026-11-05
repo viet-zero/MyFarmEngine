@@ -1,5 +1,9 @@
 # Animation impact và action transaction — P1-002
 
+## Crop/warehouse transaction — 2026-11-05
+
+Start now captures Plant/Water/Harvest, crop revision and bag/home destination. Watering only wets at IMPACT; harvest deposits once into the eligible owned container and resets the plot without deactivating it. Route/owner changes, tool loss, capacity/queue failure cancel the mutation; copied actions cannot harvest a newly replanted generation. [Contract](FARMING_HOME_STORAGE.md). Old descriptions of deactivated plots and bag-only harvest below are historical.
+
 ## Typed resources update — 2026-11-05
 
 IMPACT now consumes seed.turnip or grants crop.turnip/fruit.apple/declared pickup item in the single typed bag. Capacity is slot/stack-specific; tool ownership and captured binding/reward ID are revalidated. Candidate bag is committed only after resource and event-queue checks. Start/cancel/replay policy stays unchanged. [Inventory contract](TYPED_INVENTORY.md). Older counter descriptions below are historical.

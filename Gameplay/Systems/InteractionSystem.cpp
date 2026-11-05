@@ -5,6 +5,24 @@
 
 namespace MyGame
 {
+    FarmOperation InteractionSystem::Operation(const InteractionActor& actor,const InteractionTarget& target,int slot)
+    {
+        if(target.kind==TargetKind::Crop)
+            return !target.planted?FarmOperation::Plant:target.ready?FarmOperation::Harvest:
+                   actor.SelectedItem(slot)==ItemId::WateringCan?FarmOperation::Water:FarmOperation::Harvest;
+        return target.kind==TargetKind::FruitTree?FarmOperation::FruitHarvest:
+               target.kind==TargetKind::Pickup?FarmOperation::Pickup:FarmOperation::Hit;
+    }
+    ItemId InteractionSystem::Reward(const InteractionTarget& target)
+    {
+        if(target.kind!=TargetKind::Crop) return target.item;
+        const auto* definition=FindCrop(target.crop);return definition?definition->produce:ItemId::None;
+    }
+    bool InteractionSystem::ToStorage(const InteractionActor& actor,const InteractionTarget& target)
+    {
+        const bool harvest=target.kind==TargetKind::FruitTree || (target.kind==TargetKind::Crop && target.planted && target.ready);
+        return harvest && actor.home.Receives(actor.ownerId,actor.position,target.position);
+    }
     InteractionTarget* InteractionSystem::Nearest(const InteractionActor& actor,std::vector<InteractionTarget>& targets)
     {
         if(!std::isfinite(actor.position.x) || !std::isfinite(actor.position.y)) return nullptr;
@@ -45,15 +63,34 @@ namespace MyGame
            (item!=ItemId::Axe || actor.inventory.Count(ItemId::Axe)==0)) return InteractionResult::WrongTool;
         if(target->kind==TargetKind::Crop)
         {
-            if(!target->planted && item!=ItemId::TurnipSeed) return InteractionResult::WrongTool;
-            if(!target->planted && !actor.inventory.CanRemove(ItemId::TurnipSeed,1)) return InteractionResult::NoSeeds;
-            if(target->planted && !target->ready) return InteractionResult::NotReady;
+            if(!target->tilled) return InteractionResult::NeedsTilling;
+            if(!target->planted)
+            {
+                if(!CropFromSeed(item)) return InteractionResult::WrongTool;
+                if(!actor.inventory.CanRemove(item,1)) return InteractionResult::NoSeeds;
+            }
+            else
+            {
+                const auto* crop=FindCrop(target->crop);
+                if(!crop) return InteractionResult::InvalidCrop;
+                if(!target->ready)
+                {
+                    if(item!=ItemId::WateringCan) return InteractionResult::NotReady;
+                    if(actor.inventory.Count(item)==0) return InteractionResult::WrongTool;
+                    if(target->moisture>=crop->waterSeconds-1e-6) return InteractionResult::AlreadyWatered;
+                }
+            }
         }
         if(target->kind==TargetKind::FruitTree && target->stock<=0) return InteractionResult::NotReady;
         const bool receivesItem=target->kind==TargetKind::Pickup ||
-                                (target->kind==TargetKind::Crop && target->planted) ||
+                                (target->kind==TargetKind::Crop && target->planted && target->ready) ||
                                 target->kind==TargetKind::FruitTree;
-        if(receivesItem && !actor.inventory.CanAdd(target->kind==TargetKind::Crop?ItemId::Turnip:target->item,1)) return InteractionResult::InventoryFull;
+        if(receivesItem)
+        {
+            const bool home=ToStorage(actor,*target);
+            const auto& destination=home?actor.home.items:actor.inventory;
+            if(!destination.CanAdd(Reward(*target),1)) return home?InteractionResult::StorageFull:InteractionResult::InventoryFull;
+        }
 
         return InteractionResult::Success;
     }
@@ -67,15 +104,19 @@ namespace MyGame
     InteractionResult InteractionSystem::Apply(InteractionActor& actor,InteractionTarget* target,
                                               int selectedItem,EventBus& events,std::uint64_t actionId)
     {
-        (void)selectedItem;
+        const auto operation=Operation(actor,*target,selectedItem);
         const std::size_t needed=target->kind==TargetKind::Pickup?1u:2u;
         if(events.Pending()+needed>EventBus::MaxPending) return InteractionResult::EventQueueFull;
-        auto inventory=actor.inventory;
-        if(target->kind==TargetKind::Crop && !target->planted)
-        {if(!inventory.TryRemove(ItemId::TurnipSeed,1)) return InteractionResult::NoSeeds;}
-        else if(target->kind==TargetKind::Crop || target->kind==TargetKind::Pickup || target->kind==TargetKind::FruitTree)
-        {if(!inventory.TryAdd(target->kind==TargetKind::Crop?ItemId::Turnip:target->item,1)) return InteractionResult::InventoryFull;}
-        actor.inventory=inventory;
+        const bool home=ToStorage(actor,*target);
+        auto inventory=actor.inventory;auto storage=actor.home.items;
+        if(operation==FarmOperation::Plant)
+        {if(!inventory.TryRemove(actor.SelectedItem(selectedItem),1)) return InteractionResult::NoSeeds;}
+        else if(operation==FarmOperation::Harvest || operation==FarmOperation::Pickup || operation==FarmOperation::FruitHarvest)
+        {
+            auto& destination=home?storage:inventory;
+            if(!destination.TryAdd(Reward(*target),1)) return home?InteractionResult::StorageFull:InteractionResult::InventoryFull;
+        }
+        actor.inventory=inventory;actor.home.items=storage;
         actor.stamina-=StaminaCost;actor.cooldown=CooldownSeconds;
         if(target->kind!=TargetKind::Pickup)
             events.Publish({GameEventKind::ToolUsed,target->id,target->position,1,actionId});
@@ -85,14 +126,22 @@ namespace MyGame
             --target->health;if(target->health<=0) target->active=false;
             events.Publish({GameEventKind::ObjectHit,target->id,target->position,1,actionId});break;
         case TargetKind::Crop:
-            if(!target->planted)
+            if(operation==FarmOperation::Plant)
             {
-                target->planted=true;target->age=0;target->ready=false;
+                target->crop=CropFromSeed(actor.SelectedItem(selectedItem))->id;
+                target->planted=true;target->age=0;target->ready=false;target->moisture=0;++target->revision;
                 events.Publish({GameEventKind::CropPlanted,target->id,target->position,1,actionId});
+            }
+            else if(operation==FarmOperation::Water)
+            {
+                target->moisture=FindCrop(target->crop)->waterSeconds;++target->revision;
+                events.Publish({GameEventKind::CropWatered,target->id,target->position,1,actionId});
             }
             else
             {
-                target->active=false;
+                // Reuse the same plot; do not deactivate it or allow an old harvest token to replay.
+                target->planted=false;target->ready=false;target->crop=CropId::None;
+                target->age=0;target->moisture=0;++target->revision;
                 events.Publish({GameEventKind::CropHarvested,target->id,target->position,1,actionId});
             }
             break;
@@ -115,6 +164,8 @@ namespace MyGame
             return InteractionResult::TargetChanged;
         action={};action.id=actor.nextActionId++;action.targetId=target->id;action.kind=target->kind;
         action.selectedItem=selectedItem;action.item=actor.SelectedItem(selectedItem);action.targetItem=target->item;action.cropWasPlanted=target->planted;
+        action.operation=Operation(actor,*target,selectedItem);action.crop=target->crop;action.targetRevision=target->revision;
+        action.toStorage=ToStorage(actor,*target);action.storageOwner=action.toStorage?actor.home.ownerId:0;
         action.phase=ActionPhase::Start;action.result=InteractionResult::Success;
         actor.activeActionId=action.id;actor.busy=true;
         return InteractionResult::Success;
@@ -137,7 +188,9 @@ namespace MyGame
             target=&entry;
         }
         if(!target){action.result=InteractionResult::NoTarget;return action.result;}
-        if(actor.SelectedItem(action.selectedItem)!=action.item || target->item!=action.targetItem || target->kind!=action.kind || (target->kind==TargetKind::Crop && target->planted!=action.cropWasPlanted))
+        if(Operation(actor,*target,action.selectedItem)!=action.operation || target->crop!=action.crop || target->revision!=action.targetRevision ||
+           ToStorage(actor,*target)!=action.toStorage || (action.toStorage && actor.home.ownerId!=action.storageOwner) ||
+           actor.SelectedItem(action.selectedItem)!=action.item || target->item!=action.targetItem || target->kind!=action.kind || (target->kind==TargetKind::Crop && target->planted!=action.cropWasPlanted))
         {action.result=InteractionResult::TargetChanged;return action.result;}
         action.result=lineOfSight?CheckOwned(actor,target,action.selectedItem,true):InteractionResult::Blocked;
         if(action.result==InteractionResult::Success) action.result=Apply(actor,target,action.selectedItem,events,action.id);
@@ -173,16 +226,23 @@ namespace MyGame
         actor.cooldown=std::max(0.0f,actor.cooldown-dt);
         actor.stamina=std::min(20.0f,actor.stamina+dt);
         for(auto& target:targets)
-            if(target.active && target.kind==TargetKind::Crop && target.planted && !target.ready)
+            if(target.active && target.kind==TargetKind::Crop && target.planted)
             {
-                target.age=std::min(5.0f,target.age+dt);
-                target.ready=target.age>=5.0f;
+                const auto* crop=FindCrop(target.crop);
+                if(!crop || !std::isfinite(target.age) || !std::isfinite(target.moisture)) continue;
+                const double wet=std::min(static_cast<double>(dt),std::max(0.0,target.moisture));
+                target.moisture=std::max(0.0,target.moisture-dt);
+                if(!target.ready)
+                {
+                    target.age=std::min(crop->growthSeconds,std::max(0.0,target.age)+wet);
+                    if(target.age>=crop->growthSeconds-1e-6){target.age=crop->growthSeconds;target.ready=true;}
+                }
             }
             else if(target.active && target.kind==TargetKind::FruitTree && target.stock==0 &&
                     std::isfinite(target.regrowSeconds) && target.regrowSeconds>0 && target.maxStock>0)
             {
-                target.age=std::min(target.regrowSeconds,target.age+dt);
-                if(target.age>=target.regrowSeconds){target.stock=target.maxStock;target.age=0;}
+                target.age=std::min(static_cast<double>(target.regrowSeconds),target.age+dt);
+                if(target.age>=target.regrowSeconds-1e-6){target.stock=target.maxStock;target.age=0;}
             }
     }
 }

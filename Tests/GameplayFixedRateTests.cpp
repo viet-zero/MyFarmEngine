@@ -49,12 +49,12 @@ int main()
             if(frame%hz==0 || frame==hz*6-1)scene.Render(canvas,640,360,plan.alpha);
             const auto after=scene.Snapshot();
             Check(Same(before.player,after.player) && Same(before.npc,after.npc) && Same(before.pet,after.pet) &&
-                  Same(cameraBefore,scene.Presentation(1).camera) && before.inventoryCount==after.inventoryCount &&
+                  Same(cameraBefore,scene.Presentation(1).camera) && before.inventoryCount==after.inventoryCount && before.storedItemCount==after.storedItemCount &&
                   before.actionPhase==after.actionPhase && before.playerFrame==after.playerFrame && before.effects==after.effects,
                   "presentation/render advanced simulation, animation or gameplay events");
         }
         Result result{scene.Snapshot(),scene.Presentation(1),scene.TargetState("tree.apple.01")->stock,clock.TotalSteps()};
-        Check(result.ticks==360 && result.state.fruitHarvested==2 && result.state.inventoryCount==5 && result.stock==1,
+        Check(result.ticks==360 && result.state.fruitHarvested==2 && result.state.inventoryCount==3 && result.state.storedItemCount==2 && result.stock==1,
               "trace skipped/repeated interaction or simulated time");
         std::cout<<"Virtual render Hz="<<hz<<"; fixed ticks="<<result.ticks<<"; apples="<<result.state.fruitHarvested<<'\n';
         scene.Shutdown();return result;
@@ -90,7 +90,7 @@ int main()
     Check(probe.Snapshot().inventoryCount==3 && probe.Snapshot().effects==0 && start.actionPhase==probe.Snapshot().actionPhase,
           "render/interpolation applied action impact");
     for(int tick=0;tick<6;++tick)probe.FixedUpdate(static_cast<float>(FixedStepClock::StepSeconds));
-    Check(probe.Snapshot().inventoryCount==4 && probe.Snapshot().fruitHarvested==1,"fixed-tick marker impact missing or duplicated");
+    Check(probe.Snapshot().inventoryCount==3 && probe.Snapshot().storedItemCount==1 && probe.Snapshot().fruitHarvested==1,"fixed-tick marker impact missing or duplicated");
     probe.SetViewport(240,480);probe.Render(canvas,240,480,0.5f);
     Check(Same(probe.Presentation(0).camera,probe.Presentation(1).camera),"viewport resize retained camera history");
     Check(glGetError()==GL_NO_ERROR,"GL error in fixed-rate rendering");

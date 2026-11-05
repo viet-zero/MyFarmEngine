@@ -1,4 +1,5 @@
 #include "DemoScene2D.h"
+#include "Gameplay/Graphics/HudText.h"
 #include "Gameplay/Systems/CollisionSystem.h"
 #include "Input/Input.h"
 #include "Resources/AssetPath.h"
@@ -55,7 +56,7 @@ namespace MyGame
         m_Dog=m_Player+glm::vec2{-70,30};
         CancelInteraction();
         const auto nextAction=m_Actor.nextActionId;
-        m_Actor={};m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
+        m_Actor={};m_Actor.home=HomeStorage::PlayerGarden();m_Hotbar={};m_StorageOpen=false;m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
         m_FruitHarvested=0;
         m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+m_Trees.Entries().size()+2);
         for(const auto& object:m_World.Objects())
@@ -98,7 +99,7 @@ namespace MyGame
     {
         return {m_Player,m_Npc,m_Dog,m_PlayerState,m_NpcAnimation.State(),m_DogAnimation.State(),
                 m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame(),
-                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size()};
+                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size(),m_Actor.home.items.TotalCount(),m_Hotbar.Alpha(),m_StorageOpen};
     }
     std::optional<InteractionTarget> DemoScene2D::TargetState(std::string_view id) const
     {
@@ -139,6 +140,7 @@ namespace MyGame
         input.running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
         input.interact=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F);
         input.cancel=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_C);
+        input.toggleStorage=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_K);
         if(auto* window=glfwGetCurrentContext()) input.paused=!glfwGetWindowAttrib(window,GLFW_FOCUSED);
         input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
         input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
@@ -164,6 +166,7 @@ namespace MyGame
             return;
         }
         m_Previous=CurrentPresentation();
+        m_Hotbar.Update(dt,input.toggleStorage || input.selectedItem>=0 || input.interact || input.cancel || glm::length(input.movement)>0);
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
         const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
         const bool hurtTriggered=developer && input.hurt;
@@ -191,6 +194,9 @@ namespace MyGame
             m_Dog=m_Player+offset;m_Camera.SetPosition(m_Player);m_Moving=false;
         }
         m_Actor.position=m_Player;
+        const bool atHome=m_Actor.home.Receives(m_Actor.ownerId,m_Player,m_Player);
+        if(!atHome) m_StorageOpen=false;
+        else if(input.toggleStorage) m_StorageOpen=!m_StorageOpen;
         switch(m_Facing)
         {
         case Facing::Left:m_Actor.facing={-1,0};break;
@@ -325,7 +331,9 @@ namespace MyGame
             return target.id=="crop.plot.01";});
         if(it==m_Targets.end() || !it->active) return;
         if(!it->planted) return;
-        const int stage=GrowthFrame(it->age,{1,1,1,2});
+        const auto* crop=FindCrop(it->crop);
+        const double visualAge=crop?it->age*5.0/crop->growthSeconds:0;
+        const int stage=GrowthFrame(visualAge,{1,1,1,2});
         if(m_CropTexture && m_Assets)
             if(const auto* record=m_Assets->Record("turnip_growth"))
                 if(const auto uv=AssetManifest::FrameUv(*record,stage))
@@ -457,17 +465,22 @@ namespace MyGame
 
         // Screen UI uses a different projection and therefore does not zoom with the world.
         canvas.Begin(width,height);
+        const float opacity=m_Hotbar.Alpha();
+        if(opacity>0)
+        {
+        const auto rectangle=[&](float x,float y,float w,float h,std::array<float,4> color)
+        {color[3]*=opacity;canvas.Rectangle(x,y,w,h,color);};
         const auto bar=HotbarLayout::ForViewport(width,height);
         const float unit=bar.slot/64.0f;
-        canvas.Rectangle(bar.x,bar.y,bar.width,bar.height,{0.20f,0.24f,0.16f,0.94f});
-        canvas.Rectangle(bar.x+2*unit,bar.y+2*unit,bar.width-4*unit,bar.height-4*unit,{0.89f,0.85f,0.69f,0.98f});
+        rectangle(bar.x,bar.y,bar.width,bar.height,{0.20f,0.24f,0.16f,0.94f});
+        rectangle(bar.x+2*unit,bar.y+2*unit,bar.width-4*unit,bar.height-4*unit,{0.89f,0.85f,0.69f,0.98f});
         for(int i=0;i<4;++i)
         {
             const float x=bar.x+bar.padding+i*(bar.slot+bar.gap),y=bar.y+bar.padding;
             const bool selected=i==m_SelectedItem;
-            canvas.Rectangle(x,y,bar.slot,bar.slot,selected?
+            rectangle(x,y,bar.slot,bar.slot,selected?
                 std::array<float,4>{0.69f,0.47f,0.20f,1}:std::array<float,4>{0.57f,0.62f,0.43f,1});
-            canvas.Rectangle(x+2*unit,y+2*unit,bar.slot-4*unit,bar.slot-4*unit,
+            rectangle(x+2*unit,y+2*unit,bar.slot-4*unit,bar.slot-4*unit,
                              selected?std::array<float,4>{1,0.96f,0.79f,1}:std::array<float,4>{0.95f,0.93f,0.82f,1});
             const float inset=10*unit;
             if(m_Items && m_Assets)
@@ -475,10 +488,10 @@ namespace MyGame
                 if(const auto* frame=m_Assets->FrameBounds("items_farm",i))
                 {
                     const auto icon=FitSprite(*frame,{x+inset,y+inset},{bar.slot-2*inset,bar.slot-2*inset});
-                    canvas.Sprite(*m_Items,icon.origin.x,icon.origin.y,icon.size.x,icon.size.y,m_ItemRegions[static_cast<std::size_t>(i)]);
+                    canvas.Sprite(*m_Items,icon.origin.x,icon.origin.y,icon.size.x,icon.size.y,m_ItemRegions[static_cast<std::size_t>(i)],{1,1,1,opacity});
                 }
             }
-            else canvas.Rectangle(x+inset,y+inset,bar.slot-2*inset,bar.slot-2*inset,{0.65f,0.35f,0.16f,1});
+            else rectangle(x+inset,y+inset,bar.slot-2*inset,bar.slot-2*inset,{0.65f,0.35f,0.16f,1});
             // Numeric quantities from the same inventory model; no font/image dependency.
             const auto quantity=std::to_string(m_Actor.inventory.Count(m_Actor.SelectedItem(i)));
             constexpr std::array<unsigned int,10> digits{0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};
@@ -492,22 +505,46 @@ namespace MyGame
                     if(mask&(1u<<segment))
                     {
                         const auto& r=segments[segment];
-                        canvas.Rectangle(numberX+r[0]*unit,y+bar.slot-13*unit+r[1]*unit,r[2]*unit,r[3]*unit,
+                        rectangle(numberX+r[0]*unit,y+bar.slot-13*unit+r[1]*unit,r[2]*unit,r[3]*unit,
                                          {0.20f,0.22f,0.14f,1});
                     }
                 numberX+=5*unit;
             }
             // Small index marks remain readable without introducing an unrelated font renderer.
             for(int mark=0;mark<=i;++mark)
-                canvas.Rectangle(x+5*unit+mark*4*unit,y+bar.slot-6*unit,2*unit,2*unit,{0.39f,0.37f,0.23f,1});
+                rectangle(x+5*unit+mark*4*unit,y+bar.slot-6*unit,2*unit,2*unit,{0.39f,0.37f,0.23f,1});
         }
         const float meterWidth=bar.width*0.4f,meterX=bar.x+(bar.width-meterWidth)*0.5f;
-        canvas.Rectangle(meterX,bar.y-9*unit,meterWidth,5*unit,{0.17f,0.22f,0.14f,1});
-        canvas.Rectangle(meterX,bar.y-9*unit,meterWidth*std::clamp(m_Actor.stamina/20.0f,0.0f,1.0f),5*unit,{0.42f,0.67f,0.36f,1});
+        rectangle(meterX,bar.y-9*unit,meterWidth,5*unit,{0.17f,0.22f,0.14f,1});
+        rectangle(meterX,bar.y-9*unit,meterWidth*std::clamp(m_Actor.stamina/20.0f,0.0f,1.0f),5*unit,{0.42f,0.67f,0.36f,1});
         if(m_FeedbackTime>0)
-            canvas.Rectangle(bar.x+bar.width-6*unit,bar.y-9*unit,6*unit,5*unit,
+        {
+            const char* message=m_LastAction==InteractionResult::StorageFull?"KHO DAY":
+                m_LastAction==InteractionResult::Success && m_Action.impactConsumed && m_Action.toStorage?"VAO KHO":
+                m_LastAction==InteractionResult::Success && m_Action.impactConsumed && m_Action.operation==FarmOperation::Water?"DA TUOI":"";
+            HudText(canvas,message,bar.x+8*unit,bar.y-25*unit,1.3f*unit,{0.18f,0.23f,0.12f,opacity});
+        }
+        if(m_FeedbackTime>0)
+            rectangle(bar.x+bar.width-6*unit,bar.y-9*unit,6*unit,5*unit,
                 m_LastAction==InteractionResult::Success?std::array<float,4>{0.25f,0.78f,0.35f,m_FeedbackTime}:
                                                          std::array<float,4>{0.85f,0.25f,0.19f,m_FeedbackTime});
+        }
+        if(m_StorageOpen)
+        {
+            const float scale=std::min(1.0f,std::min(static_cast<float>(width)/640.0f,static_cast<float>(height)/360.0f));
+            const float x=width-230*scale,y=16*scale;
+            canvas.Rectangle(x,y,214*scale,124*scale,{0.94f,0.93f,0.83f,0.97f});
+            HudText(canvas,"KHO - K DONG",x+10*scale,y+10*scale,1.5f*scale);
+            const std::array<std::pair<ItemId,const char*>,4> rows{{{ItemId::Turnip,"CU CAI"},
+                {ItemId::Carrot,"CA ROT"},{ItemId::Potato,"KHOAI TAY"},{ItemId::Apple,"TAO"}}};
+            for(std::size_t i=0;i<rows.size();++i)
+            {
+                const float rowY=y+(32+static_cast<float>(i)*16)*scale;
+                HudText(canvas,rows[i].second,x+10*scale,rowY,1.5f*scale);
+                HudText(canvas,std::to_string(m_Actor.home.items.Count(rows[i].first)),x+163*scale,rowY,1.5f*scale);
+            }
+            HudText(canvas,"SO O "+std::to_string(m_Actor.home.items.UsedSlots())+"/"+std::to_string(m_Actor.home.items.SlotCount()),x+10*scale,y+104*scale,1.3f*scale);
+        }
         if(m_Options.debugOverlay)
         {
             canvas.Rectangle(16,16,132,76,{0.99f,0.97f,0.88f,0.92f});

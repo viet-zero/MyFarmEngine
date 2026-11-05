@@ -85,12 +85,12 @@ int main()
     Check(scene.Snapshot().actionId==started.actionId && Same(scene.Snapshot().player,started.player) &&
           scene.Snapshot().inventoryCount==3,"spam/movement restarted pending action");
     scene.UpdateSimulation(0.02f,{});const auto impacted=scene.Snapshot();
-    Check(scene.Bag().Count(ItemId::Apple)==1 && scene.Bag().Count(ItemId::TurnipSeed)==3,
+    Check(scene.Storage().items.Count(ItemId::Apple)==1 && scene.Bag().Count(ItemId::Apple)==0 && scene.Bag().Count(ItemId::TurnipSeed)==3,
           "live fruit impact changed seed quantity instead of adding apple");
-    Check(impacted.inventoryCount==4 && impacted.fruitHarvested==1 && impacted.effects>0 &&
+    Check(impacted.inventoryCount==3 && impacted.storedItemCount==1 && impacted.fruitHarvested==1 && impacted.effects>0 &&
           scene.TargetState("tree.apple.01")->stock==2,"marker did not apply fruit/model/FX together");
     for(int i=0;i<10;++i)scene.UpdateSimulation(0.1f,{});
-    Check(scene.Snapshot().inventoryCount==4 && scene.TargetState("tree.apple.01")->stock==2 &&
+    Check(scene.Snapshot().inventoryCount==3 && scene.Snapshot().storedItemCount==1 && scene.TargetState("tree.apple.01")->stock==2 &&
           scene.Snapshot().actionPhase==ActionPhase::Finished,"fruit impact repeated or recovery stuck");
     scene.Reset();scene.UpdateSimulation(0,orchard);scene.UpdateSimulation(0,interact);
     const auto cancelledId=scene.Snapshot().actionId;SceneInput cancel;cancel.cancel=true;
@@ -125,22 +125,38 @@ int main()
     Check(scene.Snapshot().inventoryCount==3 && !scene.TargetState("crop.plot.01")->planted,"plant mutated at Start");
     scene.UpdateSimulation(0.1f,{});
     Check(scene.Snapshot().inventoryCount==2 && scene.TargetState("crop.plot.01")->planted,"plant impact missing");
+    for(int i=0;i<10;++i)scene.UpdateSimulation(0.1f,{});
+    Check(scene.TargetState("crop.plot.01")->age==0,"dry crop grew without water");
+    SceneInput water;water.selectedItem=0;water.interact=true;scene.UpdateSimulation(0,water);
+    Check(scene.TargetState("crop.plot.01")->moisture==0,"watering mutated before impact");
+    scene.UpdateSimulation(0.1f,{});
+    Check(scene.TargetState("crop.plot.01")->moisture>0,"watering impact missing");
+    const auto wetPlot=scene.TargetState("crop.plot.01");SceneInput pauseCrop;pauseCrop.paused=true;
+    scene.UpdateSimulation(10,pauseCrop);
+    Check(scene.TargetState("crop.plot.01")->age==wetPlot->age && scene.TargetState("crop.plot.01")->moisture==wetPlot->moisture,
+          "paused crop grew or lost moisture");
     for(int i=0;i<65;++i)scene.UpdateSimulation(0.1f,{});
     Check(scene.TargetState("crop.plot.01")->ready,"crop did not grow during simulation");
     scene.UpdateSimulation(0,interact);
     Check(scene.Snapshot().inventoryCount==2 && scene.TargetState("crop.plot.01")->active,"harvest mutated at Start");
     scene.UpdateSimulation(0.1f,{});
-    Check(scene.Snapshot().inventoryCount==3 && !scene.TargetState("crop.plot.01")->active,"harvest impact not applied once");
-    Check(scene.Bag().Count(ItemId::TurnipSeed)==2 && scene.Bag().Count(ItemId::Turnip)==1,
+    Check(scene.Snapshot().inventoryCount==2 && scene.Snapshot().storedItemCount==1 && scene.TargetState("crop.plot.01")->active && !scene.TargetState("crop.plot.01")->planted,"harvest impact not applied once");
+    Check(scene.Bag().Count(ItemId::TurnipSeed)==2 && scene.Bag().Count(ItemId::Turnip)==0 && scene.Storage().items.Count(ItemId::Turnip)==1,
           "live crop did not preserve separate seed/produce quantities");
+    for(int i=0;i<6;++i)scene.UpdateSimulation(0.1f,{});
+    SceneInput replant;replant.selectedItem=2;replant.interact=true;scene.UpdateSimulation(0,replant);
+    Check(scene.Bag().Count(ItemId::TurnipSeed)==2,"replant charged before impact");
+    scene.UpdateSimulation(0.1f,{});
+    Check(scene.Bag().Count(ItemId::TurnipSeed)==1 && scene.TargetState("crop.plot.01")->planted &&
+          scene.TargetState("crop.plot.01")->age==0 && scene.Storage().items.Count(ItemId::Turnip)==1,"live replant reused old growth or lost stored produce");
     for(int i=0;i<6;++i)scene.UpdateSimulation(0.1f,{});
     travel({3000,2020});travel({2990,2020});
     SceneInput facePickup;facePickup.movement={1,0};scene.UpdateSimulation(0,facePickup);
-    scene.UpdateSimulation(0,interact);Check(scene.Snapshot().inventoryCount==3,"pickup mutated at Start");
+    scene.UpdateSimulation(0,interact);Check(scene.Snapshot().inventoryCount==1,"pickup mutated at Start");
     scene.UpdateSimulation(0.1f,{});
-    Check(scene.Snapshot().inventoryCount==4 && !scene.TargetState("item.demo.01")->active,"pickup impact not applied");
+    Check(scene.Snapshot().inventoryCount==2 && !scene.TargetState("item.demo.01")->active,"pickup impact not applied");
     for(int i=0;i<10;++i)scene.UpdateSimulation(0.1f,{});
-    Check(scene.Snapshot().inventoryCount==4,"pickup replayed after completion");
+    Check(scene.Snapshot().inventoryCount==2,"pickup replayed after completion");
 
     // Validate the real scene draw path, including the opt-in corner portraits.
     MyEngine::Canvas2D canvas;Check(canvas.Initialize(),"canvas failed");glViewport(0,0,640,360);
@@ -152,6 +168,28 @@ int main()
     options.debugOverlay=false;scene.SetOptions(options);scene.Render(canvas,640,360);
     unsigned char hidden[4]={};glReadPixels(30,330,1,1,GL_RGBA,GL_UNSIGNED_BYTE,hidden);
     Check(clean[0]==hidden[0] && clean[1]==hidden[1] && clean[2]==hidden[2],"debug portraits leaked into gameplay");
+    SceneInput quiet;
+    for(int i=0;i<51;++i)scene.UpdateSimulation(0.1f,quiet);
+    Check(scene.HotbarAlpha()==0,"live idle hotbar not hidden");
+    scene.Render(canvas,640,360);
+    const auto hotbar=HotbarLayout::ForViewport(640,360);
+    unsigned char hiddenBar[4]={};glReadPixels(static_cast<int>(hotbar.x+3),360-static_cast<int>(hotbar.y+3),1,1,GL_RGBA,GL_UNSIGNED_BYTE,hiddenBar);
+    SceneInput reveal;reveal.selectedItem=0;scene.UpdateSimulation(0,reveal);
+    Check(scene.HotbarAlpha()==1,"live selection did not reveal hotbar");scene.Render(canvas,640,360);
+    unsigned char shownBar[4]={};glReadPixels(static_cast<int>(hotbar.x+3),360-static_cast<int>(hotbar.y+3),1,1,GL_RGBA,GL_UNSIGNED_BYTE,shownBar);
+    Check(hiddenBar[0]!=shownBar[0] || hiddenBar[1]!=shownBar[1] || hiddenBar[2]!=shownBar[2],"hidden hotbar still rendered");
+    unsigned char closedPanel[4]={};glReadPixels(415,340,1,1,GL_RGBA,GL_UNSIGNED_BYTE,closedPanel);
+    SceneInput openStorage;openStorage.toggleStorage=true;scene.CaptureInput(openStorage);scene.FixedUpdate(1.0f/60);
+    Check(scene.Snapshot().storageOpen,"K did not open storage in own garden");
+    scene.FixedUpdate(1.0f/60);Check(scene.Snapshot().storageOpen,"catch-up replayed K and closed storage");
+    scene.Render(canvas,640,360);unsigned char openedPanel[4]={};glReadPixels(415,340,1,1,GL_RGBA,GL_UNSIGNED_BYTE,openedPanel);
+    Check(closedPanel[0]!=openedPanel[0] || closedPanel[1]!=openedPanel[1] || closedPanel[2]!=openedPanel[2],"on-demand warehouse panel not rendered");
+    scene.UpdateSimulation(0,openStorage);Check(!scene.Snapshot().storageOpen,"K did not close storage");
+    scene.UpdateSimulation(0,openStorage);SceneInput leave;leave.teleport=6;
+    options.demoMode=true;scene.SetOptions(options);scene.UpdateSimulation(0,leave);
+    Check(!scene.Snapshot().storageOpen,"leaving home did not close storage");
+    scene.UpdateSimulation(0,openStorage);Check(!scene.Snapshot().storageOpen,"storage opened outside own property");
+
     Check(glGetError()==GL_NO_ERROR,"OpenGL error in Gameplay11 rendering");
     canvas.Shutdown();scene.Shutdown();assets.Shutdown();
 

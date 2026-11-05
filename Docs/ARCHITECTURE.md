@@ -1,5 +1,9 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## P2-002B — 2026-11-05
+
+Crop.h/.cpp now provides three compiled CropDefinitions; plot state stays in InteractionTarget, with derived CropState and generation revision. InteractionSystem distinguishes Plant/Water/Harvest and captures operation/destination/owner before IMPACT. InteractionActor owns bag + HomeStorage (same Inventory class, separate explicit containers); membership uses owner plus finite half-open property bounds. Scene sets a prototype player garden, exposes read-only storage/snapshots, K on-demand counts, fixed-time HotbarVisibility; render remains read-only. [Contract, boundaries and limits](FARMING_HOME_STORAGE.md). No SQL or new asset I/O in the frame loop.
+
 ## Typed inventory — 2026-11-05
 
 InteractionActor owns the single Inventory (Gameplay/Inventory). Stable ItemIds/stack rules replace writable count/capacity; SceneSnapshot.inventoryCount remains derived resource-only diagnostic. InteractionSystem validates hotbar ItemId/ownership and prepares bag mutations before committing at impact. DemoScene2D renders quantities from that bag; no DB I/O in frame loop. [Contract and local SQL Express connectivity](TYPED_INVENTORY.md). Items.json remains an unimplemented data-loader stub; bag-grid UI and persistence are separate tasks.

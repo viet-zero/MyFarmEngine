@@ -7,7 +7,7 @@
 namespace MyGame
 {
     // Explicit IDs are stable data identifiers, never atlas frame indices.
-    enum class ItemId : std::uint32_t {None=0,TurnipSeed=1001,Turnip=1002,Apple=1003,Cake=1004,Wood=1005,WateringCan=2001,Axe=2002};
+    enum class ItemId : std::uint32_t {None=0,TurnipSeed=1001,Turnip=1002,Apple=1003,Cake=1004,Wood=1005,CarrotSeed=1006,Carrot=1007,PotatoSeed=1008,Potato=1009,WateringCan=2001,Axe=2002};
     struct ItemDefinition {ItemId id;std::string_view key;int maxStack;bool tool;};
     const ItemDefinition* FindItem(ItemId id);
     struct ItemStack
@@ -18,8 +18,8 @@ namespace MyGame
     class Inventory
     {
     public:
-        static constexpr int MaxSlots=12;
-        explicit Inventory(int slots=MaxSlots);
+        static constexpr int MaxSlots=48,DefaultSlots=12;
+        explicit Inventory(int slots=DefaultSlots);
         static Inventory Starter();
         int SlotCount() const {return m_SlotCount;}
         int UsedSlots() const;
@@ -34,7 +34,7 @@ namespace MyGame
         bool operator==(const Inventory&) const = default;
     private:
         std::array<ItemStack,MaxSlots> m_Slots{};
-        int m_SlotCount=MaxSlots;
+        int m_SlotCount=DefaultSlots;
     };
     inline constexpr std::array<ItemId,4> DefaultHotbar{ItemId::WateringCan,ItemId::Axe,ItemId::TurnipSeed,ItemId::Cake};
 }

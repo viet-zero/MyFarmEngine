@@ -1,5 +1,19 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## P2-002B — Cây, kho vườn nhà và HUD gọn — 2026-11-05
+
+**DONE kỹ thuật trong phạm vi slice.** Plot củ cải thật có gieo → khô → tưới → tăng trưởng → chín → thu → gieo lại trên cùng ID. CropId/seed/produce definitions cho turnip/carrot/potato đã kiểm đủ logic; scene hiện chỉ có starter/plot củ cải, chưa UI mua/chọn hai loại hạt kia. Cây chỉ lớn khi ẩm; thời gian dev 5/8/12s, mỗi lần tưới cấp 6s ẩm. Dùng fixed simulation; pause giữ age/moisture.
+
+**Yêu cầu mới về kho đã tích hợp:** nông sản/táo thu khi cả actor và target ở trong vùng sở hữu gửi thẳng vào HomeStorage 48 ô, không qua ba lô. Bag đầy vẫn thu được nếu kho còn chỗ; kho đầy giữ nguyên cây/stock, không fallback hoặc mất đồ. Ngoài vườn/không đúng owner thì vào bag; ground pickup vẫn bag. Region prototype x=[1400,3840), y=[640,2304), owner player local; chưa hệ đất/nhà hoặc multiplayer authority.
+
+**UI theo lựa chọn 1+3:** 4 ô hotbar, tự ẩn sau 4s không thao tác (fade 0.6s cuối); di chuyển/đổi ô/F/C/K hiện lại. K mở/đóng bảng số lượng kho chỉ đọc trong vườn; ra ngoài tự đóng. Không vẽ lưới bag/kho thường trực, chưa rút/chuyển/sắp đồ. Labels ASCII prototype, không tạo font/image asset mới.
+
+**Debug 26/26 PASS (20.84s), Release 26/26 PASS (10.50s)** bản cuối. New gameplay.farming kiểm 3 crop IDs, dry/wet/re-water/harvest/replant, partial wet tick, tool/cancel/revision, kho đầy/owner/biên/queue/replay, trace 30/60/144 Hz (840 ticks) và HUD timer. Runtime đi tuyến thật trồng/tưới/thu vào kho/trồng lại; OpenGL pixel tests kiểm hotbar ẩn/hiện, K panel và input chỉ toggle một lần qua catch-up; smoke/Windows launch regressions pass. Không manual extended-play hoặc art approval mới.
+
+**204 Original + imported/art SHA256 không đổi.** Không đổi ảnh/VisualClips/Assets.csv. Kho/cây/bag vẫn RAM, Reset hoặc tắt game chưa bảo toàn; SQL preflight từ P2-002A không phải save/load. [Contract/cách chơi/giới hạn](FARMING_HOME_STORAGE.md), [task](TASKS/P2-002B.md).
+
+P2-002 tổng thể PARTIAL: kinh tế/mua bán, lựa chọn 3 hạt ở UI, cây chặt/drop, lưu game còn thiếu. Tiếp [P2-002C](TASKS/P2-002C.md): tiền, mua hạt và bán từ đúng bag/kho; sau đó SQL snapshot/save/load có roundtrip/rollback để giữ cả kho và trạng thái cây. Artwork tám hướng/outfit làm sau, không chặn logic. Các mốc dưới là lịch sử.
+
 ## P2-002A — Inventory thật, logic-first — 2026-11-05
 
 **DONE kỹ thuật trong phạm vi inventory core.** InteractionActor sở hữu một bag 12 ô với stable ItemIds, stack limits, add/remove all-or-nothing. Có watering can x1, axe x1, turnip seeds x3 ban đầu; tools max-stack 1. Gieo chỉ trừ seed.turnip tại impact; thu nhận crop.turnip, orchard nhận fruit.apple; pickup dùng item ID. Hotbar kiểm ItemId và tool ownership, số lượng lấy trực tiếp từ bag. Không còn writable inventoryCount/inventoryCapacity; SceneSnapshot.inventoryCount chỉ là resource count suy ra, không tính tools.

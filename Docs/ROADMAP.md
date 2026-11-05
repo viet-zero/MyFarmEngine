@@ -1,5 +1,9 @@
 # MyFarmEngine — Roadmap sau audit
 
+## P2-002B gate — 2026-11-05
+
+Trồng/tưới/growth/trồng lại và kho sở hữu đã tích hợp, Debug/Release 26/26 PASS. [Contract](FARMING_HOME_STORAGE.md). Ba crop definitions được kiểm logic, scene chỉ có turnip; P2 umbrella vẫn PARTIAL. Theo user choice 1+3, hotbar 4 ô tự ẩn và K mở bảng kho khi cần. Next [P2-002C](TASKS/P2-002C.md): money/seed choice/buy-sell từ bag hoặc kho hợp lệ → SQL durable snapshot/save-load. Chưa ghi DB hoặc lưu qua restart; artwork làm sau.
+
 ## Logic-first inventory gate — 2026-11-05
 
 Per user direction, gameplay logic no longer waits for new character images. P2-002A typed inventory is integrated; P2-002 remains PARTIAL. Next [P2-002B crop/watering](TASKS/P2-002B.md), then money/buy/sell and a save/load pilot using installed SQL Server where appropriate. P2-001 remains blocked only for its own art acceptance. .\SQLEXPRESS read-only connection tested successfully; no game database or C++ persistence added. [Inventory details](TYPED_INVENTORY.md).

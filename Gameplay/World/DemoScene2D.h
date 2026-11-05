@@ -5,6 +5,7 @@
 #include "Gameplay/World/WorldMap.h"
 #include "Gameplay/World/ForegroundTrees.h"
 #include "Gameplay/Graphics/RenderOrder.h"
+#include "Gameplay/Graphics/HotbarVisibility.h"
 #include "Gameplay/Systems/InteractionSystem.h"
 #include "Gameplay/Effects/EffectPool.h"
 #include <array>
@@ -27,6 +28,9 @@ namespace MyGame
         ActionPhase actionPhase=ActionPhase::Idle;
         InteractionResult actionResult=InteractionResult::NoTarget;
         std::size_t effects=0;
+        int storedItemCount=0;
+        float hotbarAlpha=1;
+        bool storageOpen=false;
     };
     class DemoScene2D
     {
@@ -38,6 +42,8 @@ namespace MyGame
         void UpdateSimulation(float deltaTime,const SceneInput& input);
         SceneSnapshot Snapshot() const;
         const Inventory& Bag() const {return m_Actor.inventory;}
+        const HomeStorage& Storage() const {return m_Actor.home;}
+        float HotbarAlpha() const {return m_Hotbar.Alpha();}
         ItemId SelectedItem() const {return m_Actor.SelectedItem(m_SelectedItem); }
         std::optional<InteractionTarget> TargetState(std::string_view id) const;
         bool Initialize(AssetTextures& assets,const std::filesystem::path& dataRoot);
@@ -72,6 +78,8 @@ namespace MyGame
         ForegroundTrees m_Trees;
         RenderOrder m_RenderOrder;
         InteractionActor m_Actor;
+        HotbarVisibility m_Hotbar;
+        bool m_StorageOpen=false;
         InteractionAction m_Action;
         std::vector<InteractionTarget> m_Targets;
         EventBus m_Events;

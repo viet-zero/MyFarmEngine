@@ -1,5 +1,9 @@
 # P2-002A — Typed inventory core
 
+## P2-002B update — 2026-11-05
+
+[New farming/storage contract](FARMING_HOME_STORAGE.md): one bag (default 12 slots) plus distinct HomeStorage (48), same Inventory algorithm. ItemIds 1006/1007 seed.carrot/crop.carrot and 1008/1009 seed.potato/crop.potato added, maxStack20. Watering now works with owned can. Home crop/apple harvest goes to warehouse; ground pickup/outside harvest remains bag. Counts stay model-derived; K panel read-only, no auto-withdraw or SQL save. Earlier P2-002A descriptions below are historical (its seven-item table, permanent hotbar and unimplemented watering).
+
 2026-11-05. Logic-first slice of P2-002; keeps existing engine and assets. Does not require eight-direction/outfit artwork.
 
 ## Single owner and data
