@@ -1,5 +1,7 @@
 # MyFarmEngine
 
+**Cập nhật 05/11 — ưu tiên logic:** P2-002A đã có inventory ItemId/stack/12 ô, typed seed/crop/apple và số lượng hotbar. Debug/Release **25/25 PASS**. SQL Express local đã kết nối chỉ đọc thành công; chưa save/load. Tiếp theo crop/tưới/growth, hình ảnh bổ sung sau. [Tiến độ](Docs/PROGRESS.md) · [Inventory contract](Docs/TYPED_INVENTORY.md).
+
 Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
 **Branch hiện tại: Gameplay10 Phase F — Y-sorting, animation bốn hướng và hái quả.** Hướng dẫn tự làm, công dụng hàm và biến được tập trung trong [HuongDan/](HuongDan/README.md). Multiplayer, chat chữ và thoại nằm trong [kế hoạch online](Docs/KeHoachOnline.md).

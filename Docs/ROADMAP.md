@@ -1,5 +1,9 @@
 # MyFarmEngine — Roadmap sau audit
 
+## Logic-first inventory gate — 2026-11-05
+
+Per user direction, gameplay logic no longer waits for new character images. P2-002A typed inventory is integrated; P2-002 remains PARTIAL. Next [P2-002B crop/watering](TASKS/P2-002B.md), then money/buy/sell and a save/load pilot using installed SQL Server where appropriate. P2-001 remains blocked only for its own art acceptance. .\SQLEXPRESS read-only connection tested successfully; no game database or C++ persistence added. [Inventory details](TYPED_INVENTORY.md).
+
 ## Gate P0-002 — 2026-11-05
 
 [P0-002](TASKS/P0-002.md) DONE: 11 metadata flip fields đã sửa, regression Debug/Release 24/24; không thay ảnh/engine. P0-001 còn authored pivots/canopy/art, P2-001 còn BLOCKED artwork acceptance. Bước tiếp: chốt model/root Linh, tạo/duyệt tám hướng và outfit layers, rồi triển khai P2-001. Findings P0-001 bên dưới là lịch sử trước sửa.
@@ -34,7 +38,7 @@ Sửa runtime/console, opt-in behavior, placement/UI: DONE theo [task Gameplay11
 | P1 | [P1-002](TASKS/P1-002.md) animation impact — DONE | P1-001 | Debug/Release 22/22; model/FX tại impact, cancel/pause/retrigger guards |
 | P1 | [P1-003](TASKS/P1-003.md) fixed simulation — DONE | P1-002 | Render rates khác nhau cho kết quả gameplay tương đương |
 | P2 | [P2-001](TASKS/P2-001.md) tám hướng/outfit | P1-001, P1-002 | Art đủ coverage, layers aligned, outfit đổi thật |
-| P2 | [P2-002](TASKS/P2-002.md) farm/typed inventory | P2-001, P1-003 | Ba crop, tưới/thu/bán, cây chặt cập nhật hình và collider |
+| P2 | [P2-002](TASKS/P2-002.md) farm/typed inventory | P1-002/P1-003 + P2-002A; P2-001 only for final art | Ba crop, tưới/thu/bán, cây chặt cập nhật hình và collider |
 | P3 | [P3-001](TASKS/P3-001.md) clock/light/shadow | P2-002 | Ngày đêm mượt, shadow proxy/local light có toggle |
 | P4 | [P4-001](TASKS/P4-001.md) NPC/animal/shop/door | P2-002 | Một cư dân/thú/cửa/shop hoạt động, giao dịch atomic |
 | P4 | [P4-002](TASKS/P4-002.md) SQLite | P3-001, P4-001 | Restart/roundtrip/migration/backup/write-error tests |

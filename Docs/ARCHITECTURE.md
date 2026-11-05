@@ -1,5 +1,9 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## Typed inventory — 2026-11-05
+
+InteractionActor owns the single Inventory (Gameplay/Inventory). Stable ItemIds/stack rules replace writable count/capacity; SceneSnapshot.inventoryCount remains derived resource-only diagnostic. InteractionSystem validates hotbar ItemId/ownership and prepares bag mutations before committing at impact. DemoScene2D renders quantities from that bag; no DB I/O in frame loop. [Contract and local SQL Express connectivity](TYPED_INVENTORY.md). Items.json remains an unimplemented data-loader stub; bag-grid UI and persistence are separate tasks.
+
 ## Cập nhật P1-003 — 2026-11-05
 
 Application sở hữu FixedStepClock 60 Hz: ProcessInput một lần/frame → 0..6 Update(1/60) → Render(alpha). IGame giữ Render() tương thích, thêm hook input/pause/viewport/presentation. SceneInputBuffer giữ command tới tick đầu, không đọc lại GLFW trong catch-up. GameplayState xử lý UI ngay mỗi frame; DemoScene2D lưu previous/current feet và camera, render dùng camera copy. Minimize/focus/preview/refresh reset accumulator và snap presentation; resize thông báo camera riêng. [Contract và bằng chứng](FIXED_TIMESTEP.md).

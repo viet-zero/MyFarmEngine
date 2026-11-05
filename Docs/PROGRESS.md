@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## P2-002A — Inventory thật, logic-first — 2026-11-05
+
+**DONE kỹ thuật trong phạm vi inventory core.** InteractionActor sở hữu một bag 12 ô với stable ItemIds, stack limits, add/remove all-or-nothing. Có watering can x1, axe x1, turnip seeds x3 ban đầu; tools max-stack 1. Gieo chỉ trừ seed.turnip tại impact; thu nhận crop.turnip, orchard nhận fruit.apple; pickup dùng item ID. Hotbar kiểm ItemId và tool ownership, số lượng lấy trực tiếp từ bag. Không còn writable inventoryCount/inventoryCapacity; SceneSnapshot.inventoryCount chỉ là resource count suy ra, không tính tools.
+
+**Debug 25/25 PASS (22.40s), Release 25/25 PASS (10.97s)** trên bản cuối. Test mới gameplay.inventory kiểm full bag/matching stacks, atomic failure, IDs/amount invalid, apples không làm seed, tool mất hoặc binding/reward đổi trước impact. Live scene kiểm starter/apple/crop typed quantities; action replay, fixed-rate 30/60/144, graphics/smoke/Windows launch regression đều pass. Không có manual extended play/duyệt pixel UI số trong lượt này. 204 Original và imported/art SHA256 giữ nguyên.
+
+**SQL máy người dùng đã kiểm thực tế:** MSSQL$SQLEXPRESS chạy; Windows Authentication connect .\SQLEXPRESS/master và SELECT SERVERPROPERTY thành công: Express Edition 64-bit, 17.0.1000.7. Driver ODBC 17/18 có trên máy. Chỉ probe .NET đọc thông tin, chưa C++ SQL integration, chưa tạo database/tables hoặc save/load; không đổi network/service. [Contract và SQL evidence](TYPED_INVENTORY.md).
+
+P2-002 tổng thể **PARTIAL**; chưa watering/ba crop/money/buy-sell/bag-grid UI. Existing icons giữ nguyên (seed slot vẫn placeholder icon cũ), cake/watering/wood definitions không đồng nghĩa đã có use/drop. P2-001 chờ artwork của riêng task đó, không chặn logic nữa. Tiếp theo [P2-002B](TASKS/P2-002B.md) plot tái sử dụng + crop IDs/tưới/growth → giao dịch tiền/mua/bán → persistence pilot có roundtrip/rollback trên SQL đã cài khi cần. Không triển khai cả roadmap trong một lượt.
+
 ## Cập nhật P0-002 — 2026-11-05
 
 **DONE kỹ thuật:** sửa đúng 11 fields flip_x trong 62 clips, không đổi frame/timing/asset IDs. Idle trái Linh/An (cả NPC) và action trái An không mirror nữa; side walk/run An dùng left không mirror, right mirror. Regression kiểm các clip đã review và walk → idle giữ hướng; chạy test mới với catalog trước sửa trả exit 1 đúng lỗi.

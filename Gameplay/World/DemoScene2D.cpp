@@ -98,7 +98,7 @@ namespace MyGame
     {
         return {m_Player,m_Npc,m_Dog,m_PlayerState,m_NpcAnimation.State(),m_DogAnimation.State(),
                 m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame(),
-                m_Actor.inventoryCount,m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size()};
+                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size()};
     }
     std::optional<InteractionTarget> DemoScene2D::TargetState(std::string_view id) const
     {
@@ -479,6 +479,24 @@ namespace MyGame
                 }
             }
             else canvas.Rectangle(x+inset,y+inset,bar.slot-2*inset,bar.slot-2*inset,{0.65f,0.35f,0.16f,1});
+            // Numeric quantities from the same inventory model; no font/image dependency.
+            const auto quantity=std::to_string(m_Actor.inventory.Count(m_Actor.SelectedItem(i)));
+            constexpr std::array<unsigned int,10> digits{0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};
+            constexpr std::array<std::array<float,4>,7> segments{{
+                {0,0,3,1},{2,0,1,3},{2,2,1,3},{0,4,3,1},{0,2,1,3},{0,0,1,3},{0,2,3,1}}};
+            float numberX=x+bar.slot-5*unit-static_cast<float>(quantity.size())*5*unit;
+            for(const char digit:quantity)
+            {
+                const auto mask=digits[static_cast<std::size_t>(digit-'0')];
+                for(std::size_t segment=0;segment<segments.size();++segment)
+                    if(mask&(1u<<segment))
+                    {
+                        const auto& r=segments[segment];
+                        canvas.Rectangle(numberX+r[0]*unit,y+bar.slot-13*unit+r[1]*unit,r[2]*unit,r[3]*unit,
+                                         {0.20f,0.22f,0.14f,1});
+                    }
+                numberX+=5*unit;
+            }
             // Small index marks remain readable without introducing an unrelated font renderer.
             for(int mark=0;mark<=i;++mark)
                 canvas.Rectangle(x+5*unit+mark*4*unit,y+bar.slot-6*unit,2*unit,2*unit,{0.39f,0.37f,0.23f,1});

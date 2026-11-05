@@ -25,6 +25,8 @@ int main()
     DemoScene2D scene;
     Check(scene.Initialize(assets,MyEngine::AssetRoot()/"Data"),"scene failed");
     auto initial=scene.Snapshot();
+    Check(scene.Bag().Count(ItemId::TurnipSeed)==3 && scene.Bag().Count(ItemId::Axe)==1 &&
+          scene.Bag().Count(ItemId::Apple)==0,"scene starter typed inventory invalid");
     for(int i=0;i<180;++i) scene.UpdateSimulation(1.0f/60,{});
     auto idle=scene.Snapshot();
     Check(Same(initial.player,idle.player) && Same(initial.npc,idle.npc) && Same(initial.pet,idle.pet),"default scene moved without input/AI/follow");
@@ -83,6 +85,8 @@ int main()
     Check(scene.Snapshot().actionId==started.actionId && Same(scene.Snapshot().player,started.player) &&
           scene.Snapshot().inventoryCount==3,"spam/movement restarted pending action");
     scene.UpdateSimulation(0.02f,{});const auto impacted=scene.Snapshot();
+    Check(scene.Bag().Count(ItemId::Apple)==1 && scene.Bag().Count(ItemId::TurnipSeed)==3,
+          "live fruit impact changed seed quantity instead of adding apple");
     Check(impacted.inventoryCount==4 && impacted.fruitHarvested==1 && impacted.effects>0 &&
           scene.TargetState("tree.apple.01")->stock==2,"marker did not apply fruit/model/FX together");
     for(int i=0;i<10;++i)scene.UpdateSimulation(0.1f,{});
@@ -127,6 +131,8 @@ int main()
     Check(scene.Snapshot().inventoryCount==2 && scene.TargetState("crop.plot.01")->active,"harvest mutated at Start");
     scene.UpdateSimulation(0.1f,{});
     Check(scene.Snapshot().inventoryCount==3 && !scene.TargetState("crop.plot.01")->active,"harvest impact not applied once");
+    Check(scene.Bag().Count(ItemId::TurnipSeed)==2 && scene.Bag().Count(ItemId::Turnip)==1,
+          "live crop did not preserve separate seed/produce quantities");
     for(int i=0;i<6;++i)scene.UpdateSimulation(0.1f,{});
     travel({3000,2020});travel({2990,2020});
     SceneInput facePickup;facePickup.movement={1,0};scene.UpdateSimulation(0,facePickup);

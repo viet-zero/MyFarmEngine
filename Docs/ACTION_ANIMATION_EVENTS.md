@@ -1,5 +1,9 @@
 # Animation impact và action transaction — P1-002
 
+## Typed resources update — 2026-11-05
+
+IMPACT now consumes seed.turnip or grants crop.turnip/fruit.apple/declared pickup item in the single typed bag. Capacity is slot/stack-specific; tool ownership and captured binding/reward ID are revalidated. Candidate bag is committed only after resource and event-queue checks. Start/cancel/replay policy stays unchanged. [Inventory contract](TYPED_INVENTORY.md). Older counter descriptions below are historical.
+
 2026-11-05. Mở rộng Animator, VisualCatalog và InteractionSystem hiện có; không thêm animation/resource/save manager song song. Luồng F thật trong DemoScene2D không còn gọi Use để mutate ngay tại input.
 
 ## Hành vi gameplay

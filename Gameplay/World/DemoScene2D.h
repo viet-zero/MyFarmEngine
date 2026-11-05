@@ -37,6 +37,8 @@ namespace MyGame
         // Same simulation path used by live input and deterministic integration tests.
         void UpdateSimulation(float deltaTime,const SceneInput& input);
         SceneSnapshot Snapshot() const;
+        const Inventory& Bag() const {return m_Actor.inventory;}
+        ItemId SelectedItem() const {return m_Actor.SelectedItem(m_SelectedItem); }
         std::optional<InteractionTarget> TargetState(std::string_view id) const;
         bool Initialize(AssetTextures& assets,const std::filesystem::path& dataRoot);
         void CaptureInput();

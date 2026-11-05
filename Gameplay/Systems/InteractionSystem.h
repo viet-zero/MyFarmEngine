@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Event/EventBus.h"
+#include "Gameplay/Inventory/Inventory.h"
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
@@ -17,12 +18,16 @@ namespace MyGame
         float age=0;
         int stock=0,maxStock=0;
         float regrowSeconds=30.0f;
+        ItemId item=ItemId::Apple; // Pickup/fruit reward; crops currently yield turnip.
     };
     struct InteractionActor
     {
         glm::vec2 position{0,0},facing{0,1};
         float stamina=20,cooldown=0;
-        int inventoryCount=3,inventoryCapacity=12;
+        Inventory inventory=Inventory::Starter();
+        std::array<ItemId,4> hotbar=DefaultHotbar;
+        ItemId SelectedItem(int slot) const
+        {return slot>=0 && slot<static_cast<int>(hotbar.size())?hotbar[static_cast<std::size_t>(slot)]:ItemId::None;}
         bool busy=false,uiCapturesInput=false;
         std::uint64_t nextActionId=1,activeActionId=0,lastImpactActionId=0;
     };
@@ -36,6 +41,7 @@ namespace MyGame
         std::string targetId;
         TargetKind kind=TargetKind::Object;
         int selectedItem=0;
+        ItemId item=ItemId::None,targetItem=ItemId::None;
         bool cropWasPlanted=false,impactConsumed=false;
         ActionPhase phase=ActionPhase::Idle;
         InteractionResult result=InteractionResult::NoTarget;

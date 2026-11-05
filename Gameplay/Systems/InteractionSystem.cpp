@@ -39,18 +39,21 @@ namespace MyGame
             return InteractionResult::WrongFacing;
         if(!std::isfinite(actor.cooldown) || actor.cooldown>0) return InteractionResult::Cooldown;
         if(!std::isfinite(actor.stamina) || actor.stamina<StaminaCost) return InteractionResult::NoStamina;
-        if(target->kind==TargetKind::Object && selectedItem!=1) return InteractionResult::WrongTool;
+        const auto item=actor.SelectedItem(selectedItem);
+        if(!FindItem(item)) return InteractionResult::WrongTool;
+        if(target->kind==TargetKind::Object &&
+           (item!=ItemId::Axe || actor.inventory.Count(ItemId::Axe)==0)) return InteractionResult::WrongTool;
         if(target->kind==TargetKind::Crop)
         {
-            if(!target->planted && selectedItem!=2) return InteractionResult::WrongTool;
-            if(!target->planted && actor.inventoryCount<=0) return InteractionResult::NoSeeds;
+            if(!target->planted && item!=ItemId::TurnipSeed) return InteractionResult::WrongTool;
+            if(!target->planted && !actor.inventory.CanRemove(ItemId::TurnipSeed,1)) return InteractionResult::NoSeeds;
             if(target->planted && !target->ready) return InteractionResult::NotReady;
         }
         if(target->kind==TargetKind::FruitTree && target->stock<=0) return InteractionResult::NotReady;
         const bool receivesItem=target->kind==TargetKind::Pickup ||
                                 (target->kind==TargetKind::Crop && target->planted) ||
                                 target->kind==TargetKind::FruitTree;
-        if(receivesItem && actor.inventoryCount>=actor.inventoryCapacity) return InteractionResult::InventoryFull;
+        if(receivesItem && !actor.inventory.CanAdd(target->kind==TargetKind::Crop?ItemId::Turnip:target->item,1)) return InteractionResult::InventoryFull;
 
         return InteractionResult::Success;
     }
@@ -67,6 +70,12 @@ namespace MyGame
         (void)selectedItem;
         const std::size_t needed=target->kind==TargetKind::Pickup?1u:2u;
         if(events.Pending()+needed>EventBus::MaxPending) return InteractionResult::EventQueueFull;
+        auto inventory=actor.inventory;
+        if(target->kind==TargetKind::Crop && !target->planted)
+        {if(!inventory.TryRemove(ItemId::TurnipSeed,1)) return InteractionResult::NoSeeds;}
+        else if(target->kind==TargetKind::Crop || target->kind==TargetKind::Pickup || target->kind==TargetKind::FruitTree)
+        {if(!inventory.TryAdd(target->kind==TargetKind::Crop?ItemId::Turnip:target->item,1)) return InteractionResult::InventoryFull;}
+        actor.inventory=inventory;
         actor.stamina-=StaminaCost;actor.cooldown=CooldownSeconds;
         if(target->kind!=TargetKind::Pickup)
             events.Publish({GameEventKind::ToolUsed,target->id,target->position,1,actionId});
@@ -78,20 +87,20 @@ namespace MyGame
         case TargetKind::Crop:
             if(!target->planted)
             {
-                --actor.inventoryCount;target->planted=true;target->age=0;target->ready=false;
+                target->planted=true;target->age=0;target->ready=false;
                 events.Publish({GameEventKind::CropPlanted,target->id,target->position,1,actionId});
             }
             else
             {
-                ++actor.inventoryCount;target->active=false;
+                target->active=false;
                 events.Publish({GameEventKind::CropHarvested,target->id,target->position,1,actionId});
             }
             break;
         case TargetKind::Pickup:
-            ++actor.inventoryCount;target->active=false;
+            target->active=false;
             events.Publish({GameEventKind::ItemPicked,target->id,target->position,1,actionId});break;
         case TargetKind::FruitTree:
-            --target->stock;++actor.inventoryCount;target->age=0;
+            --target->stock;target->age=0;
             events.Publish({GameEventKind::FruitHarvested,target->id,target->position,1,actionId});break;
         }
         return InteractionResult::Success;
@@ -105,7 +114,7 @@ namespace MyGame
         if(target->id.empty() || actor.nextActionId==0 || actor.nextActionId==std::numeric_limits<std::uint64_t>::max())
             return InteractionResult::TargetChanged;
         action={};action.id=actor.nextActionId++;action.targetId=target->id;action.kind=target->kind;
-        action.selectedItem=selectedItem;action.cropWasPlanted=target->planted;
+        action.selectedItem=selectedItem;action.item=actor.SelectedItem(selectedItem);action.targetItem=target->item;action.cropWasPlanted=target->planted;
         action.phase=ActionPhase::Start;action.result=InteractionResult::Success;
         actor.activeActionId=action.id;actor.busy=true;
         return InteractionResult::Success;
@@ -128,7 +137,7 @@ namespace MyGame
             target=&entry;
         }
         if(!target){action.result=InteractionResult::NoTarget;return action.result;}
-        if(target->kind!=action.kind || (target->kind==TargetKind::Crop && target->planted!=action.cropWasPlanted))
+        if(actor.SelectedItem(action.selectedItem)!=action.item || target->item!=action.targetItem || target->kind!=action.kind || (target->kind==TargetKind::Crop && target->planted!=action.cropWasPlanted))
         {action.result=InteractionResult::TargetChanged;return action.result;}
         action.result=lineOfSight?CheckOwned(actor,target,action.selectedItem,true):InteractionResult::Blocked;
         if(action.result==InteractionResult::Success) action.result=Apply(actor,target,action.selectedItem,events,action.id);

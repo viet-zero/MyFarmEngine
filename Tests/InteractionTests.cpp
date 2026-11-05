@@ -32,28 +32,28 @@ int main()
           !targets[0].active,"object not destroyed after second hit");
     check(InteractionSystem::Use(actor,&targets[0],1,events)==InteractionResult::Inactive,"destroyed object interactive");
     for(int i=0;i<4;++i) InteractionSystem::Tick(actor,targets,0.1f);
-    const int beforeSeeds=actor.inventoryCount;
+    const int beforeSeeds=actor.inventory.ResourceCount();
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::Success &&
-          targets[1].planted && actor.inventoryCount==beforeSeeds-1,"crop planting failed");
+          targets[1].planted && actor.inventory.ResourceCount()==beforeSeeds-1,"crop planting failed");
     for(int i=0;i<4;++i) InteractionSystem::Tick(actor,targets,0.1f);
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::NotReady,"early harvest accepted");
     for(int i=0;i<50;++i) InteractionSystem::Tick(actor,targets,0.1f);
     check(targets[1].ready,"crop did not mature");
-    actor.inventoryCount=actor.inventoryCapacity;
+    actor.inventory=Inventory(1);actor.inventory.TryAdd(ItemId::Cake,10);
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::InventoryFull,"full bag harvested crop");
-    actor.inventoryCount=3;
+    actor.inventory=Inventory::Starter();
     check(InteractionSystem::Use(actor,&targets[1],2,events)==InteractionResult::Success &&
-          !targets[1].active && actor.inventoryCount==4,"harvest failed");
+          !targets[1].active && actor.inventory.ResourceCount()==4,"harvest failed");
     for(int i=0;i<4;++i) InteractionSystem::Tick(actor,targets,0.1f);
     check(InteractionSystem::Use(actor,&targets[2],0,events)==InteractionResult::Success,"pickup failed");
-    check(actor.inventoryCount==5 && !targets[2].active,"pickup state failed");
+    check(actor.inventory.ResourceCount()==5 && !targets[2].active,"pickup state failed");
     check(InteractionSystem::Nearest(actor,targets)==nullptr,"inactive target chosen");
     InteractionActor harvester;harvester.position={0,0};harvester.facing={1,0};
     InteractionTarget fruit{"tree.apple.01",TargetKind::FruitTree,{60,0}};
     fruit.stock=fruit.maxStock=2;fruit.regrowSeconds=0.3f;
     EventBus fruitEvents;
     check(InteractionSystem::Use(harvester,&fruit,0,fruitEvents)==InteractionResult::Success &&
-          fruit.stock==1 && harvester.inventoryCount==4,"first apple harvest failed");
+          fruit.stock==1 && harvester.inventory.ResourceCount()==4,"first apple harvest failed");
     check(fruitEvents.Pending()==2,"fruit event missing");
     for(int i=0;i<4;++i) InteractionSystem::Tick(harvester,targets,0.1f);
     check(InteractionSystem::Use(harvester,&fruit,0,fruitEvents)==InteractionResult::Success &&
@@ -64,7 +64,7 @@ int main()
     std::vector<InteractionTarget> forest{fruit};
     for(int i=0;i<4;++i) InteractionSystem::Tick(harvester,forest,0.1f);
     check(forest[0].stock==2,"fruit did not regrow");
-    harvester.inventoryCount=harvester.inventoryCapacity;
+    harvester.inventory=Inventory(1);harvester.inventory.TryAdd(ItemId::Cake,10);
     check(InteractionSystem::Use(harvester,&forest[0],0,fruitEvents)==InteractionResult::InventoryFull,
           "full inventory harvested fruit");
     return failures?1:0;
