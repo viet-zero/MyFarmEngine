@@ -39,6 +39,19 @@ namespace MyGame
         m_Characters[1]=assets.Load("player_an");
         m_DogTexture=assets.Load("dog_walk");
         m_CropTexture=assets.Load("turnip_growth");
+        // The reviewed pilot is staged beside the executable, outside the shipped catalog.
+        const auto review=dataRoot.parent_path()/"LocalReview";
+        const auto loadReview=[&](MyEngine::Texture2D& texture,const char* name)
+        {
+            const auto path=review/name;
+            std::error_code error;
+            if(std::filesystem::is_regular_file(path,error) && !texture.Load(path))
+                std::cerr<<"Local review image unavailable: "<<name<<'\n';
+        };
+        constexpr std::array carrotFrames{"carrot_sprout.png","carrot_young.png","carrot_mature.png"};
+        for(std::size_t i=0;i<carrotFrames.size();++i) loadReview(m_LocalCarrot[i],carrotFrames[i]);
+        loadReview(m_LocalCarrotIcon,"carrot_icon.png");
+        loadReview(m_LocalSeedIcon,"seed_bag.png");
         m_Items=assets.Load("items_farm");
         if(const auto* items=assets.Record("items_farm"))
             for(int i=0;i<4;++i)
@@ -450,6 +463,18 @@ namespace MyGame
         const double visualAge=crop?it->age*5.0/crop->growthSeconds:0;
         static const std::vector<double> stageDurations{1,1,1,2};
         const int stage=GrowthFrame(visualAge,stageDurations);
+        if(it->crop==CropId::Carrot)
+        {
+            const auto& texture=m_LocalCarrot[static_cast<std::size_t>(std::clamp(stage-1,0,2))];
+            if(texture.Id())
+            {
+                // The three reviewed 192 px frames share an alpha bottom at pixel 180.
+                canvas.Sprite(texture,it->position.x-56,it->position.y-105,112,112);
+                if(it->ready && m_LocalCarrotIcon.Id())
+                    canvas.Sprite(m_LocalCarrotIcon,it->position.x+26,it->position.y-91,28,28);
+                return;
+            }
+        }
         if(m_CropTexture && m_Assets)
             if(const auto* record=m_Assets->Record("turnip_growth"))
                 if(const auto uv=AssetManifest::FrameUv(*record,stage))
@@ -493,7 +518,7 @@ namespace MyGame
         const auto crop=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
             return target.id=="crop.plot.01";});
         if(crop!=m_Targets.end() && crop->active && crop->planted)
-            m_RenderOrder.Submit(RenderKind::Crop,0,crop->position-glm::vec2{56,94},{112,112},crop->position.y);
+            m_RenderOrder.Submit(RenderKind::Crop,0,crop->position-glm::vec2{56,105},{112,123},crop->position.y);
         const auto pickup=std::find_if(m_Targets.begin(),m_Targets.end(),[](const InteractionTarget& target){
             return target.id=="item.demo.01";});
         if(pickup!=m_Targets.end() && pickup->active)
@@ -586,7 +611,9 @@ namespace MyGame
             rectangle(x+2*unit,y+2*unit,bar.slot-4*unit,bar.slot-4*unit,
                              selected?std::array<float,4>{1,0.96f,0.79f,1}:std::array<float,4>{0.95f,0.93f,0.82f,1});
             const float inset=10*unit;
-            if(m_Items && m_Assets)
+            if(i==2 && m_LocalSeedIcon.Id())
+                canvas.Sprite(m_LocalSeedIcon,x+inset,y+inset,bar.slot-2*inset,bar.slot-2*inset,{0,0,1,1},{1,1,1,opacity});
+            else if(m_Items && m_Assets)
             {
                 if(const auto* frame=m_Assets->FrameBounds("items_farm",i))
                 {
@@ -655,6 +682,8 @@ namespace MyGame
             constexpr std::array results{"","DA GIAO DICH","SAI MAT HANG","DA GIAO DICH",
                 "DANG BAN","NGOAI VUON","THIEU TIEN","TUI DAY","THIEU DO","TIEN DAY"};
             label(results[static_cast<std::size_t>(m_TradeResult)],12,155);
+            if(m_LocalCarrotIcon.Id())
+                canvas.Sprite(m_LocalCarrotIcon,x+145*scale,y+60*scale,15*scale,15*scale);
         }
         if(m_StorageOpen)
         {
@@ -705,6 +734,9 @@ namespace MyGame
         m_SaveMessageTime=0;
         CancelInteraction();
         m_Ready = false;
+        for(auto& texture:m_LocalCarrot) texture.Reset();
+        m_LocalCarrotIcon.Reset();
+        m_LocalSeedIcon.Reset();
         m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;
         m_Assets=nullptr;
         m_Characters.fill(nullptr);

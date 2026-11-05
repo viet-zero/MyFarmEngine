@@ -1,5 +1,13 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Bản thử ảnh cà rốt từ 04_Curated — 2026-11-05
+
+Bản thử lấy ba frame cà rốt sprout, young, mature và hai icon carrot, seed_bag. Hai frame seed và harvestable của bộ nguồn bị cắt hình. Trong game, giai đoạn đầu dùng sprout và cây chín dùng mature kèm icon cà rốt. Ba frame 192 px có cùng đáy alpha y=180, được căn với điểm luống. Icon túi hạt dùng ở ô 3, icon cà rốt xuất hiện trong menu M.
+
+`Scripts/StageCarrotReview.ps1 -Configuration Release` sao chép năm PNG vào Assets/LocalReview cạnh executable sau khi build Phase F. Bản Debug dùng `-Configuration Debug`. Mã chọn hình theo CropId và có fallback khi không có gói review. Tệp ảnh và cả thư viện review nằm tại máy người dùng để chờ xác nhận quyền phân phối.
+
+Test runtime đọc pixel OpenGL và kiểm cây cà rốt non/chín cho hình khác nhau. Pass giao diện menu thử dùng tối đa hai draw call. Kiểm hash 204 Original đạt.
+
 ## P4-002A — Lưu và tải SQL Express local — 2026-11-05
 
 **J** chụp snapshot và lưu, **L** tải snapshot trong gameplay khi menu mua bán đã đóng và thao tác hiện tại đã kết thúc. Luồng nền chạy ODBC qua Windows Authentication tới SQL Express local. Tải tạm dừng mô phỏng trong lúc chờ. Game kiểm phiên bản, định dạng, target và vị trí trước khi áp dụng dữ liệu. Khởi động lại game rồi nhấn L để tiếp tục bản lưu.

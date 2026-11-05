@@ -219,6 +219,31 @@ int main()
               scene.SelectedItem()==ItemId::CarrotSeed &&
               scene.Storage().items.Count(ItemId::Turnip)==1 &&
               scene.TargetState("crop.plot.01")->planted,"scene did not restore inventory, money, storage and planted crop");
+        if(std::filesystem::is_regular_file(MyEngine::AssetRoot()/"LocalReview/carrot_mature.png"))
+        {
+            auto carrot=*snapshot;
+            carrot.position={3000,1780};
+            for(auto& target:carrot.targets)
+            {
+                if(target.id!="crop.plot.01") continue;
+                target.crop=CropId::Carrot;
+                target.planted=true;
+                target.ready=false;
+                target.age=0;
+                target.moisture=0;
+            }
+            Check(scene.RestoreSave(carrot),"carrot review scene failed to restore");
+            scene.Render(canvas,640,360);
+            std::array<unsigned char,64*80*4> sprout{},ripe{};
+            glReadPixels(288,230,64,80,GL_RGBA,GL_UNSIGNED_BYTE,sprout.data());
+            for(auto& target:carrot.targets)
+                if(target.id=="crop.plot.01"){target.age=8;target.ready=true;}
+            Check(scene.RestoreSave(carrot),"ripe carrot scene failed to restore");
+            scene.Render(canvas,640,360);
+            glReadPixels(288,230,64,80,GL_RGBA,GL_UNSIGNED_BYTE,ripe.data());
+            Check(sprout!=ripe && glGetError()==GL_NO_ERROR,"carrot growth stages did not render differently");
+        }
+
     }
 
 
