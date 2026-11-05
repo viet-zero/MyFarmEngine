@@ -1,5 +1,9 @@
 # MyFarmEngine — Roadmap sau audit
 
+## Gate P0-002 — 2026-11-05
+
+[P0-002](TASKS/P0-002.md) DONE: 11 metadata flip fields đã sửa, regression Debug/Release 24/24; không thay ảnh/engine. P0-001 còn authored pivots/canopy/art, P2-001 còn BLOCKED artwork acceptance. Bước tiếp: chốt model/root Linh, tạo/duyệt tám hướng và outfit layers, rồi triển khai P2-001. Findings P0-001 bên dưới là lịch sử trước sửa.
+
 ## Gate artwork P0-001 — 2026-11-05
 
 Audit xong, P0-001 PARTIAL vì art/root/masks chưa có. [Evidence và handoff](P0-001_ARTWORK_PIVOT_AUDIT.md). P2-001 BLOCKED artwork acceptance: chưa bộ tám hướng/outfit nào đủ; Linh là mẫu pilot đề xuất. Trước tiên [P0-002](TASKS/P0-002.md) sửa 11 rows direction/flip, rồi chốt authored roots và tạo/duyệt layers + diagonals, sau đó implementation P2-001. P1-001/002/003 DONE kỹ thuật; không mở rộng world khi chưa đạt MVP. Các gate dưới là lịch sử.

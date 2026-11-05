@@ -1,5 +1,15 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cập nhật P0-002 — 2026-11-05
+
+**DONE kỹ thuật:** sửa đúng 11 fields flip_x trong 62 clips, không đổi frame/timing/asset IDs. Idle trái Linh/An (cả NPC) và action trái An không mirror nữa; side walk/run An dùng left không mirror, right mirror. Regression kiểm các clip đã review và walk → idle giữ hướng; chạy test mới với catalog trước sửa trả exit 1 đúng lỗi.
+
+**Debug 24/24 PASS (23.17s), Release 24/24 PASS (11.36s)**, gồm graphics/runtime/geometry/fixed-rate/animation/smoke/Windows launch. Đã xem clip board sau sửa ở scale chuẩn; đây là contact sheet, không có manual gameplay soak mới. 204 Original và imported/art hashes khớp; không sửa PNG, Assets.csv hoặc engine/renderer.
+
+[P0-002 và ảnh trước/sau](TASKS/P0-002.md). P0-001 vẫn PARTIAL do authored pivots/artwork/canopy mask; P2-001 vẫn BLOCKED artwork acceptance. An walk phải còn mirror phụ kiện; sửa flip không tạo art tám hướng hoặc layers. Các findings CSV P0-001 giữ nguyên làm evidence lịch sử, không phải danh sách lỗi còn mở.
+
+Tiếp theo: chốt Linh model/reference stature/root → bàn giao và duyệt diagonals + body/hair/clothes/outfit layers → triển khai loader/controller P2-001 với artwork đủ điều kiện. Không tính prototype là MVP hoàn chỉnh. Các mốc dưới là lịch sử.
+
 ## Cập nhật P0-001 artwork/pivots — 2026-11-05
 
 **Audit DONE; P0-001 tổng thể PARTIAL.** Đã xem/đo 31 character records + dog: 32 inputs, 68 declared frames; có bảng từng asset và ảnh sáng/tối. Linh là mẫu painted chính đề xuất, An mẫu phụ; chưa asset nào đạt tám hướng/outfit. Runtime vẫn composite bốn hướng, không có authored pivots hoặc layers. Library 0001–0012 sai style; 0055–0060 alpha 255 toàn ảnh, caro baked và nhiều pose cắt dính. Giữ needs_review.

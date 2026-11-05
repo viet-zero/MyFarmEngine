@@ -12,7 +12,7 @@ Engine C++20 dùng GLFW + GLAD/OpenGL cho đồ án game nông trại.
 
 **P1-002 — animation impact:** F bắt đầu thao tác; item/stock/FX chỉ đổi tại marker IMPACT. **C** hủy; khi mở preview hoặc mất focus game pause. [Cách hoạt động và giới hạn](Docs/ACTION_ANIMATION_EVENTS.md). Animation hiện vẫn bốn hướng và action art một pose.
 
-**Audit artwork 05/11:** [P0-001 và evidence](Docs/P0-001_ARTWORK_PIVOT_AUDIT.md) đã hoàn tất phần audit; chưa bộ nào đủ tám hướng/outfit, P2-001 đang chờ artwork. Phát hiện 11 rows direction/flip cần sửa riêng ở P0-002; Original giữ nguyên.
+**Audit artwork 05/11:** [P0-001 và evidence](Docs/P0-001_ARTWORK_PIVOT_AUDIT.md) đã hoàn tất phần audit; chưa bộ nào đủ tám hướng/outfit, P2-001 đang chờ artwork. P0-002 đã sửa 11 rows direction/flip, Debug/Release 24/24 PASS; Original giữ nguyên.
 
 **P1-003:** gameplay 60 Hz, input không lặp qua catch-up, nội suy actor/camera; pause không fast-forward. [Contract và kiểm thử](Docs/FIXED_TIMESTEP.md).
 

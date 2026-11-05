@@ -9,7 +9,7 @@ Cập nhật 05/11/2026. Baseline và evidence ở [PROGRESS](../PROGRESS.md), d
 | [P1-001](P1-001.md) | DONE | Asset/clip cross-validation và schema coverage v1; Debug/Release 21/21 |
 | [P1-002](P1-002.md) | DONE kỹ thuật | Animation markers + impact transaction; Debug/Release 22/22 |
 | [P1-003](P1-003.md) | DONE kỹ thuật | Simulation 60 Hz/input/interpolation; Debug/Release 24/24 |
-| [P0-002](P0-002.md) | TODO — tiếp theo | Sửa 11 rows direction/flip đã xác nhận |
+| [P0-002](P0-002.md) | DONE kỹ thuật | 11 direction/flip rows; Debug/Release 24/24 |
 | [P2-001](P2-001.md) | BLOCKED art / TODO code | Thiếu tám hướng/layers/authored pivots |
 | [P2-002](P2-002.md) | TODO | Ba crop/typed inventory/farm loop |
 | [P3-001](P3-001.md) | TODO | Lighting/shadows |

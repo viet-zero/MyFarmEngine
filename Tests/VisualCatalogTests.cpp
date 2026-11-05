@@ -46,12 +46,34 @@ int main(int argc,char** argv)
     Check(player.Select(catalog,"player_linh",VisualState::Action,Facing::Left,true) &&
           !player.Finished() && player.Save().timeline.elapsed==0.0,
           "new action input did not restart the finished clip");
-    Check(catalog.Find("player_an",VisualState::Walk,Facing::Left)->flipX,
-          "An left walk should mirror reviewed side sheet");
-    Check(catalog.Find("player_linh",VisualState::Idle,Facing::Left)->flipX,
-          "Linh left idle should mirror reviewed pose");
-    Check(!catalog.Find("player_linh",VisualState::Walk,Facing::Left)->flipX,
-          "Linh left walk has its own left-facing art");
+    // Reviewed source orientation: P0-001 contact sheets, not inferred from filenames.
+    for(const auto profile:{"player_linh","npc_linh","player_an","npc_an"})
+    {
+        const auto* idleLeft=catalog.Find(profile,VisualState::Idle,Facing::Left);
+        Check(idleLeft && idleLeft->timeline.firstFrame==1 && !idleLeft->flipX,
+              "reviewed idle-left pose was mirrored to the right");
+        AnimationController actor;
+        Check(actor.Select(catalog,profile,VisualState::Walk,Facing::Left),"left walk missing");
+        actor.Update(0.2f,false);
+        Check(actor.Select(catalog,profile,VisualState::Idle,Facing::Left) &&
+              actor.Direction()==Facing::Left && actor.Clip()==idleLeft && !actor.Clip()->flipX,
+              "walk-to-idle lost reviewed left-facing pose");
+    }
+    for(const auto profile:{"player_an","npc_an"})
+        for(const auto state:{VisualState::Walk,VisualState::Run})
+        {
+            if(std::string_view(profile)=="npc_an" && state==VisualState::Run) continue;
+            const auto* leftSide=catalog.Find(profile,state,Facing::Left);
+            const auto* rightSide=catalog.Find(profile,state,Facing::Right);
+            Check(leftSide && rightSide && leftSide->assetId=="player_an_walk_side" &&
+                  rightSide->assetId==leftSide->assetId && !leftSide->flipX && rightSide->flipX,
+                  "An side sheet source faces left; only right should mirror");
+        }
+    const auto* anAction=catalog.Find("player_an",VisualState::Action,Facing::Left);
+    Check(anAction && anAction->timeline.firstFrame==1 && !anAction->flipX,"An left action mirrored right");
+    Check(!catalog.Find("player_linh",VisualState::Walk,Facing::Left)->flipX &&
+          !catalog.Find("player_linh",VisualState::Action,Facing::Left)->flipX,
+          "Linh authored left walk/action should remain unmirrored");
     Check(ResolvePlayerState(true,false,false,false,VisualState::Idle,true)==VisualState::Walk &&
           ResolvePlayerState(true,true,false,false,VisualState::Walk,true)==VisualState::Run &&
           ResolvePlayerState(true,true,true,false,VisualState::Run,true)==VisualState::Action &&

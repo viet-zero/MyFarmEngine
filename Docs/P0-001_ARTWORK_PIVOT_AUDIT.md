@@ -1,5 +1,9 @@
 # P0-001 — Artwork, pivots và readiness cho P2-001
 
+## Sau P0-002 — 2026-11-05
+
+[11 lỗi direction/flip đã được sửa](TASKS/P0-002.md), Debug/Release 24/24 PASS. Ảnh và findings P0-001 bên dưới giữ nguyên làm evidence trước sửa. Chưa có artwork/layers/pivot authored mới; không đổi Original. An walk phải vẫn mirror phụ kiện, cần art review. [Clip board mới](Reviews/P0-002/clips-dark.png).
+
 2026-11-05. Repo D:/my_code/MyFarmEngine, branch feat/gameplay10-phase-f-depth-directional-harvest; audit trên baseline 0ca4128, working tree sạch khi bắt đầu. Không đổi runtime, ảnh, Assets.csv, VisualClips.csv hoặc trạng thái ready/needs_review.
 
 ## Kết luận

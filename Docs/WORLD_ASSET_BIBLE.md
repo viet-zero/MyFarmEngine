@@ -1,5 +1,9 @@
 # MyFarmEngine — World asset bible
 
+## Sau P0-002 — 2026-11-05
+
+[11 lỗi direction/flip đã được sửa](TASKS/P0-002.md), Debug/Release 24/24 PASS. Ảnh và findings P0-001 bên dưới giữ nguyên làm evidence trước sửa. Chưa có artwork/layers/pivot authored mới; không đổi Original. An walk phải vẫn mirror phụ kiện, cần art review. [Clip board mới](Reviews/P0-002/clips-dark.png).
+
 ## Audit P0-001 — 2026-11-05
 
 [Artwork/pivot audit](P0-001_ARTWORK_PIVOT_AUDIT.md) ghi quyết định từng character và evidence 68 frames. Không có bộ tám hướng/outfit ready; Linh/An chỉ prototype composite và style reference. 11 direction rows cần sửa metadata; Library0055–0060 opaque checkerboard, giữ needs_review. Ground pivot hiện là bbox bottom-center, chưa authored. Canopy proxy chưa alpha mask. Original/Export/runtime CSV giữ nguyên. Ghi chú kỹ thuật cũ bên dưới chỉ là lịch sử; filtering hiện có mipmaps từ Gameplay11.

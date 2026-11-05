@@ -1,5 +1,9 @@
 # Character Scale & Style Standard — Gameplay11
 
+## Sau P0-002 — 2026-11-05
+
+[11 lỗi direction/flip đã được sửa](TASKS/P0-002.md), Debug/Release 24/24 PASS. Ảnh và findings P0-001 bên dưới giữ nguyên làm evidence trước sửa. Chưa có artwork/layers/pivot authored mới; không đổi Original. An walk phải vẫn mirror phụ kiện, cần art review. [Clip board mới](Reviews/P0-002/clips-dark.png).
+
 ## Review P0-001 — 2026-11-05
 
 Đã có [audit 32 inputs/68 frames](P0-001_ARTWORK_PIVOT_AUDIT.md) và [metrics](Reviews/P0-001/frames.csv). Standard 132/72 và alpha-bounds pivot vẫn là giải pháp prototype; không đủ cho layers. Cần authored root/shared reference stature; không suy pivot từ tâm tay vươn. Linh/An chỉ là ứng viên painted, chưa art-approved; không bộ nào đủ tám hướng/outfit. Metadata flip sai ở 11 rows được ghi task P0-002, chưa sửa tại mốc audit.
