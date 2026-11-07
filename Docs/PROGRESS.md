@@ -6,7 +6,7 @@
 
 Đây là bộ Master v3 procedural đã tải trước đó. Tab Viết cho tôi có liên kết bộ Assets Đơn Giản v3 mới hơn, nhưng trình duyệt mở chat đang ở trạng thái yêu cầu đăng nhập. Tải bộ mới còn chờ truy cập phiên chat được xác thực.
 
-Debug 27/27 PASS (20.18s), Release 27/27 PASS (10.10s). Pixel OpenGL kiểm đất khô/ướt có hiển thị khác nhau.
+Debug 27/27 PASS (20.18s), Release 27/27 PASS (9.70s). Pixel OpenGL kiểm đất khô/ướt có hiển thị khác nhau.
 
 Bản thử local sử dụng hai tile 128×128 đất luống khô và ướt của mùa xuân. Script StageTerrainReview.ps1 sao chép hai ảnh vào Assets/LocalReview cạnh executable. Có thể chọn spring/summer/autumn/winter qua tham số Season để review hình. Việc đổi ảnh review chưa tạo hệ mùa gameplay.
 
