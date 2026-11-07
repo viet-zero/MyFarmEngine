@@ -118,6 +118,7 @@ namespace MyGame
         const MyEngine::Texture2D* m_DogTexture=nullptr;
         const MyEngine::Texture2D* m_CropTexture=nullptr;
         std::array<MyEngine::Texture2D,3> m_LocalCarrot;
+        std::array<MyEngine::Texture2D,2> m_LocalSoil;
         MyEngine::Texture2D m_LocalCarrotIcon,m_LocalSeedIcon;
         std::array<const MyEngine::Texture2D*, 2> m_Characters{};
         std::array<std::array<float,4>,4> m_ItemRegions{};

@@ -256,6 +256,36 @@ int main()
               scene.SelectedItem()==ItemId::CarrotSeed &&
               scene.Storage().items.Count(ItemId::Turnip)==1 &&
               scene.TargetState("crop.plot.01")->planted,"scene did not restore inventory, money, storage and planted crop");
+        if(std::filesystem::is_regular_file(MyEngine::AssetRoot()/"LocalReview/soil_wet.png"))
+        {
+            auto soil=*snapshot;
+            soil.position={2200,1950};
+            for(auto& target:soil.targets)
+                if(target.id=="crop.home.1")
+                {
+                    target.planted=true;
+                    target.crop=CropId::Turnip;
+                    target.ready=false;
+                    target.age=0;
+                    target.moisture=0;
+                }
+            MyEngine::Camera2D probeCamera;
+            probeCamera.SetWorldSize(WorldMap::Size());
+            probeCamera.Resize(640,360);
+            probeCamera.SetZoom(0.85f);
+            probeCamera.SetPosition(soil.position);
+            const auto sample=probeCamera.WorldToScreen({2185,2030});
+            std::array<unsigned char,4> dry{},wet{};
+            Check(scene.RestoreSave(soil),"dry soil review snapshot failed");
+            scene.Render(canvas,640,360);
+            glReadPixels(static_cast<int>(sample.x),359-static_cast<int>(sample.y),1,1,GL_RGBA,GL_UNSIGNED_BYTE,dry.data());
+            for(auto& target:soil.targets)
+                if(target.id=="crop.home.1") target.moisture=6;
+            Check(scene.RestoreSave(soil),"wet soil review snapshot failed");
+            scene.Render(canvas,640,360);
+            glReadPixels(static_cast<int>(sample.x),359-static_cast<int>(sample.y),1,1,GL_RGBA,GL_UNSIGNED_BYTE,wet.data());
+            Check(dry!=wet && glGetError()==GL_NO_ERROR,"local soil did not display dry/wet distinction");
+        }
         if(std::filesystem::is_regular_file(MyEngine::AssetRoot()/"LocalReview/carrot_mature.png"))
         {
             auto carrot=*snapshot;

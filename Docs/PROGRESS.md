@@ -1,5 +1,17 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Nhập terrain local và thử đất khô/ướt — 2026-11-08
+
+Đã kiểm ZIP MyFarmEngine_Master_v3_Terrain_4Seasons.zip có sẵn trong Downloads và nhập riêng nhóm 01_Terrain_Seasonal_v3 vào AssetLibrary_Review/Terrain_v3_Local. Nhóm có 67 tệp gồm 56 PNG terrain, 4 atlas, 2 preview và 5 tệp dữ liệu/tài liệu. IMPORT_HASHES.json ghi hash ZIP và từng tệp. Ảnh đã được decode/verify lúc nhập.
+
+Đây là bộ Master v3 procedural đã tải trước đó. Tab Viết cho tôi có liên kết bộ Assets Đơn Giản v3 mới hơn, nhưng trình duyệt mở chat đang ở trạng thái yêu cầu đăng nhập. Tải bộ mới còn chờ truy cập phiên chat được xác thực.
+
+Debug 27/27 PASS (20.18s), Release 27/27 PASS (10.10s). Pixel OpenGL kiểm đất khô/ướt có hiển thị khác nhau.
+
+Bản thử local sử dụng hai tile 128×128 đất luống khô và ướt của mùa xuân. Script StageTerrainReview.ps1 sao chép hai ảnh vào Assets/LocalReview cạnh executable. Có thể chọn spring/summer/autumn/winter qua tham số Season để review hình. Việc đổi ảnh review chưa tạo hệ mùa gameplay.
+
+Đã xem preview bốn mùa và world prototype. Cỏ/nước có họa tiết lặp rõ, bờ nước chưa đủ autotile và luống trong world preview có hiện tượng nhìn xuyên nền. Bản thử giữ nền màu đất dưới PNG alpha để thể hiện ô khô/ướt rõ hơn. Các phần cỏ/nước/đường cần duyệt thêm trước khi ghép bản đồ.
+
 ## Lưới thao tác 64×64 — 2026-11-05
 
 Sáu luống đầu game nằm trên sáu ô liền kề của WorldMap. Đối tượng tương tác được lập chỉ mục theo ô khi dựng hoặc tải scene. Cùng một hàm xác định ô nhắm cho viền và phím F, chỉ xét hàng hoặc cột theo hướng nhìn, tầm với và đường nhìn. Khi chưa có mục tiêu, viền chỉ ô ngay phía trước. Ô có mục tiêu hiện viền vàng và gợi ý thao tác đối với luống và vật phẩm rơi.

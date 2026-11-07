@@ -70,6 +70,8 @@ namespace MyGame
         for(std::size_t i=0;i<carrotFrames.size();++i) loadReview(m_LocalCarrot[i],carrotFrames[i]);
         loadReview(m_LocalCarrotIcon,"carrot_icon.png");
         loadReview(m_LocalSeedIcon,"seed_bag.png");
+        loadReview(m_LocalSoil[0],"soil_dry.png");
+        loadReview(m_LocalSoil[1],"soil_wet.png");
         m_Items=assets.Load("items_farm");
         if(const auto* items=assets.Record("items_farm"))
             for(int i=0;i<4;++i)
@@ -631,6 +633,9 @@ namespace MyGame
                     std::array<float,4>{0.49f,0.33f,0.21f,0.95f};
                 canvas.Rectangle(origin.x+1,origin.y+1,tileSize-2,tileSize-2,{0.91f,0.78f,0.49f,1});
                 canvas.Rectangle(origin.x+3,origin.y+3,tileSize-6,tileSize-6,soil);
+                const auto& texture=m_LocalSoil[target.moisture>0?1u:0u];
+                if(texture.Id())
+                    canvas.Sprite(texture,origin.x+3,origin.y+3,tileSize-6,tileSize-6);
                 const char* label=!target.planted?"O TRONG":target.ready?"DA CHIN":target.moisture>0?"DANG LON":"CAN TUOI";
                 HudText(canvas,label,origin.x+5,origin.y+tileSize-13,1.05f,{1,0.94f,0.78f,1});
                 if(target.planted)
@@ -888,6 +893,7 @@ namespace MyGame
         CancelInteraction();
         m_Ready = false;
         for(auto& texture:m_LocalCarrot) texture.Reset();
+        for(auto& texture:m_LocalSoil) texture.Reset();
         m_LocalCarrotIcon.Reset();
         m_LocalSeedIcon.Reset();
         m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;
