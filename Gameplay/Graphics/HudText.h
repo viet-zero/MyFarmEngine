@@ -13,6 +13,7 @@ namespace MyGame
         case 'F':return {31,16,16,30,16,16,16};case 'L':return {16,16,16,16,16,16,31};
         case 'M':return {17,27,21,21,17,17,17};case 'P':return {30,17,17,30,16,16,16};
         case 'W':return {17,17,17,21,21,27,17};case 'Q':return {14,17,17,17,21,18,13};
+        case 'X':return {17,17,10,4,10,17,17};
         case 'A':return {14,17,17,31,17,17,17};case 'C':return {14,17,16,16,16,17,14};
         case 'D':return {30,17,17,17,17,17,30};case 'G':return {14,17,16,23,17,17,15};
         case 'H':return {17,17,17,31,17,17,17};case 'I':return {31,4,4,4,4,4,31};

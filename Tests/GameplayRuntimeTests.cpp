@@ -20,6 +20,20 @@ int main()
     MyEngine::Window window;
     if(!window.Create(640,360,"Gameplay11 integration",false)) return 1;
     MyEngine::Input::Initialize(window.GetNativeWindow());
+    if(std::filesystem::exists(MyEngine::AssetRoot()/"LocalV4"/"sprites.csv"))
+    {
+        WorldArt art;
+        Check(art.Load(MyEngine::AssetRoot()/"LocalV4") && art.Ready(),"staged v4 atlas failed to load");
+        for(int direction=0;direction<8;++direction)
+            for(int frame=0;frame<2;++frame)
+                Check(art.Actor(direction,true,frame)!=nullptr && art.Actor(direction,false,0)!=nullptr,
+                      "v4 direction/frame missing");
+        for(int season=0;season<4;++season)
+            Check(art.Terrain(season).Find("land_255") && art.Terrain(season).Find("water_000"),
+                  "v4 seasonal terrain missing");
+        art.Reset();
+        Check(!art.Ready(),"v4 reset left atlas enabled");
+    }
     AssetTextures assets;
     Check(assets.Initialize(MyEngine::AssetRoot()),"asset manifest initialization failed");
     DemoScene2D scene;

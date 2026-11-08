@@ -2,6 +2,7 @@
 #include "Gameplay/Assets/AssetManifest.h"
 #include <glm/glm.hpp>
 #include <vector>
+#include <optional>
 
 namespace MyGame
 {
@@ -17,7 +18,7 @@ namespace MyGame
     };
     // Alpha-derived bounds are presentation metadata, never gameplay collision or art approval.
     std::vector<SpriteFrameBounds> MeasureSpriteFrames(const MyEngine::ImageData& image,const AssetRecord& record);
-    SpritePlacement PlaceSprite(const SpriteFrameBounds& frame,glm::vec2 feet,float height,bool flipX=false);
+    SpritePlacement PlaceSprite(const SpriteFrameBounds& frame,glm::vec2 feet,float height,bool flipX=false,std::optional<glm::vec2> authoredPivot=std::nullopt);
     SpritePlacement FitSprite(const SpriteFrameBounds& frame,glm::vec2 origin,glm::vec2 box);
     struct HotbarLayout
     {

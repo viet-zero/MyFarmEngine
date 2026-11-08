@@ -46,7 +46,7 @@ target_link_libraries(MyFarmGameplayLogic PUBLIC MyFarmEngineCore)
 if(WIN32)
     target_link_libraries(MyFarmGameplayLogic PRIVATE odbc32)
 endif()
-add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/AssetTextures.cpp Gameplay/Graphics/SpriteGeometry.cpp)
+add_library(MyFarmVisualAssets STATIC Gameplay/Graphics/WorldArt.cpp Gameplay/Graphics/AssetTextures.cpp Gameplay/Graphics/SpriteGeometry.cpp)
 target_link_libraries(MyFarmVisualAssets PUBLIC MyFarmGameplayAnimation)
 
 add_executable(AssetAudit Gameplay/Assets/AssetAudit.cpp)

@@ -34,13 +34,19 @@ namespace MyGame
         for(auto& frame:result) frame.referenceHeight=reference;
         return result;
     }
-    SpritePlacement PlaceSprite(const SpriteFrameBounds& frame,glm::vec2 feet,float height,bool flipX)
+    SpritePlacement PlaceSprite(const SpriteFrameBounds& frame,glm::vec2 feet,float height,bool flipX,std::optional<glm::vec2> authoredPivot)
     {
         if(frame.width<=0 || frame.height<=0 || frame.referenceHeight<=0 ||
            !std::isfinite(height) || height<=0) return {};
         const float scale=height/static_cast<float>(frame.referenceHeight);
         const float contentX=static_cast<float>(flipX?frame.frameWidth-frame.left-frame.width:frame.left);
-        const glm::vec2 pivot{contentX+frame.width*0.5f,static_cast<float>(frame.top+frame.height)};
+        glm::vec2 pivot{contentX+frame.width*0.5f,static_cast<float>(frame.top+frame.height)};
+        if(authoredPivot)
+        {
+            if(!std::isfinite(authoredPivot->x) || !std::isfinite(authoredPivot->y)) return {};
+            pivot=*authoredPivot;
+            if(flipX) pivot.x=frame.frameWidth-pivot.x;
+        }
         SpritePlacement result;
         result.origin=feet-pivot*scale;
         result.size=glm::vec2(frame.frameWidth,frame.frameHeight)*scale;

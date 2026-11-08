@@ -6,6 +6,7 @@
 #include "Gameplay/World/ForegroundTrees.h"
 #include "Gameplay/Graphics/RenderOrder.h"
 #include "Gameplay/Graphics/HotbarVisibility.h"
+#include "Gameplay/Graphics/WorldArt.h"
 #include "Gameplay/Systems/Trade.h"
 #include "Gameplay/Systems/InteractionSystem.h"
 #include "Gameplay/Effects/EffectPool.h"
@@ -72,6 +73,9 @@ namespace MyGame
         };
         std::optional<TileFocus> FocusedTile();
         void IndexTargetTiles();
+        void CacheTerrainArt();
+        void DrawWorldObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const;
+        void DrawStaticObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const;
         PresentationSnapshot CurrentPresentation() const;
         void CancelInteraction(InteractionResult reason=InteractionResult::Cancelled);
         struct SpriteDraw
@@ -90,6 +94,9 @@ namespace MyGame
         SceneInputBuffer m_Input;
         PresentationSnapshot m_Previous;
         WorldMap m_World;
+        WorldArt m_WorldArt;
+        std::array<std::vector<const ArtFrame*>,4> m_TerrainArt;
+        int m_ArtSeason=0,m_PlayerLook=2,m_NpcLook=2;
         ForegroundTrees m_Trees;
         RenderOrder m_RenderOrder;
         InteractionActor m_Actor;

@@ -80,6 +80,11 @@ namespace MyGame
                 if(uv) m_ItemRegions[static_cast<std::size_t>(i)]=*uv;
                 else {m_Items=nullptr;std::cerr<<"Asset fallback [items_farm]: four_item_regions_required\n";}
             }
+        if(m_WorldArt.Load(dataRoot.parent_path()/"LocalV4"))
+        {
+            CacheTerrainArt();
+            std::cout<<"World art v4 enabled: four terrain palettes and eight-direction character\n";
+        }
         m_Ready=true; // Missing artwork uses geometric placeholders, not a fatal game error.
         Reset();
         return m_Ready;
@@ -92,6 +97,7 @@ namespace MyGame
         const auto nextAction=m_Actor.nextActionId;
         m_Actor={};m_Actor.home=HomeStorage::PlayerGarden();m_Hotbar={};m_StorageOpen=false;m_StorageRow=0;m_StorageResult=TradeResult::None;m_MarketOpen=false;m_MarketRow=0;m_TradeResult=TradeResult::None;m_Actor.nextActionId=nextAction;m_Actor.position=m_Player;m_Action={};
         m_FruitHarvested=0;
+        m_PlayerLook=m_NpcLook=2;
         m_Targets.clear();m_Targets.reserve(m_World.Objects().size()+m_Trees.Entries().size()+2);
         for(const auto& object:m_World.Objects())
         {
@@ -182,6 +188,7 @@ namespace MyGame
         input.save=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_J);
         input.load=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_L);
         input.toggleTileGrid=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_G);
+        input.nextArtSeason=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_T);
         if(auto* window=glfwGetCurrentContext()) input.paused=!glfwGetWindowAttrib(window,GLFW_FOCUSED);
         input.reset=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_R);
         input.action=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_SPACE);
@@ -326,6 +333,7 @@ namespace MyGame
         }
         if(m_Loading) return;
         if(input.toggleTileGrid) m_ShowTileGrid=!m_ShowTileGrid;
+        if(input.nextArtSeason && m_WorldArt.Ready()) m_ArtSeason=(m_ArtSeason+1)%4;
         if((input.save || input.load) && !m_SaveJob.valid() && !m_Action.Pending() && !m_MarketOpen)
         {
             try
@@ -381,7 +389,11 @@ namespace MyGame
             m_SelectedItem=input.selectedItem;
         const bool locked=(m_PlayerState==VisualState::Action || m_PlayerState==VisualState::Hurt) &&
                           !m_PlayerAnimation.Finished();
-        if(!locked && !m_Action.Pending()) m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
+        if(!locked && !m_Action.Pending())
+        {
+            m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
+            m_PlayerLook=ArtDirection(input.movement,m_PlayerLook);
+        }
         std::array<DynamicCollider,2> obstacles={{{m_Dog,DogCollider},{m_Npc,NpcCollider}}};
         const std::span<const DynamicCollider> playerObstacles(obstacles.data(),m_Options.demoMode?2u:1u);
         const auto previous=m_Player;
@@ -477,7 +489,11 @@ namespace MyGame
             if(glm::length(goal-m_Npc)<8) m_NpcPatrolRight=!m_NpcPatrolRight;
         }
         const bool npcMoving=glm::length(m_Npc-npcBefore)>0.001f;
-        if(npcMoving) m_NpcFacing=FacingFromVelocity(m_Npc.x-npcBefore.x,m_Npc.y-npcBefore.y,m_NpcFacing);
+        if(npcMoving)
+        {
+            m_NpcFacing=FacingFromVelocity(m_Npc.x-npcBefore.x,m_Npc.y-npcBefore.y,m_NpcFacing);
+            m_NpcLook=ArtDirection(m_Npc-npcBefore,m_NpcLook);
+        }
         m_NpcAnimation.Select(m_Visuals,"npc_an",npcMoving?VisualState::Walk:VisualState::Idle,m_NpcFacing);
         m_NpcAnimation.Update(dt,false);
 
@@ -521,6 +537,19 @@ namespace MyGame
     }
     DemoScene2D::SpriteDraw DemoScene2D::ActorSprite(int character,glm::vec2 feet,const AnimationController& animation) const
     {
+        if(m_WorldArt.Ready())
+        {
+            const bool npc=&animation==&m_NpcAnimation;
+            const bool walking=animation.State()==VisualState::Walk || animation.State()==VisualState::Run;
+            if(const auto* frame=m_WorldArt.Actor(npc?m_NpcLook:m_PlayerLook,walking,animation.Frame()))
+            {
+                SpriteDraw sprite;
+                sprite.texture=&m_WorldArt.Sprites().Texture();
+                sprite.uv=frame->uv;
+                sprite.placement=PlaceSprite(frame->bounds,feet,HumanHeight,false,frame->pivot);
+                return sprite;
+            }
+        }
         if(const auto* clip=animation.Clip();clip && m_Assets)
             if(const auto* record=m_Assets->Record(clip->assetId);record && m_Assets->Loaded(clip->assetId))
                 return SpriteFor(clip->assetId,animation.Frame()-record->firstFrame,feet,HumanHeight,clip->flipX);
@@ -542,6 +571,74 @@ namespace MyGame
         if(sprite.texture) canvas.Sprite(*sprite.texture,p.origin.x,p.origin.y,p.size.x,p.size.y,sprite.uv);
         else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.55f,0.32f,0.16f,1});
     }
+    void DemoScene2D::CacheTerrainArt()
+    {
+        constexpr std::array<glm::ivec2,8> offsets{{{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}}};
+        for(int season=0;season<4;++season)
+        {
+            auto& frames=m_TerrainArt[static_cast<std::size_t>(season)];
+            frames.assign(WorldMap::Width*WorldMap::Height,nullptr);
+            const auto& atlas=m_WorldArt.Terrain(season);
+            for(int y=0;y<WorldMap::Height;++y)
+                for(int x=0;x<WorldMap::Width;++x)
+                {
+                    const auto* cell=m_World.TryCell(x,y);
+                    const bool water=cell->terrain==Terrain::Water;
+                    unsigned int mask=0;
+                    for(std::size_t bit=0;bit<offsets.size();++bit)
+                    {
+                        const auto offset=offsets[bit];
+                        const auto* neighbor=m_World.TryCell(x+offset.x,y+offset.y);
+                        if(!neighbor || (neighbor->terrain==Terrain::Water)==water) mask|=1u<<bit;
+                    }
+                    mask=CanonicalTerrainMask(mask);
+                    std::string key;
+                    if(!water && mask==255) key=cell->terrain==Terrain::Path?"path":"grass";
+                    else key=std::string(water?"water_":"land_")+
+                             (mask<10?"00":mask<100?"0":"")+std::to_string(mask);
+                    frames[static_cast<std::size_t>(y*WorldMap::Width+x)]=atlas.Find(key);
+                }
+        }
+    }
+
+    void DemoScene2D::DrawWorldObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const
+    {
+        const auto& atlas=m_WorldArt.Sprites();
+        std::string_view id="rock";
+        if(object.visualId.find("tree")!=std::string::npos) id="tree";
+        else if(object.visualId.find("bush")!=std::string::npos) id="bush";
+        else if(object.visualId.find("gate")!=std::string::npos) id="fence";
+        else if(object.visualId.find("chest")!=std::string::npos) id="chest";
+        else if(object.visualId.find("sign")!=std::string::npos) id="sign";
+        else if(object.visualId.find("water")!=std::string::npos) return;
+        const auto* frame=atlas.Find(id);
+        if(!frame) return;
+        const auto feet=object.position+glm::vec2{object.size.x*0.5f,object.size.y};
+        const float height=id=="tree"?240.0f:std::max(45.0f,object.size.y*1.4f);
+        const auto placement=PlaceSprite(frame->bounds,feet,height,false,frame->pivot);
+        canvas.Sprite(atlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
+    }
+
+    void DemoScene2D::DrawStaticObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const
+    {
+        const auto& atlas=m_WorldArt.Sprites();
+        if(object.gameplayId.find("fence")!=std::string::npos)
+        {
+            const bool horizontal=object.size.x>object.size.y;
+            const float length=horizontal?object.size.x:object.size.y;
+            for(float distance=0;distance<length;distance+=64)
+            {
+                const auto origin=object.position+(horizontal?glm::vec2{distance,-32}:glm::vec2{-12,distance});
+                atlas.Draw(canvas,"fence",origin,{64,64});
+            }
+            return;
+        }
+        const auto* frame=atlas.Find(object.gameplayId=="town.market"?"shop":"house");
+        if(!frame) return;
+        const auto placement=FitSprite(frame->bounds,object.position,object.size);
+        canvas.Sprite(atlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
+    }
+
     void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const
     {
         const auto* it=&plot;
@@ -586,7 +683,18 @@ namespace MyGame
             std::sin(static_cast<float>(m_GameAge)*87.0f)*shake,
             std::cos(static_cast<float>(m_GameAge)*71.0f)*shake});
         canvas.BeginWorld(width,height,renderCamera);
-        if(m_Map)
+        if(m_WorldArt.Ready())
+        {
+            const auto range=m_World.VisibleTiles(renderCamera.Position(),renderCamera.ViewSize());
+            const auto& atlas=m_WorldArt.Terrain(m_ArtSeason);
+            const auto& frames=m_TerrainArt[static_cast<std::size_t>(m_ArtSeason)];
+            for(int y=range.top;y<range.bottom;++y)
+                for(int x=range.left;x<range.right;++x)
+                    if(const auto* frame=frames[static_cast<std::size_t>(y*WorldMap::Width+x)])
+                        canvas.Sprite(atlas.Texture(),static_cast<float>(x*WorldMap::TileSize),
+                                      static_cast<float>(y*WorldMap::TileSize),WorldMap::TileSize,WorldMap::TileSize,frame->uv);
+        }
+        else if(m_Map)
             canvas.Sprite(*m_Map,0,0,WorldSize.x,WorldSize.y);
         else
         {
@@ -634,7 +742,24 @@ namespace MyGame
                 canvas.Rectangle(origin.x+1,origin.y+1,tileSize-2,tileSize-2,{0.91f,0.78f,0.49f,1});
                 canvas.Rectangle(origin.x+3,origin.y+3,tileSize-6,tileSize-6,soil);
                 const auto& texture=m_LocalSoil[target.moisture>0?1u:0u];
-                if(texture.Id())
+                if(m_WorldArt.Ready())
+                {
+                    const auto hasCrop=[&](glm::ivec2 cell)
+                    {
+                        const auto bucket=m_TargetTiles.find(TileKey(cell));
+                        if(bucket==m_TargetTiles.end()) return false;
+                        return std::any_of(bucket->second.begin(),bucket->second.end(),[&](std::size_t index){
+                            const auto& other=m_Targets[index];
+                            return other.active && other.kind==TargetKind::Crop;
+                        });
+                    };
+                    const bool left=hasCrop(*tile-glm::ivec2{1,0});
+                    const bool right=hasCrop(*tile+glm::ivec2{1,0});
+                    const std::string part=left?(right?"giua":"cuoi"):(right?"dau":"don");
+                    m_WorldArt.Terrain(m_ArtSeason).Draw(canvas,std::string(target.moisture>0?"bed_uot_":"bed_kho_")+part,
+                                                       origin,{tileSize,tileSize});
+                }
+                else if(texture.Id())
                     canvas.Sprite(texture,origin.x+3,origin.y+3,tileSize-6,tileSize-6);
                 const char* label=!target.planted?"O TRONG":target.ready?"DA CHIN":target.moisture>0?"DANG LON":"CAN TUOI";
                 HudText(canvas,label,origin.x+5,origin.y+tileSize-13,1.05f,{1,0.94f,0.78f,1});
@@ -646,7 +771,7 @@ namespace MyGame
                 m_RenderOrder.Submit(RenderKind::Pickup,i,target.position-glm::vec2{42,44},{84,76},target.position.y);
             }
         }
-        if(m_Map)
+        if(m_Map && !m_WorldArt.Ready())
             for(std::size_t i=0;i<m_Trees.Entries().size();++i)
             {
                 const auto& tree=m_Trees.Entries()[i];
@@ -656,7 +781,7 @@ namespace MyGame
             for(std::size_t i=0;i<m_World.Objects().size();++i)
             {
                 const auto& object=m_World.Objects()[i];
-                if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position,object.size,
+                if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position-glm::vec2{100,240},object.size+glm::vec2{200,240},
                                                        object.position.y+object.size.y);
             }
         if(focus && !m_MarketOpen && !m_StorageOpen)
@@ -671,6 +796,13 @@ namespace MyGame
             canvas.Rectangle(origin.x,origin.y,3,tileSize,color);
             canvas.Rectangle(origin.x+tileSize-3,origin.y,3,tileSize,color);
         }
+        if(m_WorldArt.Ready())
+            for(std::size_t i=0;i<m_World.StaticColliders().size();++i)
+            {
+                const auto& object=m_World.StaticColliders()[i];
+                m_RenderOrder.Submit(RenderKind::StaticObject,i,object.position-glm::vec2{32,32},
+                                     object.size+glm::vec2{64,64},object.position.y+object.size.y);
+            }
         const auto player=ActorSprite(m_Character,presented.player,m_PlayerAnimation).placement;
         m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,presented.player.y);
         if(m_Options.demoMode)
@@ -709,8 +841,16 @@ namespace MyGame
                 canvas.SpriteEllipse(*m_Map,x,y,w,h,{x/WorldSize.x,y/WorldSize.y,w/WorldSize.x,h/WorldSize.y});
                 break;
             }
+            case RenderKind::StaticObject:
+                DrawStaticObject(canvas,m_World.StaticColliders()[entry.index]);
+                break;
             case RenderKind::WorldObject:
             {
+                if(m_WorldArt.Ready())
+                {
+                    DrawWorldObject(canvas,m_World.Objects()[entry.index]);
+                    break;
+                }
                 const auto& object=m_World.Objects()[entry.index];
                 const std::array<float,4> color=object.visualId=="visual.water.ripple"?
                     std::array<float,4>{0.65f,0.86f,0.96f,0.6f}:
@@ -876,6 +1016,13 @@ namespace MyGame
             canvas.Rectangle(left,8,144*scale,15*scale,{0.95f,0.90f,0.77f,0.98f});
             HudText(canvas,hint,left+5*scale,12,scale);
         }
+        if(m_WorldArt.Ready() && !m_StorageOpen && !m_MarketOpen)
+        {
+            constexpr std::array seasons{"XUAN","HA","THU","DONG"};
+            const float left=static_cast<float>(width)-140;
+            canvas.Rectangle(left,8,132,20,{0.95f,0.93f,0.82f,0.94f});
+            HudText(canvas,std::string(seasons[static_cast<std::size_t>(m_ArtSeason)])+" - T MUA",left+5,13,1.3f);
+        }
         if(m_SaveMessageTime>0)
         {
             const float scale=std::min(1.5f,static_cast<float>(width)/300.0f);
@@ -896,6 +1043,8 @@ namespace MyGame
         for(auto& texture:m_LocalSoil) texture.Reset();
         m_LocalCarrotIcon.Reset();
         m_LocalSeedIcon.Reset();
+        m_WorldArt.Reset();
+        for(auto& frames:m_TerrainArt) frames.clear();
         m_Map=m_Items=m_DogTexture=m_CropTexture=nullptr;
         m_Assets=nullptr;
         m_Characters.fill(nullptr);

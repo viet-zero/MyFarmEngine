@@ -1,5 +1,21 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Tích hợp bộ ảnh Đơn Giản v4 — 2026-11-08
+
+Đã giải nén ZIP Downloads MyFarmEngine_Assets_DonGian_v4_Da_Hoa_Cay_DoVat.zip (1238 entries) vào AssetLibrary_Review/DonGian_v4, kiểm CRC. Giữ nguyên nguồn và Original. Thông tin chờ tải bộ mới trong mục lịch sử v3 phía dưới đã được giải quyết.
+
+Scripts/StageV4Assets.py đóng gói 450 vùng ảnh: 104 vùng terrain mỗi mùa × 4 và 34 vùng nhân vật/đồ vật. Atlas có viền extrude 2 pixel, provenance SHA256; không resize ảnh nguồn. Dữ liệu ảnh local chưa đưa lên Git. Chạy `python Scripts/StageV4Assets.py --configuration Release` (hoặc Debug), cần Pillow và thư mục đã giải nén.
+
+WorldArt nạp atlas có kiểm tra metadata, đủ 47 mask bờ nước và frame nhân vật. Scene dùng tile 64, cache lựa chọn terrain bốn mùa, culling và Canvas2D batching hiện có; truy vấn luống liền kề dùng chỉ mục ô. Thiếu bộ local thì dùng đường render cũ. T đổi bảng màu mùa để review, chưa phải mùa gameplay.
+
+Nhân vật dùng chung bộ prototype tám hướng, giữ tỷ lệ và root (96,180) trên canvas 192×192, chiều cao chuẩn 132 world units theo reference stature chung. Input, va chạm, marker hành động và tương tác bốn hướng vẫn giữ logic hiện hành. Mỗi entity giữ controller riêng. Chỉ có hai frame walk mỗi hướng; idle là placeholder, hành động dùng pose idle; chưa có outfit layers. Không coi animation tám hướng hoàn chỉnh là DONE.
+
+Đồ vật/nhà được ghép lên collision và thứ tự chân hiện có, chưa phải bản đồ art hoàn thiện. Cây/bụi có viền màu, cỏ/nước có họa tiết lặp, artwork và footprint nhà còn NEEDS_ART_REVIEW. Chưa ghép cây modular vì thiếu attachment point; không dùng resize để tuyên bố sửa phong cách.
+
+Kiểm chứng: Debug và Release 27/27 tests, gồm mask 47 loại, tám hướng và pivot có tác giả; test OpenGL kiểm nạp atlas local. Release executable chạy --smoke-test, exit 0. Chưa có buổi chơi tay dài hoặc số đo FPS cho bản v4.
+
+Tiếp theo: (1) review trực quan spawn/nhà/cây và footprint; (2) bổ sung action frames/outfit sau khi chốt artwork; (3) hoàn thiện mùa gameplay độc lập với phím review T.
+
 ## Nhập terrain local và thử đất khô/ướt — 2026-11-08
 
 Đã kiểm ZIP MyFarmEngine_Master_v3_Terrain_4Seasons.zip có sẵn trong Downloads và nhập riêng nhóm 01_Terrain_Seasonal_v3 vào AssetLibrary_Review/Terrain_v3_Local. Nhóm có 67 tệp gồm 56 PNG terrain, 4 atlas, 2 preview và 5 tệp dữ liệu/tài liệu. IMPORT_HASHES.json ghi hash ZIP và từng tệp. Ảnh đã được decode/verify lúc nhập.
