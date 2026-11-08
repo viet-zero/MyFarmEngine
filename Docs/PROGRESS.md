@@ -1,5 +1,17 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Đường/rào và va chạm khớp footprint — 2026-11-08
+
+Đã thu collider town về chân tường 420×100 thay vùng baked cũ; bỏ vùng fountain vô hình. Cây còn thân 72×24, giữ foot center; gate 80×20 và ảnh giới hạn theo width, không méo. Rào theo panel 64 có Y-sort/culling riêng, rails đúng trục; chuyển rào ra khỏi đường và mở lối bắc rộng 96. Nhà farm footprint (2638,2160,420,100), chân (2848,2260), không che luống cũ hoặc cắt tuyến tiếp cận.
+
+Đường xuân là dải đất 48 trong ô 64, vai đường nối theo topology; grass một pass và đường một batch rectangle. Đây còn geometry prototype, chưa là road/fence artwork hand-painted cuối. F9 thêm viền collider để tự đối chiếu.
+
+Debug 27/27 PASS (42.55s), Release 27/27 PASS (13.95s). Tests thêm vùng dưới canopy/roof-only đi được, thân/tường chặn, đường cạnh rào/lối bắc thông, scene chạm tường/cây dừng và chuyển Idle, Y-sort từng panel. Contact scene: wall y=2274, trunk y=1604, không xuyên collider; khe nhỏ do substep tối đa 8 units. Tests chuột/camera/UI/farming/save cũ vẫn pass.
+
+Đã mở Release thật, bật F9 xem gốc cây/chân nhà/cổng/rào; chế độ nhân vật gieo bằng 3/F, chuyển B rồi tưới cùng ô bằng chuột và thấy DANG LON. Reset lượt test về spawn, debug tắt; không ghi SQL save. CheckAssets giữ nguyên 204 Original và các hash import/art cũ.
+
+Chi tiết và nơi chỉnh: COLLISION_VISUAL_ALIGNMENT.md. Còn lại: artwork đường/rào tự nhiên hơn, cổng mở/đóng và cửa nhà, hoàn thiện các palette mùa. Save cũ có vị trí nằm trong footprint mới được từ chối an toàn, không tự sửa DB.
+
 ## CozyV1 và hai cách chơi — 2026-11-08
 
 Verification cuối: Debug 27/27 (36.81s), Release 27/27 (16.31s), có OpenGL pixel test. Đã thao tác native cửa sổ Release: click nút chuyển mode, click hotbar chọn hạt, gieo ô thứ sáu, chọn bình/tưới, chờ cây chín, click thu hoạch; bảng K hiện củ cải túi 0/kho 1 và plot trở về trống. Không ghi save SQL trong lượt chơi thử. Đã xem cây và nhà, chuyển khu hồ và zoom ra: phát hiện rồi sửa tint rừng thành chuyển tiếp theo địa lý (không theo random Forest cell), dùng ellipse bờ mềm cho hồ theo chính center/radius WorldMap. Spring không còn dùng shore v4; đường và ba palette khác vẫn v4. Bản test trả về spawn, debug tắt.

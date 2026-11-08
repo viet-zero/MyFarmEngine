@@ -77,6 +77,9 @@ namespace MyGame
         void IndexTargetTiles();
         void CacheTerrainArt();
         void DrawWorldObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const;
+        struct FencePanel {glm::vec2 origin,size;};
+        std::vector<FencePanel> m_FencePanels;
+        void DrawFencePanel(MyEngine::Canvas2D& canvas,const FencePanel& panel) const;
         void DrawStaticObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const;
         PresentationSnapshot CurrentPresentation() const;
         void CancelInteraction(InteractionResult reason=InteractionResult::Cancelled);

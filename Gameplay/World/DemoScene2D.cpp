@@ -85,6 +85,19 @@ namespace MyGame
             CacheTerrainArt();
             std::cout<<"World art v4 enabled: four terrain palettes and eight-direction character\n";
         }
+        m_FencePanels.clear();
+        for(const auto& fence:m_World.StaticColliders())
+        {
+            if(fence.gameplayId.find("fence")==std::string::npos) continue;
+            const bool horizontal=fence.size.x>fence.size.y;
+            const float length=horizontal?fence.size.x:fence.size.y;
+            for(float offset=0;offset<length;offset+=64)
+            {
+                const float extent=std::min(64.0f,length-offset);
+                m_FencePanels.push_back({fence.position+(horizontal?glm::vec2{offset,0}:glm::vec2{0,offset}),
+                    horizontal?glm::vec2{extent,fence.size.y}:glm::vec2{fence.size.x,extent}});
+            }
+        }
         m_Ready=true; // Missing artwork uses geometric placeholders, not a fatal game error.
         if(!m_Scale.Load(dataRoot/"VisualScale.csv")) std::cerr<<"VisualScale missing/invalid: using defaults\n";
         if(m_WorldArt.LoadCozy(dataRoot.parent_path()/"Cozy")) std::cout<<"Cozy art v1 enabled\n";
@@ -678,25 +691,45 @@ namespace MyGame
         const auto* frame=selectedAtlas.Find(id);
         if(!frame) return;
         const auto feet=object.position+glm::vec2{object.size.x*0.5f,object.size.y};
-        const float height=id=="tree"?m_Scale.tree:id=="fence"?m_Scale.gate:std::clamp(object.size.y,32.0f,96.0f);
+        const float height=id=="tree"?m_Scale.tree:id=="fence"?std::min(m_Scale.gate,object.size.x*frame->bounds.referenceHeight/frame->bounds.width):std::clamp(object.size.y,32.0f,96.0f);
         const auto placement=PlaceSprite(frame->bounds,feet,height,false,frame->pivot);
         canvas.Sprite(selectedAtlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
+    }
+
+    void DemoScene2D::DrawFencePanel(MyEngine::Canvas2D& canvas,const FencePanel& panel) const
+    {
+        const bool horizontal=panel.size.x>panel.size.y;
+        const float x=panel.origin.x,y=panel.origin.y;
+        const float rise=m_Scale.fence*0.55f;
+        constexpr std::array<float,4> dark{0.35f,0.23f,0.12f,1},wood{0.61f,0.43f,0.24f,1},light{0.79f,0.62f,0.37f,1};
+        if(horizontal)
+        {
+            for(const float elevation:{rise*0.4f,rise*0.8f})
+            {
+                canvas.Rectangle(x,y+panel.size.y-elevation,panel.size.x,6,wood);
+                canvas.Rectangle(x,y+panel.size.y-elevation,panel.size.x,2,light);
+            }
+        }
+        else
+        {
+            // Rails follow the actual north/south footprint instead of repeating east/west art.
+            canvas.Rectangle(x+4,y-rise*0.65f,5,panel.size.y,wood);
+            canvas.Rectangle(x+4,y-rise*0.65f,2,panel.size.y,light);
+        }
+        const glm::vec2 start{x,y+panel.size.y};
+        const glm::vec2 end=horizontal?glm::vec2{x+panel.size.x-6,start.y}:glm::vec2{x,y};
+        for(const auto foot:{start,end})
+        {
+            canvas.Rectangle(foot.x,foot.y-rise,7,rise,dark);
+            canvas.Rectangle(foot.x+1,foot.y-rise+1,5,rise-2,wood);
+            canvas.Rectangle(foot.x+1,foot.y-rise+1,5,3,light);
+        }
     }
 
     void DemoScene2D::DrawStaticObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const
     {
         const auto& atlas=m_WorldArt.Sprites();
-        if(object.gameplayId.find("fence")!=std::string::npos)
-        {
-            const bool horizontal=object.size.x>object.size.y;
-            const float length=horizontal?object.size.x:object.size.y;
-            for(float distance=0;distance<length;distance+=m_Scale.fence)
-            {
-                const auto origin=object.position+(horizontal?glm::vec2{distance,-32}:glm::vec2{-12,distance});
-                atlas.Draw(canvas,"fence",origin,{m_Scale.fence,m_Scale.fence});
-            }
-            return;
-        }
+        if(object.gameplayId.find("fence")!=std::string::npos) return;
         const bool shop=object.gameplayId=="town.market";
         // The fountain collider belongs to the old baked town map; do not draw a house over it.
         if(object.gameplayId=="town.fountain") return;
@@ -762,12 +795,11 @@ namespace MyGame
             const auto& ground=m_WorldArt.Ground();
             const auto* waterFrame=atlas.Find("water_255");
             const auto* cozyGrass=cozy?ground.Find("grass"):nullptr;
-            const auto* pathFrame=atlas.Find("path");
             for(int y=range.top;y<range.bottom;++y)
                 for(int x=range.left;x<range.right;++x)
                     if(const auto* frame=frames[static_cast<std::size_t>(y*WorldMap::Width+x)])
                     {
-                        const auto* base=cozy && frame!=pathFrame?cozyGrass:nullptr;
+                        const auto* base=cozy?cozyGrass:nullptr;
                         const float wx=static_cast<float>(x*WorldMap::TileSize),wy=static_cast<float>(y*WorldMap::TileSize);
                         if(base)
                         {
@@ -780,10 +812,26 @@ namespace MyGame
                             canvas.Sprite(ground.Texture(),wx,wy,WorldMap::TileSize,WorldMap::TileSize,uv,
                                 {shade*(1-forest*0.08f),shade,shade*(1-forest*0.03f),1});
                         }
-                        else canvas.Sprite(atlas.Texture(),wx,wy,WorldMap::TileSize,WorldMap::TileSize,frame->uv);
+                        else if(!cozy) canvas.Sprite(atlas.Texture(),wx,wy,WorldMap::TileSize,WorldMap::TileSize,frame->uv);
                     }
             if(cozy)
             {
+                // Joined dirt ribbons follow the tile network, with continuous shoulders at junctions.
+                const auto pathAt=[&](int x,int y){const auto* cell=m_World.TryCell(x,y);return cell && cell->terrain==Terrain::Path;};
+                for(int y=range.top;y<range.bottom;++y) for(int x=range.left;x<range.right;++x)
+                {
+                    if(!pathAt(x,y)) continue;
+                    const float wx=x*64.0f,wy=y*64.0f;
+                    const bool horizontal=pathAt(x-1,y)||pathAt(x+1,y);
+                    const bool vertical=pathAt(x,y-1)||pathAt(x,y+1);
+                    const auto ribbon=[&](float px,float py,float w,float h,bool alongX){
+                        canvas.Rectangle(px,py,w,h,{0.62f,0.59f,0.37f,1});
+                        canvas.Rectangle(px+(alongX?0:2),py+(alongX?2:0),w-(alongX?0:4),h-(alongX?4:0),{0.76f,0.65f,0.43f,1});
+                        canvas.Rectangle(px+(alongX?0:4),py+(alongX?4:0),w-(alongX?0:8),h-(alongX?8:0),{0.80f,0.70f,0.49f,1});
+                    };
+                    if(horizontal) ribbon(wx,wy+8,64,48,true);
+                    if(vertical || !horizontal) ribbon(wx+8,wy,48,64,false);
+                }
                 // The source world defines one elliptical lake. Use the same center/radii;
                 // keep its tile collision model, with a soft visual shore instead of unrelated v4 art.
                 constexpr glm::vec2 lakeCenter{(WorldMap::LakeCenterX+0.5f)*WorldMap::TileSize,
@@ -931,8 +979,16 @@ namespace MyGame
             for(std::size_t i=0;i<m_World.StaticColliders().size();++i)
             {
                 const auto& object=m_World.StaticColliders()[i];
+                if(object.gameplayId.find("fence")!=std::string::npos) continue;
                 m_RenderOrder.Submit(RenderKind::StaticObject,i,object.position-glm::vec2{m_Scale.house,m_Scale.house},
                                      object.size+glm::vec2{2*m_Scale.house,m_Scale.house},object.position.y+object.size.y);
+            }
+        if(m_WorldArt.Ready())
+            for(std::size_t i=0;i<m_FencePanels.size();++i)
+            {
+                const auto& panel=m_FencePanels[i];
+                m_RenderOrder.Submit(RenderKind::FencePanel,i,panel.origin-glm::vec2{0,m_Scale.fence},
+                                     panel.size+glm::vec2{8,m_Scale.fence},panel.origin.y+panel.size.y);
             }
         const auto player=ActorSprite(m_Character,presented.player,m_PlayerAnimation).placement;
         if(!m_GardenControl) m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,presented.player.y);
@@ -948,6 +1004,7 @@ namespace MyGame
         {
             switch(entry.kind)
             {
+            case RenderKind::FencePanel:DrawFencePanel(canvas,m_FencePanels[entry.index]);break;
             case RenderKind::Crop:DrawCrop(canvas,m_Targets[entry.index]);break;
             case RenderKind::Pickup:
             {
@@ -1000,6 +1057,18 @@ namespace MyGame
             canvas.Rectangle(effect.position.x-size*0.5f,effect.position.y-size*0.5f,size,size,
                 effect.kind==EffectKind::FloatingText?std::array<float,4>{0.98f,0.86f,0.3f,alpha}:
                                                       std::array<float,4>{0.95f,0.72f,0.42f,alpha});
+        }
+        if(m_Options.debugOverlay)
+        {
+            const auto outline=[&](const WorldObject& object){
+                if(!object.active || !object.blocked || !WorldMap::Intersects(object.position,object.size,visibleOrigin,renderCamera.ViewSize())) return;
+                const auto p=object.position,sz=object.size;
+                constexpr std::array<float,4> color{0.9f,0.18f,0.12f,0.85f};
+                canvas.Rectangle(p.x,p.y,sz.x,1.5f,color);canvas.Rectangle(p.x,p.y+sz.y-1.5f,sz.x,1.5f,color);
+                canvas.Rectangle(p.x,p.y,1.5f,sz.y,color);canvas.Rectangle(p.x+sz.x-1.5f,p.y,1.5f,sz.y,color);
+            };
+            for(const auto& object:m_World.Objects()) outline(object);
+            for(const auto& object:m_World.StaticColliders()) outline(object);
         }
         canvas.End();
 

@@ -1,9 +1,9 @@
 id,x,y,width,height
-town.clockhouse,0,400,1280,690
-town.market,0,1580,760,720
-town.fountain,820,1600,500,400
-town.south_house,0,3220,620,700
-farm.north_fence,2600,1190,1340,45
-farm.west_fence,2600,1235,45,655
-farm.east_fence,3930,1235,45,700
-farm.home,2580,1850,350,100
+town.clockhouse,430,990,420,100
+town.market,170,2200,420,100
+town.south_house,100,3820,420,100
+farm.north_fence.a,2640,1248,416,16
+farm.north_fence.b,3152,1248,848,16
+farm.west_fence,2640,1264,16,536
+farm.east_fence,3984,1264,16,592
+farm.home,2638,2160,420,100

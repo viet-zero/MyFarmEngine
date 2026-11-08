@@ -1,5 +1,7 @@
 # MyFarmEngine — Sổ tay chỉnh tay và bàn giao
 
+Bản chỉnh đường/rào/va chạm mới nhất: [COLLISION_VISUAL_ALIGNMENT.md](COLLISION_VISUAL_ALIGNMENT.md). F9 hiện collider thật; nhà farm hiện đặt chân (2848,2260), các lối vào được giữ thông.
+
 Cập nhật 2026-11-08. Repository duy nhất: D:/my_code/MyFarmEngine. Đây là prototype kỹ thuật có farming thật; chưa là game hoàn chỉnh. Mục lịch sử trong PROGRESS/ROADMAP không thay thế trạng thái mới nhất ở đầu tài liệu.
 
 ## Tiến độ hiện tại
@@ -43,7 +45,7 @@ Bản chạy: out/build/phase-f-release/MyFarmEngine.exe. Double click để ch�
 | Chiều cao nhân vật/cây/nhà/cổng/rào | Gameplay/Data/VisualScale.csv | human=112, tree=336, house=420, gate=80, fence=64 world units. Giữ key, số hữu hạn 16..1024; đủ 5 dòng. Build/deploy rồi khởi động lại. File sai giữ toàn bộ mặc định, có log |
 | Preview tỷ lệ nhanh không compile | out/build/phase-f-release/Assets/Data/VisualScale.csv | Đổi bản deployed rồi mở lại game. Lần build kế tiếp sẽ chép lại từ Gameplay/Data |
 | Vị trí/footprint vật thể | Gameplay/Data/Objects.csv | x/y góc trái collider, width/height footprint; ID gameplay khác ID visual. Render root ở đáy giữa; đừng dùng ảnh để quyết định va chạm |
-| Nhà và rào cố định | Gameplay/Data/StaticColliders.csv | farm.home là footprint nhà mới. Các collider town kế thừa ảnh baked cũ còn cần audit footprint theo art mới |
+| Nhà và rào cố định | Gameplay/Data/StaticColliders.csv | farm.home là footprint nhà mới. Collider town hiện thu về chân tường; xem COLLISION_VISUAL_ALIGNMENT.md |
 | Cây orchard legacy | Gameplay/Data/ForegroundTrees.csv | Điểm tương tác/fruits và metadata canopy cũ. Khi LocalV4 bật, sprite whole-tree dùng root từ object footprint; canopy baked dùng khi fallback |
 | Sáu luống / vị trí bắt đầu | Gameplay/World/DemoScene2D.cpp: GardenCells / WorldMap.cpp: Spawn | Chỉnh world units, đặt giữa tile 64; cần rebuild. Giữ ID crop ổn định để save còn khớp |
 | Biên vườn/kho | Gameplay/Inventory/HomeStorage.h: PlayerGarden | origin và size; vùng half-open, đúng ownerId. Cả chuột lẫn harvest đều kiểm quyền |
@@ -106,7 +108,7 @@ Tìm hàm đang dùng: `rg -n "CaptureInput|UpdateSimulation|Render|DrawWorldObj
 
 CozyV1 được tạo bằng built-in imagegen: meadow sage nhẹ, cây táo, cottage mái ngói, hồ xanh với gợn và mảng hoa/clover. Prompt/spec và provenance trong Assets/Workspace/CozyV1. Các bản nhà có glow đã bị loại khỏi runtime. Source generated v1 giữ nguyên; atlas là bản dẫn xuất để chạy. Root đo từ alpha cho props mới vẫn là prototype, cần duyệt bằng mắt từng object; hero có root tác giả (96,180).
 
-Chưa làm lại toàn bộ sprite nhân vật để tránh mất identity/frame consistency: vẫn dùng bộ chibi v4 cùng tỷ lệ; cần bộ hành động/outfit chuẩn riêng. Hồ xuân dùng ảnh mới với mask ellipse/bờ mềm; collision vẫn theo tile nên rìa nhìn thấy có sai khác nhỏ trong nửa ô. Shop/tường/rào/đường và một số bụi/đá còn art v4; ba palette ngoài xuân chưa đồng bộ bộ Cozy mới. Nền hồ/gợn là trình bày, chưa có vật lý nước hoặc phản chiếu. Layout town cần làm collider theo nhà mới; chưa có cửa nhà/interior.
+Chưa làm lại toàn bộ sprite nhân vật để tránh mất identity/frame consistency: vẫn dùng bộ chibi v4 cùng tỷ lệ; cần bộ hành động/outfit chuẩn riêng. Hồ xuân dùng ảnh mới với mask ellipse/bờ mềm; collision vẫn theo tile nên rìa nhìn thấy có sai khác nhỏ trong nửa ô. Shop/tường/rào/đường và một số bụi/đá còn art v4; ba palette ngoài xuân chưa đồng bộ bộ Cozy mới. Nền hồ/gợn là trình bày, chưa có vật lý nước hoặc phản chiếu. Footprint town đã thu về chân tường; layout/art town vẫn cần polish; chưa có cửa nhà/interior.
 
 ## Ba bước tiếp theo hợp lý
 

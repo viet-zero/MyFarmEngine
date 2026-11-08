@@ -1,5 +1,7 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+Cập nhật 2026-11-08: đường/rào và collider chân nhà/thân cây đã chỉnh trong cảnh Cozy; Debug/Release 27/27. Xem [COLLISION_VISUAL_ALIGNMENT.md](COLLISION_VISUAL_ALIGNMENT.md). Art đường/rào vẫn prototype; tiếp theo polish artwork, cổng/cửa nhà và animation.
+
 ## Hai chế độ và CozyV1 — 2026-11-08
 
 GLFW Input buffer cả mouse/key edge, clear khi mất focus. SceneInputBuffer giữ click đến fixed tick đầu tiên, không replay catch-up. Cursor đổi window pixels sang framebuffer pixels (DPI), ScreenToWorld dùng camera đã render gồm zoom/shake. UI nhận click trước world.

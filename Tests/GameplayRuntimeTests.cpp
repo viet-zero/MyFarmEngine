@@ -43,6 +43,25 @@ int main()
           "editable visual scale configuration did not load");
     DemoScene2D scene;
     Check(scene.Initialize(assets,MyEngine::AssetRoot()/"Data"),"scene failed");
+    auto alignment=scene.CaptureSave();
+    alignment.position={2848,2310};
+    Check(scene.RestoreSave(alignment),"front-wall approach start rejected");
+    SceneInput approachWall;approachWall.movement={0,-1};
+    for(int i=0;i<30;++i) scene.UpdateSimulation(0.1f,approachWall);
+    // MoveAndSlide stops within its bounded 8-unit substep of the wall, without penetration.
+    std::cout<<"Wall contact y="<<scene.Snapshot().player.y<<'\n';
+    Check(scene.Snapshot().player.y>=2272 && scene.Snapshot().player.y<2280 &&
+          scene.Snapshot().playerState==VisualState::Idle,"character walked through wall or animated while blocked");
+    alignment.position={1990,1640};
+    Check(scene.RestoreSave(alignment),"trunk approach start rejected");
+    for(int i=0;i<20;++i) scene.UpdateSimulation(0.1f,approachWall);
+    std::cout<<"Trunk contact y="<<scene.Snapshot().player.y<<'\n';
+    Check(scene.Snapshot().player.y>=1602 && scene.Snapshot().player.y<1610,"character passed through orchard trunk");
+    alignment.position={3104,1320};
+    Check(scene.RestoreSave(alignment),"north entrance start rejected");
+    for(int i=0;i<10;++i) scene.UpdateSimulation(0.1f,approachWall);
+    Check(scene.Snapshot().player.y<1240,"character could not pass north opening");
+    scene.Reset();
     const auto managerStart=scene.Snapshot().player;
     SceneInput manager;manager.toggleGardenControl=true;manager.selectedItem=2;
     scene.UpdateSimulation(1.0f/60,manager);

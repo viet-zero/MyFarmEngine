@@ -18,8 +18,8 @@ int main(int argc,char** argv)
     check(map.CanMoveTo(map.Spawn(Zone::Farm)),"farm spawn blocked");
     check(!map.CanMoveTo({-1,50}) && !map.CanMoveTo({std::numeric_limits<float>::quiet_NaN(),50}),"invalid position accepted");
     check(!map.CanMoveTo({5050,1200}),"lake water accepted");
-    check(!map.CanMoveTo({4670,2600}),"blocking tree accepted");
-    check(map.SetObjectActive("tree.oak.01",false) && map.CanMoveTo({4670,2600}),"destroyed tree still blocked");
+    check(!map.CanMoveTo({4670,2655}),"blocking tree accepted");
+    check(map.SetObjectActive("tree.oak.01",false) && map.CanMoveTo({4670,2655}),"destroyed tree still blocked");
     check(!map.SetObjectActive("absent",false),"unknown object state changed");
     check(map.Objects().size()==9,"object definitions missing");
     for(const auto& object:map.Objects()) check(object.gameplayId!=object.visualId,"visual ID reused as gameplay ID");

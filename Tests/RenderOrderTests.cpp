@@ -25,5 +25,13 @@ int main()
     order.Begin({0,0},{200,200});
     check(order.Entries().empty(),"frame did not clear queue");
     check(!order.Submit(RenderKind::Actor,0,{10,10},{-1,20},10),"invalid bounds accepted");
+    order.Begin({0,0},{200,200});
+    order.Submit(RenderKind::FencePanel,0,{80,20},{16,64},84);
+    order.Submit(RenderKind::Actor,0,{75,30},{30,80},110);
+    order.Submit(RenderKind::FencePanel,1,{80,84},{16,64},148);
+    order.Sort();
+    check(order.Entries().size()==3 && order.Entries()[0].kind==RenderKind::FencePanel &&
+          order.Entries()[1].kind==RenderKind::Actor && order.Entries()[2].kind==RenderKind::FencePanel,
+          "vertical fence must sort each panel around actor feet");
     return failures?1:0;
 }

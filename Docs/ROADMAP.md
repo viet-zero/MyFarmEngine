@@ -1,5 +1,7 @@
 # MyFarmEngine — Roadmap sau audit
 
+Cập nhật 2026-11-08: đường/rào và collider chân nhà/thân cây đã chỉnh trong cảnh Cozy; Debug/Release 27/27. Xem [COLLISION_VISUAL_ALIGNMENT.md](COLLISION_VISUAL_ALIGNMENT.md). Art đường/rào vẫn prototype; tiếp theo polish artwork, cổng/cửa nhà và animation.
+
 ## Gate mới nhất — 2026-11-08
 
 P1-001/002/003 DONE kỹ thuật. Farming/replant/water/growth, typed inventory/kho, trade và manual SQL Server save/load có trong prototype. Có hai cách chơi: nhân vật và quản lý vườn bằng chuột dùng chung model. CozyV1 thêm cỏ/hoa/hồ/cây/nhà và scale CSV. P2-001 còn PARTIAL: 8 hướng local nhưng chỉ 2 walk frames/hướng, thiếu action/outfit/NPC identity. P0 artwork acceptance còn PARTIAL.

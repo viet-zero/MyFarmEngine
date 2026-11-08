@@ -5,7 +5,7 @@
 
 namespace MyGame
 {
-    enum class RenderKind {Crop,Pickup,Actor,Animal,TreeCanopy,WorldObject,StaticObject};
+    enum class RenderKind {Crop,Pickup,Actor,Animal,TreeCanopy,WorldObject,StaticObject,FencePanel};
     struct RenderEntry
     {
         RenderKind kind;

@@ -1,10 +1,10 @@
 gameplay_id,visual_id,x,y,width,height,blocked
-tree.oak.01,visual.tree.oak,4660,2580,72,88,1
-tree.apple.01,visual.tree.apple,1910,1430,160,160,1
-tree.apple.02,visual.tree.apple,2320,1160,120,130,1
+tree.oak.01,visual.tree.oak,4660,2644,72,24,1
+tree.apple.01,visual.tree.apple,1954,1566,72,24,1
+tree.apple.02,visual.tree.apple,2344,1266,72,24,1
 rock.field.01,visual.rock.gray,3530,1280,72,60,1
 bush.berry.01,visual.bush.berry,3970,950,64,54,0
-gate.town.01,visual.gate.wood,1860,1960,80,100,1
+gate.town.01,visual.gate.wood,1860,2040,80,20,1
 chest.farm.01,visual.chest.wood,3160,1070,70,54,1
 sign.town.01,visual.sign.town,750,1940,48,80,0
 water.ripple.01,visual.water.ripple,5050,2100,56,20,0
