@@ -28,18 +28,28 @@ namespace MyGame
         MyEngine::Texture2D m_Texture;
         std::map<std::string,ArtFrame,std::less<>> m_Frames;
     };
+    struct VisualScale
+    {
+        float human=112,tree=336,house=420,gate=80,fence=64;
+        bool Load(const std::filesystem::path& path);
+    };
     class WorldArt
     {
     public:
         bool Load(const std::filesystem::path& root);
         void Reset();
+        bool LoadCozy(const std::filesystem::path& root);
+        bool CozyReady() const {return m_CozyReady;}
+        const ArtAtlas& Ground() const {return m_Ground;}
+        const ArtAtlas& Props() const {return m_Props;}
         bool Ready() const {return m_Ready;}
         const ArtAtlas& Terrain(int season) const {return m_Terrain[static_cast<std::size_t>(season)];}
         const ArtAtlas& Sprites() const {return m_Sprites;}
         const ArtFrame* Actor(int direction,bool walking,int frame) const;
     private:
         std::array<ArtAtlas,4> m_Terrain;
-        ArtAtlas m_Sprites;
+        ArtAtlas m_Sprites,m_Ground,m_Props;
+        bool m_CozyReady=false;
         bool m_Ready=false;
     };
 }

@@ -76,6 +76,7 @@ namespace MyGame
     {
         for(auto& atlas:m_Terrain) atlas.Reset();
         m_Sprites.Reset();
+        m_Ground.Reset();m_Props.Reset();m_CozyReady=false;
         m_Ready=false;
     }
     bool WorldArt::Load(const std::filesystem::path& root)
@@ -103,6 +104,37 @@ namespace MyGame
                 if(!Actor(direction,frame>0,frame-1)){Reset();return false;}
         m_Ready=true;
         return true;
+    }
+    bool VisualScale::Load(const std::filesystem::path& path)
+    {
+        std::ifstream input(path);
+        std::string line;
+        if(!input || !std::getline(input,line)) return false;
+        if(line.starts_with("\xEF\xBB\xBF")) line.erase(0,3);
+        if(line!="key,value") return false;
+        auto candidate=*this;
+        std::map<std::string,float*> values{{"human",&candidate.human},{"tree",&candidate.tree},
+            {"house",&candidate.house},{"gate",&candidate.gate},{"fence",&candidate.fence}};
+        std::map<std::string,bool> seen;
+        while(std::getline(input,line))
+        {
+            for(char& c:line) if(c==',') c=' ';
+            std::istringstream row(line);std::string key,extra;float value=0;
+            if(!(row>>key>>value) || row>>extra || !std::isfinite(value) || value<16 || value>1024 ||
+               !values.contains(key) || seen[key]) return false;
+            seen[key]=true;*values.at(key)=value;
+        }
+        if(seen.size()!=values.size()) return false;
+        *this=candidate;return true;
+    }
+    bool WorldArt::LoadCozy(const std::filesystem::path& root)
+    {
+        m_CozyReady=false;
+        if(!m_Ground.Load(root/"ground") || !m_Props.Load(root/"props") ||
+           !m_Ground.Find("grass") || !m_Ground.Find("water") || !m_Ground.Find("meadow") ||
+           !m_Props.Find("tree") || !m_Props.Find("house"))
+        {m_Ground.Reset();m_Props.Reset();return false;}
+        m_CozyReady=true;return true;
     }
     const ArtFrame* WorldArt::Actor(int direction,bool walking,int frame) const
     {

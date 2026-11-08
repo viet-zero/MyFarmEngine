@@ -92,6 +92,9 @@ int main()
     canvas.SpriteEllipse(texture,0,0,32,32,{0,0,1,1});
     canvas.End();
     Check(Read(0,0)[2]==255 && Read(16,16)[2]!=255,"ellipse mask failed at corner/center");
+    glClearColor(0,0,1,1);glClear(GL_COLOR_BUFFER_BIT);
+    canvas.Begin(32,32);canvas.Ellipse(0,0,32,32,{1,0,0,1});canvas.End();
+    Check(Read(0,0)[2]==255 && Read(16,16)[0]==255,"colored shore ellipse mask failed");
     canvas.Begin(32,32);
     canvas.Rectangle(0,0,2,2,{1,0,0,1});
     canvas.End();

@@ -1,5 +1,11 @@
 # MyFarmEngine — Roadmap sau audit
 
+## Gate mới nhất — 2026-11-08
+
+P1-001/002/003 DONE kỹ thuật. Farming/replant/water/growth, typed inventory/kho, trade và manual SQL Server save/load có trong prototype. Có hai cách chơi: nhân vật và quản lý vườn bằng chuột dùng chung model. CozyV1 thêm cỏ/hoa/hồ/cây/nhà và scale CSV. P2-001 còn PARTIAL: 8 hướng local nhưng chỉ 2 walk frames/hướng, thiếu action/outfit/NPC identity. P0 artwork acceptance còn PARTIAL.
+
+Ba task tiếp: duyệt biome/shore/footprint nhà town; chuẩn hóa action/outfit; UI chuột shop/kho và feedback/balance. Chi tiết acceptance và nơi chỉnh: PROJECT_HANDOVER.md. Chưa mở rộng world trước khi chốt visual/farming. Các gate bên dưới là lịch sử.
+
 ## P2-002B gate — 2026-11-05
 
 Trồng/tưới/growth/trồng lại và kho sở hữu đã tích hợp, Debug/Release 26/26 PASS. [Contract](FARMING_HOME_STORAGE.md). Ba crop definitions được kiểm logic, scene chỉ có turnip; P2 umbrella vẫn PARTIAL. Theo user choice 1+3, hotbar 4 ô tự ẩn và K mở bảng kho khi cần. Next [P2-002C](TASKS/P2-002C.md): money/seed choice/buy-sell từ bag hoặc kho hợp lệ → SQL durable snapshot/save-load. Chưa ghi DB hoặc lưu qua restart; artwork làm sau.

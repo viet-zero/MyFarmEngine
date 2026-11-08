@@ -18,10 +18,10 @@ namespace MyGame
         if(target.kind!=TargetKind::Crop) return target.item;
         const auto* definition=FindCrop(target.crop);return definition?definition->produce:ItemId::None;
     }
-    bool InteractionSystem::ToStorage(const InteractionActor& actor,const InteractionTarget& target)
+    bool InteractionSystem::ToStorage(const InteractionActor& actor,const InteractionTarget& target,bool garden)
     {
         const bool harvest=target.kind==TargetKind::FruitTree || (target.kind==TargetKind::Crop && target.planted && target.ready);
-        return harvest && actor.home.Receives(actor.ownerId,actor.position,target.position);
+        return harvest && actor.home.Receives(actor.ownerId,garden?target.position:actor.position,target.position);
     }
     InteractionTarget* InteractionSystem::Nearest(const InteractionActor& actor,std::vector<InteractionTarget>& targets)
     {
@@ -43,7 +43,7 @@ namespace MyGame
         return nearest;
     }
     InteractionResult InteractionSystem::CheckOwned(const InteractionActor& actor,const InteractionTarget* target,
-                                                      int selectedItem,bool owned)
+                                                      int selectedItem,bool owned,bool garden)
     {
         if((!owned && (actor.busy || actor.activeActionId!=0)) || actor.uiCapturesInput) return InteractionResult::Busy;
         if(!target) return InteractionResult::NoTarget;
@@ -51,12 +51,14 @@ namespace MyGame
         if(!std::isfinite(actor.position.x) || !std::isfinite(actor.position.y) ||
            !std::isfinite(actor.facing.x) || !std::isfinite(actor.facing.y) ||
            !std::isfinite(target->position.x) || !std::isfinite(target->position.y)) return InteractionResult::TooFar;
+        if(garden && (target->kind!=TargetKind::Crop ||
+           !actor.home.Receives(actor.ownerId,target->position,target->position))) return InteractionResult::Blocked;
         const glm::vec2 delta=target->position-actor.position;
         const float distance=glm::length(delta);
-        if(!std::isfinite(distance) || distance>Range) return InteractionResult::TooFar;
+        if(!garden && (!std::isfinite(distance) || distance>Range)) return InteractionResult::TooFar;
         const float facingLength=glm::length(actor.facing);
-        if(facingLength<=0 || !std::isfinite(facingLength) ||
-           (distance>1 && glm::dot(delta/distance,actor.facing/facingLength)<0.5f))
+        if(!garden && (facingLength<=0 || !std::isfinite(facingLength) ||
+           (distance>1 && glm::dot(delta/distance,actor.facing/facingLength)<0.5f)))
             return InteractionResult::WrongFacing;
         if(!std::isfinite(actor.cooldown) || actor.cooldown>0) return InteractionResult::Cooldown;
         if(!std::isfinite(actor.stamina) || actor.stamina<StaminaCost) return InteractionResult::NoStamina;
@@ -90,7 +92,7 @@ namespace MyGame
                                 target->kind==TargetKind::FruitTree;
         if(receivesItem)
         {
-            const bool home=ToStorage(actor,*target);
+            const bool home=ToStorage(actor,*target,garden);
             const auto& destination=home?actor.home.items:actor.inventory;
             if(!destination.CanAdd(Reward(*target),1)) return home?InteractionResult::StorageFull:InteractionResult::InventoryFull;
         }
@@ -104,13 +106,18 @@ namespace MyGame
         const auto result=Check(actor,target,selectedItem);
         return result==InteractionResult::Success?Apply(actor,target,selectedItem,events,0):result;
     }
+    InteractionResult InteractionSystem::UseGarden(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events)
+    {
+        const auto result=CheckOwned(actor,target,selectedItem,false,true);
+        return result==InteractionResult::Success?Apply(actor,target,selectedItem,events,0,true):result;
+    }
     InteractionResult InteractionSystem::Apply(InteractionActor& actor,InteractionTarget* target,
-                                              int selectedItem,EventBus& events,std::uint64_t actionId)
+                                              int selectedItem,EventBus& events,std::uint64_t actionId,bool garden)
     {
         const auto operation=Operation(actor,*target,selectedItem);
         const std::size_t needed=target->kind==TargetKind::Pickup?1u:2u;
         if(events.Pending()+needed>EventBus::MaxPending) return InteractionResult::EventQueueFull;
-        const bool home=ToStorage(actor,*target);
+        const bool home=ToStorage(actor,*target,garden);
         if(operation==FarmOperation::Plant)
         {if(!actor.inventory.TryRemove(actor.SelectedItem(selectedItem),1)) return InteractionResult::NoSeeds;}
         else if(operation==FarmOperation::Harvest || operation==FarmOperation::Pickup || operation==FarmOperation::FruitHarvest)

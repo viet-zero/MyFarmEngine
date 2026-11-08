@@ -75,6 +75,7 @@ namespace MyGame
         static InteractionResult Check(const InteractionActor& actor,const InteractionTarget* target,int selectedItem);
         // Low-level immediate operation; live gameplay commits through Impact below.
         static InteractionResult Use(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events);
+        static InteractionResult UseGarden(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events);
         static void Tick(InteractionActor& actor,std::vector<InteractionTarget>& targets,float deltaTime);
         static InteractionResult Start(InteractionActor& actor,const InteractionTarget* target,int selectedItem,InteractionAction& action);
         static void Activate(InteractionActor& actor,InteractionAction& action);
@@ -85,9 +86,9 @@ namespace MyGame
         static void Cancel(InteractionActor& actor,InteractionAction& action,InteractionResult reason=InteractionResult::Cancelled);
     private:
         static FarmOperation Operation(const InteractionActor& actor,const InteractionTarget& target,int slot);
-        static bool ToStorage(const InteractionActor& actor,const InteractionTarget& target);
+        static bool ToStorage(const InteractionActor& actor,const InteractionTarget& target,bool garden=false);
         static ItemId Reward(const InteractionTarget& target);
-        static InteractionResult CheckOwned(const InteractionActor& actor,const InteractionTarget* target,int selectedItem,bool owned);
-        static InteractionResult Apply(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events,std::uint64_t actionId);
+        static InteractionResult CheckOwned(const InteractionActor& actor,const InteractionTarget* target,int selectedItem,bool owned,bool garden=false);
+        static InteractionResult Apply(InteractionActor& actor,InteractionTarget* target,int selectedItem,EventBus& events,std::uint64_t actionId,bool garden=false);
     };
 }

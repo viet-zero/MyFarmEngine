@@ -1,6 +1,7 @@
 #include "Gameplay/Graphics/SpriteGeometry.h"
 #include "Gameplay/Graphics/WorldArt.h"
 #include <set>
+#include <fstream>
 #include <limits>
 #include <cmath>
 #include <iostream>
@@ -55,5 +56,10 @@ int main()
         Check(Near(bar.width,4*bar.slot+3*bar.gap+2*bar.padding),"toolbar spacing inconsistent");
     }
     record.frameCount=3;Check(MeasureSpriteFrames(image,record).empty(),"out-of-grid frame accepted");
+    const auto badScale=std::filesystem::current_path()/"invalid_visual_scale.csv";
+    {std::ofstream output(badScale);output<<"key,value\nhuman,160\ntree,-1\n";}
+    VisualScale scale;
+    Check(!scale.Load(badScale) && Near(scale.human,112),"invalid scale partially changed configuration");
+    std::filesystem::remove(badScale);
     return failures?1:0;
 }

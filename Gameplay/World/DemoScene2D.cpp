@@ -86,11 +86,14 @@ namespace MyGame
             std::cout<<"World art v4 enabled: four terrain palettes and eight-direction character\n";
         }
         m_Ready=true; // Missing artwork uses geometric placeholders, not a fatal game error.
+        if(!m_Scale.Load(dataRoot/"VisualScale.csv")) std::cerr<<"VisualScale missing/invalid: using defaults\n";
+        if(m_WorldArt.LoadCozy(dataRoot.parent_path()/"Cozy")) std::cout<<"Cozy art v1 enabled\n";
         Reset();
         return m_Ready;
     }
     void DemoScene2D::Reset()
     {
+        m_GardenControl=false;m_HoverWorld.reset();m_HavePickCamera=false;
         m_Player = m_World.Spawn(Zone::Farm);
         m_Dog=m_Player+glm::vec2{-70,30};
         CancelInteraction();
@@ -142,7 +145,7 @@ namespace MyGame
     {
         return {m_Player,m_Npc,m_Dog,m_PlayerState,m_NpcAnimation.State(),m_DogAnimation.State(),
                 m_PlayerAnimation.Frame(),m_NpcAnimation.Frame(),m_DogAnimation.Frame(),
-                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size(),m_Actor.home.items.TotalCount(),m_Hotbar.Alpha(),m_StorageOpen,m_Actor.money,m_MarketOpen};
+                m_Actor.inventory.ResourceCount(),m_FruitHarvested,m_Action.id,m_Action.phase,m_LastAction,m_Effects.Active().size(),m_Actor.home.items.TotalCount(),m_Hotbar.Alpha(),m_StorageOpen,m_Actor.money,m_MarketOpen,m_GardenControl};
     }
     std::optional<InteractionTarget> DemoScene2D::TargetState(std::string_view id) const
     {
@@ -167,7 +170,7 @@ namespace MyGame
     void DemoScene2D::SetViewport(int width,int height)
     {
         if(width<=0 || height<=0) return;
-        m_Camera.Resize(width,height);m_Camera.SetPosition(m_Player);
+        m_Camera.Resize(width,height);if(!m_GardenControl) m_Camera.SetPosition(m_Player);
         m_Previous.camera=m_Camera.Position();
     }
     void DemoScene2D::SynchronizePresentation()
@@ -180,6 +183,7 @@ namespace MyGame
         input.movement={
             (MyEngine::Input::IsKeyPressed(GLFW_KEY_D)?1.0f:0.0f)-(MyEngine::Input::IsKeyPressed(GLFW_KEY_A)?1.0f:0.0f),
             (MyEngine::Input::IsKeyPressed(GLFW_KEY_S)?1.0f:0.0f)-(MyEngine::Input::IsKeyPressed(GLFW_KEY_W)?1.0f:0.0f)};
+        input.toggleGardenControl=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_B);
         input.running=MyEngine::Input::IsKeyPressed(GLFW_KEY_LEFT_SHIFT);
         input.interact=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_F);
         input.cancel=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_C);
@@ -199,6 +203,35 @@ namespace MyGame
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) input.zoom=-1;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) input.zoom=1;
         for(int i=0;i<4;++i) if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i)) input.selectedItem=i;
+        const bool click=MyEngine::Input::ConsumeMousePress(GLFW_MOUSE_BUTTON_LEFT);
+        if(auto* window=glfwGetCurrentContext();window && m_HavePickCamera && !input.paused)
+        {
+            double x=0,y=0;int w=0,h=0,fw=0,fh=0;
+            glfwGetCursorPos(window,&x,&y);glfwGetWindowSize(window,&w,&h);glfwGetFramebufferSize(window,&fw,&fh);
+            if(w>0 && h>0 && x>=0 && y>=0 && x<w && y<h)
+            {
+                const glm::vec2 screen{static_cast<float>(x)*fw/w,static_cast<float>(y)*fh/h};
+                const auto bar=HotbarLayout::ForViewport(fw,fh);
+                const bool overBar=screen.x>=bar.x && screen.x<bar.x+bar.width &&
+                                   screen.y>=bar.y && screen.y<bar.y+bar.height;
+                if(click && screen.x>=8 && screen.x<268 && screen.y>=8 && screen.y<28 &&
+                   !m_StorageOpen && !m_MarketOpen) input.toggleGardenControl=true;
+                else if(overBar && click && !m_StorageOpen && !m_MarketOpen)
+                {
+                    for(int i=0;i<4;++i)
+                    {
+                        const float left=bar.x+bar.padding+i*(bar.slot+bar.gap);
+                        if(screen.x>=left && screen.x<left+bar.slot && screen.y>=bar.y+bar.padding &&
+                           screen.y<bar.y+bar.padding+bar.slot) input.selectedItem=i;
+                    }
+                }
+                else if(!overBar && screen.y>64 && !m_StorageOpen && !m_MarketOpen)
+                {
+                    input.hoverWorld=m_PickCamera.ScreenToWorld(screen);
+                    if(click) input.pointerWorld=input.hoverWorld;
+                }
+            }
+        }
         m_Input.Capture(input);
     }
     FarmSave DemoScene2D::CaptureSave() const
@@ -270,6 +303,17 @@ namespace MyGame
                 m_TargetTiles[TileKey(*tile)].push_back(i);
     }
 
+    std::optional<DemoScene2D::TileFocus> DemoScene2D::PointerTile(glm::vec2 world)
+    {
+        const auto cell=TileAt(world);
+        if(!cell) return std::nullopt;
+        const auto bucket=m_TargetTiles.find(TileKey(*cell));
+        if(bucket!=m_TargetTiles.end())
+            for(const auto index:bucket->second)
+                if(m_Targets[index].active && m_Targets[index].kind==TargetKind::Crop)
+                    return TileFocus{*cell,&m_Targets[index]};
+        return TileFocus{*cell,nullptr};
+    }
     std::optional<DemoScene2D::TileFocus> DemoScene2D::FocusedTile()
     {
         const auto start=TileAt(m_Actor.position);
@@ -332,6 +376,12 @@ namespace MyGame
             return;
         }
         if(m_Loading) return;
+        m_HoverWorld=input.hoverWorld;
+        if(input.toggleGardenControl && !m_Action.Pending() && !m_MarketOpen && !m_StorageOpen)
+        {
+            m_GardenControl=!m_GardenControl;
+            m_HoverWorld.reset();m_Previous=CurrentPresentation();
+        }
         if(input.toggleTileGrid) m_ShowTileGrid=!m_ShowTileGrid;
         if(input.nextArtSeason && m_WorldArt.Ready()) m_ArtSeason=(m_ArtSeason+1)%4;
         if((input.save || input.load) && !m_SaveJob.valid() && !m_Action.Pending() && !m_MarketOpen)
@@ -376,7 +426,7 @@ namespace MyGame
             }
             return;
         }
-        m_Hotbar.Update(dt,input.toggleStorage || input.selectedItem>=0 || input.interact || input.cancel || glm::length(input.movement)>0);
+        m_Hotbar.Update(dt,input.toggleStorage || input.selectedItem>=0 || input.interact || input.cancel || input.pointerWorld.has_value() || m_GardenControl || glm::length(input.movement)>0);
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
         const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
         const bool hurtTriggered=developer && input.hurt;
@@ -391,13 +441,13 @@ namespace MyGame
                           !m_PlayerAnimation.Finished();
         if(!locked && !m_Action.Pending())
         {
-            m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
-            m_PlayerLook=ArtDirection(input.movement,m_PlayerLook);
+            if(!m_GardenControl) m_Facing=FacingFromVelocity(input.movement.x,input.movement.y,m_Facing);
+            if(!m_GardenControl) m_PlayerLook=ArtDirection(input.movement,m_PlayerLook);
         }
         std::array<DynamicCollider,2> obstacles={{{m_Dog,DogCollider},{m_Npc,NpcCollider}}};
         const std::span<const DynamicCollider> playerObstacles(obstacles.data(),m_Options.demoMode?2u:1u);
         const auto previous=m_Player;
-        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,m_Action.Pending()?glm::vec2{0,0}:input.movement,input.running?300.0f:180.0f,
+        m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,(m_GardenControl || m_Action.Pending())?glm::vec2{0,0}:input.movement,input.running?300.0f:180.0f,
                                                dt,PlayerCollider,playerObstacles);
         m_Moving=glm::length(m_Player-previous)>0.001f;
         if(developer && input.teleport>=4 && input.teleport<=8)
@@ -431,9 +481,15 @@ namespace MyGame
         case Facing::Up:m_Actor.facing={0,-1};break;
         default:m_Actor.facing={0,1};break;
         }
+        if(m_GardenControl && input.pointerWorld && !storageInput && !hurtTriggered && !input.cancel)
+        {
+            const auto focus=PointerTile(*input.pointerWorld);
+            m_LastAction=InteractionSystem::UseGarden(m_Actor,focus?focus->target:nullptr,m_SelectedItem,m_Events);
+            m_FeedbackTime=0.6f;
+        }
         bool actionTriggered=developer && input.action && !m_Action.Pending();
         bool started=false;
-        if(input.interact && !storageInput && !hurtTriggered && !input.cancel && !teleporting)
+        if(!m_GardenControl && input.interact && !storageInput && !hurtTriggered && !input.cancel && !teleporting)
         {
             const auto focus=FocusedTile();
             auto* target=focus?focus->target:nullptr;
@@ -510,7 +566,14 @@ namespace MyGame
         m_DogAnimation.Select(m_Visuals,"dog",dogMoving?(dogRunning?VisualState::Run:VisualState::Walk):VisualState::Idle,
                              FacingFromVelocity(m_Dog.x-dogBefore.x,m_Dog.y-dogBefore.y,Facing::Down));
         m_DogAnimation.Update(dt,false);
-        m_GameAge+=dt;m_Camera.Follow(m_Player,dt);
+        m_GameAge+=dt;
+        if(m_GardenControl)
+        {
+            const float length=glm::length(input.movement);
+            if(length>0.001f && std::isfinite(length))
+                m_Camera.SetPosition(m_Camera.Position()+input.movement/length*(input.running?650.0f:400.0f)*dt);
+        }
+        else m_Camera.Follow(m_Player,dt);
         if(teleporting) m_Previous=CurrentPresentation();
     }
     DemoScene2D::SpriteDraw DemoScene2D::SpriteFor(std::string_view id,int frame,glm::vec2 feet,float height,bool flip) const
@@ -546,7 +609,7 @@ namespace MyGame
                 SpriteDraw sprite;
                 sprite.texture=&m_WorldArt.Sprites().Texture();
                 sprite.uv=frame->uv;
-                sprite.placement=PlaceSprite(frame->bounds,feet,HumanHeight,false,frame->pivot);
+                sprite.placement=PlaceSprite(frame->bounds,feet,m_Scale.human,false,frame->pivot);
                 return sprite;
             }
         }
@@ -611,12 +674,13 @@ namespace MyGame
         else if(object.visualId.find("chest")!=std::string::npos) id="chest";
         else if(object.visualId.find("sign")!=std::string::npos) id="sign";
         else if(object.visualId.find("water")!=std::string::npos) return;
-        const auto* frame=atlas.Find(id);
+        const auto& selectedAtlas=id=="tree" && m_WorldArt.CozyReady()?m_WorldArt.Props():atlas;
+        const auto* frame=selectedAtlas.Find(id);
         if(!frame) return;
         const auto feet=object.position+glm::vec2{object.size.x*0.5f,object.size.y};
-        const float height=id=="tree"?240.0f:std::max(45.0f,object.size.y*1.4f);
+        const float height=id=="tree"?m_Scale.tree:id=="fence"?m_Scale.gate:std::clamp(object.size.y,32.0f,96.0f);
         const auto placement=PlaceSprite(frame->bounds,feet,height,false,frame->pivot);
-        canvas.Sprite(atlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
+        canvas.Sprite(selectedAtlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
     }
 
     void DemoScene2D::DrawStaticObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const
@@ -626,17 +690,22 @@ namespace MyGame
         {
             const bool horizontal=object.size.x>object.size.y;
             const float length=horizontal?object.size.x:object.size.y;
-            for(float distance=0;distance<length;distance+=64)
+            for(float distance=0;distance<length;distance+=m_Scale.fence)
             {
                 const auto origin=object.position+(horizontal?glm::vec2{distance,-32}:glm::vec2{-12,distance});
-                atlas.Draw(canvas,"fence",origin,{64,64});
+                atlas.Draw(canvas,"fence",origin,{m_Scale.fence,m_Scale.fence});
             }
             return;
         }
-        const auto* frame=atlas.Find(object.gameplayId=="town.market"?"shop":"house");
+        const bool shop=object.gameplayId=="town.market";
+        // The fountain collider belongs to the old baked town map; do not draw a house over it.
+        if(object.gameplayId=="town.fountain") return;
+        const auto& selectedAtlas=!shop && m_WorldArt.CozyReady()?m_WorldArt.Props():atlas;
+        const auto* frame=selectedAtlas.Find(shop?"shop":"house");
         if(!frame) return;
-        const auto placement=FitSprite(frame->bounds,object.position,object.size);
-        canvas.Sprite(atlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
+        const auto feet=object.position+glm::vec2{object.size.x*0.5f,object.size.y};
+        const auto placement=PlaceSprite(frame->bounds,feet,m_Scale.house,false,frame->pivot);
+        canvas.Sprite(selectedAtlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
     }
 
     void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const
@@ -682,17 +751,78 @@ namespace MyGame
         renderCamera.SetPosition(renderCamera.Position()+glm::vec2{
             std::sin(static_cast<float>(m_GameAge)*87.0f)*shake,
             std::cos(static_cast<float>(m_GameAge)*71.0f)*shake});
+        m_PickCamera=renderCamera;m_HavePickCamera=true;
         canvas.BeginWorld(width,height,renderCamera);
         if(m_WorldArt.Ready())
         {
             const auto range=m_World.VisibleTiles(renderCamera.Position(),renderCamera.ViewSize());
             const auto& atlas=m_WorldArt.Terrain(m_ArtSeason);
             const auto& frames=m_TerrainArt[static_cast<std::size_t>(m_ArtSeason)];
+            const bool cozy=m_WorldArt.CozyReady() && m_ArtSeason==0;
+            const auto& ground=m_WorldArt.Ground();
+            const auto* waterFrame=atlas.Find("water_255");
+            const auto* cozyGrass=cozy?ground.Find("grass"):nullptr;
+            const auto* pathFrame=atlas.Find("path");
             for(int y=range.top;y<range.bottom;++y)
                 for(int x=range.left;x<range.right;++x)
                     if(const auto* frame=frames[static_cast<std::size_t>(y*WorldMap::Width+x)])
-                        canvas.Sprite(atlas.Texture(),static_cast<float>(x*WorldMap::TileSize),
-                                      static_cast<float>(y*WorldMap::TileSize),WorldMap::TileSize,WorldMap::TileSize,frame->uv);
+                    {
+                        const auto* base=cozy && frame!=pathFrame?cozyGrass:nullptr;
+                        const float wx=static_cast<float>(x*WorldMap::TileSize),wy=static_cast<float>(y*WorldMap::TileSize);
+                        if(base)
+                        {
+                            // One image spans eight cells. Geographic tint varies slowly, not as checkerboard noise.
+                            auto uv=base->uv;
+                            uv[0]+=uv[2]*static_cast<float>(x%8)/8;uv[1]+=uv[3]*static_cast<float>(y%8)/8;
+                            uv[2]/=8;uv[3]/=8;
+                            const float shade=0.95f+0.04f*std::sin(x*0.12f+y*0.08f);
+                            const float forest=std::clamp((wx-3900.0f)/1200.0f,0.0f,1.0f);
+                            canvas.Sprite(ground.Texture(),wx,wy,WorldMap::TileSize,WorldMap::TileSize,uv,
+                                {shade*(1-forest*0.08f),shade,shade*(1-forest*0.03f),1});
+                        }
+                        else canvas.Sprite(atlas.Texture(),wx,wy,WorldMap::TileSize,WorldMap::TileSize,frame->uv);
+                    }
+            if(cozy)
+            {
+                // The source world defines one elliptical lake. Use the same center/radii;
+                // keep its tile collision model, with a soft visual shore instead of unrelated v4 art.
+                constexpr glm::vec2 lakeCenter{(WorldMap::LakeCenterX+0.5f)*WorldMap::TileSize,
+                                                (WorldMap::LakeCenterY+0.5f)*WorldMap::TileSize};
+                constexpr glm::vec2 lakeRadius{WorldMap::LakeRadiusX*WorldMap::TileSize,
+                                                WorldMap::LakeRadiusY*WorldMap::TileSize};
+                const auto shore=lakeCenter-lakeRadius-glm::vec2{12,12};
+                if(WorldMap::Intersects(shore,lakeRadius*2.0f+glm::vec2{24,24},
+                                       renderCamera.Position()-renderCamera.ViewSize()*0.5f,renderCamera.ViewSize()))
+                {
+                    canvas.Ellipse(shore.x,shore.y,lakeRadius.x*2+24,lakeRadius.y*2+24,{0.57f,0.64f,0.40f,1});
+                    const auto* water=ground.Find("water");
+                    canvas.SpriteEllipse(ground.Texture(),lakeCenter.x-lakeRadius.x,lakeCenter.y-lakeRadius.y,
+                                         lakeRadius.x*2,lakeRadius.y*2,water->uv);
+                }
+                // Ripple highlights are one adjacent untextured batch, using simulation time only.
+                for(int y=range.top;y<range.bottom;++y) for(int x=range.left;x<range.right;++x)
+                {
+                    if(frames[static_cast<std::size_t>(y*WorldMap::Width+x)]!=waterFrame || (x*7+y*13)%11) continue;
+                    const float phase=static_cast<float>(m_GameAge)*1.2f+x*0.4f+y*0.7f;
+                    const float rippleWidth=18+5*std::sin(phase);
+                    canvas.Rectangle(x*64.0f+20,y*64.0f+30+2*std::sin(phase),rippleWidth,1.5f,
+                                     {0.92f,0.98f,1,0.13f+0.06f*std::sin(phase)});
+                }
+                // Stable sparse clumps make each region distinct; prepared plots remain clear.
+                const auto* meadow=ground.Find("meadow");
+                for(int y=range.top;y<range.bottom;++y) for(int x=range.left;x<range.right;++x)
+                {
+                    const auto* cell=m_World.TryCell(x,y);
+                    const auto hash=static_cast<unsigned int>(x)*73856093u ^ static_cast<unsigned int>(y)*19349663u;
+                    const unsigned int density=cell->terrain==Terrain::Forest?7u:cell->zone==Zone::Farm?19u:13u;
+                    if(cell->terrain==Terrain::Water || cell->terrain==Terrain::Path || hash%density ||
+                       m_TargetTiles.contains(TileKey({x,y}))) continue;
+                    const float clumpHeight=18.0f+static_cast<float>((hash>>8)%15);
+                    const glm::vec2 feet{x*64.0f+16.0f+static_cast<float>((hash>>12)%32),y*64.0f+48};
+                    const auto place=PlaceSprite(meadow->bounds,feet,clumpHeight,false,meadow->pivot);
+                    canvas.Sprite(ground.Texture(),place.origin.x,place.origin.y,place.size.x,place.size.y,meadow->uv);
+                }
+            }
         }
         else if(m_Map)
             canvas.Sprite(*m_Map,0,0,WorldSize.x,WorldSize.y);
@@ -710,7 +840,7 @@ namespace MyGame
         }
         const auto visibleOrigin=renderCamera.Position()-renderCamera.ViewSize()*0.5f;
         m_RenderOrder.Begin(visibleOrigin,renderCamera.ViewSize());
-        const auto focus=FocusedTile();
+        const auto focus=m_GardenControl?(m_HoverWorld?PointerTile(*m_HoverWorld):std::nullopt):FocusedTile();
         const auto* focusedTarget=focus?focus->target:nullptr;
         constexpr float tileSize=static_cast<float>(WorldMap::TileSize);
         if(m_ShowTileGrid)
@@ -762,7 +892,8 @@ namespace MyGame
                 else if(texture.Id())
                     canvas.Sprite(texture,origin.x+3,origin.y+3,tileSize-6,tileSize-6);
                 const char* label=!target.planted?"O TRONG":target.ready?"DA CHIN":target.moisture>0?"DANG LON":"CAN TUOI";
-                HudText(canvas,label,origin.x+5,origin.y+tileSize-13,1.05f,{1,0.94f,0.78f,1});
+                if(&target==focusedTarget || m_Options.debugOverlay)
+                    HudText(canvas,label,origin.x+5,origin.y+tileSize-13,1.05f,{1,0.94f,0.78f,1});
                 if(target.planted)
                     m_RenderOrder.Submit(RenderKind::Crop,i,feet-glm::vec2{56,105},{112,123},feet.y);
             }
@@ -781,7 +912,7 @@ namespace MyGame
             for(std::size_t i=0;i<m_World.Objects().size();++i)
             {
                 const auto& object=m_World.Objects()[i];
-                if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position-glm::vec2{100,240},object.size+glm::vec2{200,240},
+                if(object.active) m_RenderOrder.Submit(RenderKind::WorldObject,i,object.position-glm::vec2{m_Scale.tree,m_Scale.tree},object.size+glm::vec2{2*m_Scale.tree,m_Scale.tree},
                                                        object.position.y+object.size.y);
             }
         if(focus && !m_MarketOpen && !m_StorageOpen)
@@ -800,18 +931,18 @@ namespace MyGame
             for(std::size_t i=0;i<m_World.StaticColliders().size();++i)
             {
                 const auto& object=m_World.StaticColliders()[i];
-                m_RenderOrder.Submit(RenderKind::StaticObject,i,object.position-glm::vec2{32,32},
-                                     object.size+glm::vec2{64,64},object.position.y+object.size.y);
+                m_RenderOrder.Submit(RenderKind::StaticObject,i,object.position-glm::vec2{m_Scale.house,m_Scale.house},
+                                     object.size+glm::vec2{2*m_Scale.house,m_Scale.house},object.position.y+object.size.y);
             }
         const auto player=ActorSprite(m_Character,presented.player,m_PlayerAnimation).placement;
-        m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,presented.player.y);
+        if(!m_GardenControl) m_RenderOrder.Submit(RenderKind::Actor,0,player.visibleOrigin,player.visibleSize,presented.player.y);
         if(m_Options.demoMode)
         {
             const auto npc=ActorSprite(1,presented.npc,m_NpcAnimation).placement;
             m_RenderOrder.Submit(RenderKind::Actor,1,npc.visibleOrigin,npc.visibleSize,presented.npc.y);
         }
         const auto pet=SpriteFor("dog_walk",m_DogAnimation.Frame(),presented.pet,PetHeight).placement;
-        m_RenderOrder.Submit(RenderKind::Animal,0,pet.visibleOrigin,pet.visibleSize,presented.pet.y);
+        if(!m_GardenControl) m_RenderOrder.Submit(RenderKind::Animal,0,pet.visibleOrigin,pet.visibleSize,presented.pet.y);
         m_RenderOrder.Sort();
         for(const auto& entry:m_RenderOrder.Entries())
         {
@@ -874,6 +1005,11 @@ namespace MyGame
 
         // Screen UI uses a different projection and therefore does not zoom with the world.
         canvas.Begin(width,height);
+        if(!m_MarketOpen && !m_StorageOpen)
+        {
+            canvas.Rectangle(8,8,260,20,{0.96f,0.94f,0.82f,0.95f});
+            HudText(canvas,m_GardenControl?"B: VUON - CHUOT | WASD CAMERA":"B: VUON | WASD DI - F DUNG",14,13,1.2f,{0.20f,0.30f,0.16f,1});
+        }
         const float opacity=m_Hotbar.Alpha();
         if(opacity>0 && !m_MarketOpen)
         {
@@ -1010,11 +1146,11 @@ namespace MyGame
         if(focusedTarget && (focusedTarget->kind==TargetKind::Crop || focusedTarget->kind==TargetKind::Pickup) && !m_MarketOpen && !m_StorageOpen)
         {
             const float scale=std::min(1.5f,static_cast<float>(width)/340.0f);
-            const char* hint=focusedTarget->kind==TargetKind::Pickup?"F NHAT VAT PHAM":!focusedTarget->planted?"3 CHON HAT - F GIEO":
+            const char* hint=m_GardenControl?(!focusedTarget->planted?"CHON HAT - CLICK GIEO":focusedTarget->ready?"CLICK THU HOACH":focusedTarget->moisture>0?"DANG LON":"CHON BINH - CLICK TUOI"):focusedTarget->kind==TargetKind::Pickup?"F NHAT VAT PHAM":!focusedTarget->planted?"3 CHON HAT - F GIEO":
                 focusedTarget->ready?"F THU HOACH":focusedTarget->moisture>0?"DANG LON":"1 CHON BINH - F TUOI";
             const float left=static_cast<float>(width)*0.5f-72*scale;
-            canvas.Rectangle(left,8,144*scale,15*scale,{0.95f,0.90f,0.77f,0.98f});
-            HudText(canvas,hint,left+5*scale,12,scale);
+            canvas.Rectangle(left,34,144*scale,15*scale,{0.95f,0.90f,0.77f,0.98f});
+            HudText(canvas,hint,left+5*scale,38,scale);
         }
         if(m_WorldArt.Ready() && !m_StorageOpen && !m_MarketOpen)
         {

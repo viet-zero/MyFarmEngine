@@ -38,6 +38,7 @@ namespace MyGame
         bool storageOpen=false;
         int money=0;
         bool marketOpen=false;
+        bool gardenControl=false;
     };
     class DemoScene2D
     {
@@ -72,6 +73,7 @@ namespace MyGame
             InteractionTarget* target=nullptr;
         };
         std::optional<TileFocus> FocusedTile();
+        std::optional<TileFocus> PointerTile(glm::vec2 world);
         void IndexTargetTiles();
         void CacheTerrainArt();
         void DrawWorldObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const;
@@ -90,7 +92,10 @@ namespace MyGame
                        const AnimationController& animation);
         void DrawDog(MyEngine::Canvas2D& canvas,glm::vec2 feet) const;
         void DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const;
-        MyEngine::Camera2D m_Camera;
+        MyEngine::Camera2D m_Camera,m_PickCamera;
+        VisualScale m_Scale;
+        bool m_GardenControl=false,m_HavePickCamera=false;
+        std::optional<glm::vec2> m_HoverWorld;
         SceneInputBuffer m_Input;
         PresentationSnapshot m_Previous;
         WorldMap m_World;

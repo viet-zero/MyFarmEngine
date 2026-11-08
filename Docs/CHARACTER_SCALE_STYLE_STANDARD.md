@@ -1,5 +1,11 @@
 # Character Scale & Style Standard — Gameplay11
 
+## Quy chuẩn đang áp dụng cho v4/CozyV1 — 2026-11-08
+
+Gameplay/Data/VisualScale.csv là override chỉnh tay: human 112, tree 336 (3×human), house 420 (3.75×human), gate 80, fence 64 world units. Hero v4 192×192 giữ root tác giả (96,180) và reference stature chung 24 frames, không kéo méo. Mỗi entity có controller/look riêng. V4/Cozy dùng cùng nguyên tắc chân để Y-sort; collider không phóng theo artwork. Fallback legacy vẫn có HumanHeight=132 nên không nhầm override với thay đổi toàn engine.
+
+Đã xem trực tiếp hero/nhà/cây sau ghép. Hai walk frames/hướng còn hạn chế; action art/outfit/NPC identity và roots tác giả cho props vẫn NEEDS_ART_REVIEW. Chi tiết chỉnh: PROJECT_HANDOVER.md.
+
 ## Sau P0-002 — 2026-11-05
 
 [11 lỗi direction/flip đã được sửa](TASKS/P0-002.md), Debug/Release 24/24 PASS. Ảnh và findings P0-001 bên dưới giữ nguyên làm evidence trước sửa. Chưa có artwork/layers/pivot authored mới; không đổi Original. An walk phải vẫn mirror phụ kiện, cần art review. [Clip board mới](Reviews/P0-002/clips-dark.png).

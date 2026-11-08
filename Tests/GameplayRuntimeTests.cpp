@@ -31,13 +31,35 @@ int main()
         for(int season=0;season<4;++season)
             Check(art.Terrain(season).Find("land_255") && art.Terrain(season).Find("water_000"),
                   "v4 seasonal terrain missing");
+        if(std::filesystem::exists(MyEngine::AssetRoot()/"Cozy"/"props.csv"))
+            Check(art.LoadCozy(MyEngine::AssetRoot()/"Cozy") && art.CozyReady(),"cozy atlases failed to load");
         art.Reset();
         Check(!art.Ready(),"v4 reset left atlas enabled");
     }
     AssetTextures assets;
     Check(assets.Initialize(MyEngine::AssetRoot()),"asset manifest initialization failed");
+    VisualScale scales;
+    Check(scales.Load(MyEngine::AssetRoot()/"Data"/"VisualScale.csv") && scales.human==112 && scales.tree==336,
+          "editable visual scale configuration did not load");
     DemoScene2D scene;
     Check(scene.Initialize(assets,MyEngine::AssetRoot()/"Data"),"scene failed");
+    const auto managerStart=scene.Snapshot().player;
+    SceneInput manager;manager.toggleGardenControl=true;manager.selectedItem=2;
+    scene.UpdateSimulation(1.0f/60,manager);
+    Check(scene.Snapshot().gardenControl,"B did not enable garden control");
+    manager={};manager.pointerWorld=glm::vec2{2336,2080};
+    scene.CaptureInput(manager);
+    for(int tick=0;tick<12;++tick) scene.FixedUpdate(1.0f/60);
+    Check(scene.TargetState("crop.home.6")->planted && scene.Bag().Count(ItemId::TurnipSeed)==2,
+          "pointer did not select exact remote plot or replayed click");
+    manager={};manager.movement={1,0};
+    const auto cameraBefore=scene.Presentation(1).camera;
+    for(int tick=0;tick<30;++tick) scene.UpdateSimulation(1.0f/60,manager);
+    Check(Same(managerStart,scene.Snapshot().player) && !Same(cameraBefore,scene.Presentation(1).camera),
+          "manager camera moved avatar or failed to pan");
+    manager={};manager.toggleGardenControl=true;scene.UpdateSimulation(1.0f/60,manager);
+    Check(!scene.Snapshot().gardenControl,"B did not restore character mode");
+    scene.Reset();
     SceneInput sowAtSpawn;
     sowAtSpawn.selectedItem=2;
     sowAtSpawn.interact=true;
@@ -334,10 +356,44 @@ int main()
     GameplayState state;state.Enter();
     auto* native=window.GetNativeWindow();glfwPollEvents();glfwFocusWindow(native);glfwPollEvents();
     const auto key=glfwSetKeyCallback(native,nullptr);glfwSetKeyCallback(native,key);
+    const auto mouse=glfwSetMouseButtonCallback(native,nullptr);glfwSetMouseButtonCallback(native,mouse);
+    Check(mouse!=nullptr,"mouse callback missing");
+    if(mouse)
+    {
+        mouse(native,GLFW_MOUSE_BUTTON_LEFT,GLFW_PRESS,0);mouse(native,GLFW_MOUSE_BUTTON_LEFT,GLFW_RELEASE,0);
+        Check(MyEngine::Input::ConsumeMousePress(GLFW_MOUSE_BUTTON_LEFT),"short mouse click lost");
+        Check(!MyEngine::Input::ConsumeMousePress(GLFW_MOUSE_BUTTON_LEFT),"mouse click consumed twice");
+    }
     const auto tap=[&](int code){key(native,code,0,GLFW_PRESS,0);key(native,code,0,GLFW_RELEASE,0);state.ProcessInput();state.Update(0);};
     Check(key!=nullptr,"input callback missing");
     if(key)
     {
+        if(mouse)
+        {
+            state.Render(1);
+            const auto click=[&](double x,double y)
+            {
+                glfwSetCursorPos(native,x,y);
+                mouse(native,GLFW_MOUSE_BUTTON_LEFT,GLFW_PRESS,0);
+                mouse(native,GLFW_MOUSE_BUTTON_LEFT,GLFW_RELEASE,0);
+                state.ProcessInput();state.Update(1.0f/60);state.Render(1);
+            };
+            click(40,18);
+            Check(state.Snapshot().gardenControl,"clickable mode control failed");
+            const auto toolbar=HotbarLayout::ForViewport(640,360);
+            click(toolbar.x+toolbar.padding+2*(toolbar.slot+toolbar.gap)+toolbar.slot/2,
+                  toolbar.y+toolbar.padding+toolbar.slot/2);
+            Check(state.Snapshot().inventoryCount==3,"hotbar click leaked to world");
+            MyEngine::Camera2D pick;
+            pick.SetWorldSize(WorldMap::Size());pick.Resize(640,360);pick.SetZoom(0.85f);
+            pick.SetPosition(state.Snapshot().player);
+            const auto plot=pick.WorldToScreen({2336,2080});
+            click(plot.x,plot.y);
+            Check(state.Snapshot().inventoryCount==2,"live cursor/camera mapping failed to plant remote plot");
+            tap(GLFW_KEY_M);click(plot.x,plot.y);
+            Check(state.Snapshot().inventoryCount==2 && state.Snapshot().marketOpen,"menu click leaked to world");
+            tap(GLFW_KEY_M);tap(GLFW_KEY_R);
+        }
         tap(GLFW_KEY_F1);Check(state.Mode()==3,"gallery accessible in default gameplay");
         tap(GLFW_KEY_F9);Check(state.Options().debugOverlay,"F9 did not enable overlay");
         tap(GLFW_KEY_F7);tap(GLFW_KEY_F);

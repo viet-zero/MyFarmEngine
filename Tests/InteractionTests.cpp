@@ -68,5 +68,36 @@ int main()
     harvester.inventory=Inventory(1);harvester.inventory.TryAdd(ItemId::Cake,10);
     check(InteractionSystem::Use(harvester,&forest[0],0,fruitEvents)==InteractionResult::InventoryFull,
           "full inventory harvested fruit");
+    InteractionActor manager;manager.home=HomeStorage::PlayerGarden();manager.position={4000,3000};
+    manager.facing={0,-1};
+    InteractionTarget garden{"garden",TargetKind::Crop,{2208,2016}};
+    EventBus gardenEvents;
+    const auto physicalPosition=manager.position;
+    check(InteractionSystem::Use(manager,&garden,2,gardenEvents)==InteractionResult::TooFar,
+          "character mode lost reach restriction");
+    check(InteractionSystem::UseGarden(manager,&garden,2,gardenEvents)==InteractionResult::Success && garden.planted,
+          "manager could not plant without avatar");
+    check(glm::length(manager.position-physicalPosition)<0.001f && manager.inventory.Count(ItemId::TurnipSeed)==2,
+          "manager moved avatar or consumed wrong seeds");
+    check(InteractionSystem::UseGarden(manager,&garden,0,gardenEvents)==InteractionResult::Cooldown,
+          "manager bypassed cooldown");
+    manager.cooldown=0;
+    check(InteractionSystem::UseGarden(manager,&garden,0,gardenEvents)==InteractionResult::Success && garden.moisture>0,
+          "manager watering failed");
+    garden.ready=true;manager.cooldown=0;
+    check(InteractionSystem::UseGarden(manager,&garden,0,gardenEvents)==InteractionResult::Success && !garden.planted &&
+          manager.home.items.Count(ItemId::Turnip)==1,"manager harvest did not use home storage/reusable plot");
+    manager.cooldown=0;garden.position={4000,3000};
+    check(InteractionSystem::UseGarden(manager,&garden,2,gardenEvents)==InteractionResult::Blocked,
+          "manager planted outside owned garden");
+    garden.position={2208,2016};manager.ownerId=2;
+    check(InteractionSystem::UseGarden(manager,&garden,2,gardenEvents)==InteractionResult::Blocked,
+          "manager bypassed ownership");
+    manager.ownerId=1;garden.kind=TargetKind::Object;
+    check(InteractionSystem::UseGarden(manager,&garden,1,gardenEvents)==InteractionResult::Blocked,
+          "manager remotely hit an object");
+    garden.kind=TargetKind::Crop;manager.uiCapturesInput=true;
+    check(InteractionSystem::UseGarden(manager,&garden,2,gardenEvents)==InteractionResult::Busy,
+          "manager ignored UI input ownership");
     return failures?1:0;
 }

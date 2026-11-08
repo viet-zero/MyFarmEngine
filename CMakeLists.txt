@@ -90,6 +90,7 @@ add_custom_target(MyFarmRuntimeAssets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Objects.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/ForegroundTrees.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/ForegroundTrees.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/StaticColliders.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/StaticColliders.csv"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualScale.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/VisualScale.csv"
 )
 add_dependencies(MyFarmEngine MyFarmRuntimeAssets)
 

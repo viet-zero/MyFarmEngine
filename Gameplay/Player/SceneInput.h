@@ -1,11 +1,14 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <algorithm>
+#include <optional>
 namespace MyGame
 {
     struct SceneInput
     {
         glm::vec2 movement{0,0};
+        std::optional<glm::vec2> pointerWorld,hoverWorld;
+        bool toggleGardenControl=false;
         bool running=false,interact=false,action=false,hurt=false,reset=false,switchCharacter=false;
         int teleport=0,zoom=0,selectedItem=-1;
         bool cancel=false,paused=false,toggleStorage=false,toggleMarket=false,save=false,load=false,toggleTileGrid=false,nextArtSeason=false;
@@ -18,6 +21,9 @@ namespace MyGame
         void Capture(const SceneInput& input)
         {
             if(input.paused){Clear();m_Pending.paused=true;return;}
+            m_Pending.toggleGardenControl|=input.toggleGardenControl;
+            if(input.pointerWorld) m_Pending.pointerWorld=input.pointerWorld;
+            m_Pending.hoverWorld=input.hoverWorld;
             m_Pending.paused=false;m_Pending.movement=input.movement;m_Pending.running=input.running;
             m_Pending.interact|=input.interact;m_Pending.action|=input.action;m_Pending.hurt|=input.hurt;
             m_Pending.reset|=input.reset;m_Pending.switchCharacter|=input.switchCharacter;m_Pending.cancel|=input.cancel;
@@ -34,7 +40,7 @@ namespace MyGame
         SceneInput Consume()
         {
             const auto result=m_Pending;
-            m_Pending={};m_Pending.movement=result.movement;m_Pending.running=result.running;m_Pending.paused=result.paused;
+            m_Pending={};m_Pending.movement=result.movement;m_Pending.running=result.running;m_Pending.paused=result.paused;m_Pending.hoverWorld=result.hoverWorld;
             return result;
         }
         void Clear(){m_Pending={};}

@@ -1,5 +1,22 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## CozyV1 và hai cách chơi — 2026-11-08
+
+Verification cuối: Debug 27/27 (36.81s), Release 27/27 (16.31s), có OpenGL pixel test. Đã thao tác native cửa sổ Release: click nút chuyển mode, click hotbar chọn hạt, gieo ô thứ sáu, chọn bình/tưới, chờ cây chín, click thu hoạch; bảng K hiện củ cải túi 0/kho 1 và plot trở về trống. Không ghi save SQL trong lượt chơi thử. Đã xem cây và nhà, chuyển khu hồ và zoom ra: phát hiện rồi sửa tint rừng thành chuyển tiếp theo địa lý (không theo random Forest cell), dùng ellipse bờ mềm cho hồ theo chính center/radius WorldMap. Spring không còn dùng shore v4; đường và ba palette khác vẫn v4. Bản test trả về spawn, debug tắt.
+
+
+Đã xem game thật: nền v4 lặp dày, cổng lớn, nhãn luống chật. Tạo 5 PNG bằng built-in imagegen, lưu riêng Assets/Workspace/CozyV1 cùng prompt/hash: grass, tree, house, water, meadow. Hai bản nhà có halo không dùng. Hero chibi v4 giữ nguyên để bảo toàn identity/frame; chưa làm lại toàn bộ artwork. Original không đổi.
+
+VisualScale.csv: human=112, tree=336, house=420, gate=80, fence=64; giữ aspect/root, scale không thay collider. Thêm footprint farm.home; collider town cũ còn cần chỉnh, fountain không còn vẽ nhầm thành nhà. Đã quan sát Release sau ghép: nền nhẹ hơn, nhà/cổng/hero dùng tỷ lệ mới.
+
+Xuân có nền trải 8×8 cells, tint địa lý, hoa/clover ổn định khác mật độ theo vùng, hồ interior riêng và gợn sáng theo simulation time. Path và ba palette khác vẫn v4, cần duyệt seam/style; T chưa tạo mùa gameplay.
+
+B hoặc bảng góc trái chuyển garden control: ẩn avatar/pet, WASD pan camera, chọn hotbar rồi click crop để gieo/tưới/thu. Character mode giữ WASD/F, range và animation impact. Dùng chung model/kho/quyền/cooldown/stamina; UI/focus chặn input, click không replay catch-up. Menu shop/kho vẫn dùng phím.
+
+Hướng dẫn tự chỉnh từng cơ chế: PROJECT_HANDOVER.md. Danh sách từng file kể cả file rỗng: FILE_INDEX.csv, tái tạo bằng GenerateProjectIndex.py. File tồn tại không có nghĩa DONE.
+
+Debug và Release 27/27 đã qua trong lượt triển khai; test thêm quyền vườn, plant/water/harvest/storage, mode/camera, input click exactly-once, atlas và scale. CheckAssets: 204 Original, 189 imported và 18 artwork theo manifest giữ SHA256. Không có benchmark FPS mới; visual acceptance vẫn PARTIAL. Verification thực tế được ghi ngay đầu mục này.
+
 ## Tích hợp bộ ảnh Đơn Giản v4 — 2026-11-08
 
 Đã giải nén ZIP Downloads MyFarmEngine_Assets_DonGian_v4_Da_Hoa_Cay_DoVat.zip (1238 entries) vào AssetLibrary_Review/DonGian_v4, kiểm CRC. Giữ nguyên nguồn và Original. Thông tin chờ tải bộ mới trong mục lịch sử v3 phía dưới đã được giải quyết.

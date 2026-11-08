@@ -25,6 +25,7 @@ namespace MyEngine
                     const std::array<float, 4>& tint = {1,1,1,1});
         void SpriteEllipse(const Texture2D& texture,float x,float y,float width,float height,
                            const std::array<float,4>& uv);
+        void Ellipse(float x,float y,float width,float height,const std::array<float,4>& color);
         void Cover(const Texture2D& texture);
         void Rectangle(float x, float y, float width, float height,
                        const std::array<float, 4>& color);

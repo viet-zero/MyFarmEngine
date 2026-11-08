@@ -24,6 +24,17 @@ $preset = if ($Asan) { $Phase + '-asan' } else { $Phase + '-' + $Configuration.T
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
     & (Join-Path $PSScriptRoot 'PrepareAssets.ps1')
+    # Generated artwork stays separate from Original. Stage for both Debug and Release.
+    if (!$Asan -and $Phase -eq 'phase-f' -and (Test-Path 'Assets/Workspace/CozyV1/grass-v1.png')) {
+        python (Join-Path $PSScriptRoot 'StageCozyAssets.py') --configuration $Configuration
+        if ($LASTEXITCODE -ne 0) { throw 'Cozy staging failed; install Python and Pillow.' }
+        if (Test-Path 'AssetLibrary_Review/DonGian_v4/MyFarmEngine_Assets/QUY_TAC_TILE.json') {
+            python (Join-Path $PSScriptRoot 'StageV4Assets.py') --configuration $Configuration
+            if ($LASTEXITCODE -ne 0) { throw 'Local v4 staging failed.' }
+        } else {
+            Write-Warning 'Local v4 library is absent; character/world will use the shipped fallback.'
+        }
+    }
     cmake --preset $preset
     if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
     cmake --build --preset $preset

@@ -1,5 +1,13 @@
 # MyFarmEngine — Kiến trúc thực tế
 
+## Hai chế độ và CozyV1 — 2026-11-08
+
+GLFW Input buffer cả mouse/key edge, clear khi mất focus. SceneInputBuffer giữ click đến fixed tick đầu tiên, không replay catch-up. Cursor đổi window pixels sang framebuffer pixels (DPI), ScreenToWorld dùng camera đã render gồm zoom/shake. UI nhận click trước world.
+
+B chuyển garden control transient: giữ vị trí avatar, ẩn avatar/pet, WASD pan camera; sparse tile index xác định crop. UseGarden kiểm crop trong vườn đúng chủ rồi dùng chung CheckOwned/Apply với inventory/stamina/cooldown/events/warehouse. Character F vẫn Start/IMPACT transaction. Không nhân đôi farming.
+
+VisualScale.csv load nguyên tử, tách scale khỏi collider. CozyV1 có hai atlas ground/props, Build.ps1 stage tự động; PNG source sinh mới nằm Workspace, Original giữ nguyên. Terrain/hoa bố trí ổn định; gợn hồ dùng simulation time. Town collider và style mọi mùa còn cần review. Hướng dẫn: PROJECT_HANDOVER.md; danh sách file: FILE_INDEX.csv.
+
 ## P2-002B — 2026-11-05
 
 Crop.h/.cpp now provides three compiled CropDefinitions; plot state stays in InteractionTarget, with derived CropState and generation revision. InteractionSystem distinguishes Plant/Water/Harvest and captures operation/destination/owner before IMPACT. InteractionActor owns bag + HomeStorage (same Inventory class, separate explicit containers); membership uses owner plus finite half-open property bounds. Scene sets a prototype player garden, exposes read-only storage/snapshots, K on-demand counts, fixed-time HotbarVisibility; render remains read-only. [Contract, boundaries and limits](FARMING_HOME_STORAGE.md). No SQL or new asset I/O in the frame loop.

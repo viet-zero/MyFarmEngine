@@ -26,3 +26,6 @@ compile_commands.json
 
 # Temporary
 *.log
+# Python asset pipeline
+__pycache__/
+*.pyc

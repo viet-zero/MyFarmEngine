@@ -1,5 +1,11 @@
 # MyFarmEngine — World asset bible
 
+## Bộ CozyV1 — 2026-11-08
+
+5 PNG sinh mới, có prompt và hash trong Assets/Workspace/CozyV1; Original bất biến. Grass nhẹ, meadow clump, tree táo, farmhouse, lake water. StageCozyAssets.py tạo 2 atlas có padding 16 px, không resize source. Xuân dùng cỏ trải 8×8 cells, tint chuyển tiếp địa lý, clump thưa theo vùng, hồ ellipse cùng WorldMap center/radius và gợn theo simulation time. Tránh random tint mỗi cell gây checkerboard. V4 shore 47 mask vẫn dùng cho các palette/fallback; xuân mới dùng bờ mềm.
+
+Đã xem trong game thật. Đường/rào/vài props và các mùa khác còn v4, seam/biome/layout vẫn PARTIAL, không coi 5 ảnh là art-complete toàn game. Town collider kế thừa cần audit theo nhà mới; outfit/action cần tạo bộ riêng. Scale: Gameplay/Data/VisualScale.csv. Hướng dẫn chỉnh tay và chức năng file: PROJECT_HANDOVER.md.
+
 ## Sau P0-002 — 2026-11-05
 
 [11 lỗi direction/flip đã được sửa](TASKS/P0-002.md), Debug/Release 24/24 PASS. Ảnh và findings P0-001 bên dưới giữ nguyên làm evidence trước sửa. Chưa có artwork/layers/pivot authored mới; không đổi Original. An walk phải vẫn mirror phụ kiện, cần art review. [Clip board mới](Reviews/P0-002/clips-dark.png).

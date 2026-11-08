@@ -114,6 +114,10 @@ namespace MyEngine
     {
         Submit(texture.Id(), {{x,y,width,height},uv,{1,1,1,1}},true);
     }
+    void Canvas2D::Ellipse(float x,float y,float width,float height,const std::array<float,4>& color)
+    {
+        Submit(m_White,{{x,y,width,height},{0,0,1,1},color},true);
+    }
     void Canvas2D::Cover(const Texture2D& texture)
     {
         if (!texture.Id() || m_Width <= 0 || m_Height <= 0)

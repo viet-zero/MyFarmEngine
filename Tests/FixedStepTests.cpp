@@ -47,5 +47,13 @@ int main()
     input.Capture(sample);sample={};sample.paused=true;input.Capture(sample);
     const auto paused=input.Consume();Check(paused.paused && !paused.interact && !paused.reset,"pause replayed pending command");
     input.Clear();Check(!input.Consume().paused,"resume retained pause flag");
+    sample={};sample.toggleGardenControl=true;sample.pointerWorld=glm::vec2{2208,2016};
+    sample.hoverWorld=sample.pointerWorld;input.Capture(sample);
+    sample={};sample.hoverWorld=glm::vec2{2300,2080};input.Capture(sample);
+    const auto pointer=input.Consume(),noRepeat=input.Consume();
+    Check(pointer.toggleGardenControl && pointer.pointerWorld && pointer.pointerWorld->x==2208 &&
+          pointer.hoverWorld && pointer.hoverWorld->x==2300,"buffer lost click or latest hover");
+    Check(!noRepeat.toggleGardenControl && !noRepeat.pointerWorld && noRepeat.hoverWorld,
+          "catch-up replayed mouse click/mode toggle");
     return failures?1:0;
 }
