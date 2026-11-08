@@ -11,9 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SEASONS = ("Xuan", "Ha", "Thu", "Dong")
 DIRECTIONS = ("e", "se", "s", "sw", "w", "nw", "n", "ne")
 
-def pack(entries, destination, name):
-    width = 2048
-    padding = 2
+def pack(entries, destination, name, width=2048, padding=2):
     x = y = row_height = 0
     placed = []
     for key, path, pivot, stature in entries:
