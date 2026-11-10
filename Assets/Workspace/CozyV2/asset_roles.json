@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "road",
+      "file": "env_road_dirt_spring_material_v02.png",
+      "role": "terrain_material",
+      "effect": "stable_road_wear",
+      "anchor": "tile"
+    },
+    {
+      "id": "fence",
+      "file": "prop_fence_oak_horizontal_v02.png",
+      "role": "prop_panel",
+      "effect": "stable_wood_variation",
+      "anchor": "bottom_center"
+    },
+    {
+      "id": "house_open",
+      "file": "building_farmhouse_door_open_v02.png",
+      "role": "portal_state",
+      "effect": "portal_crossfade",
+      "anchor": "inherit_house_closed"
+    }
+  ],
+  "regions": [
+    {
+      "id": "fence_post",
+      "parent": "fence",
+      "rect": [
+        120,
+        100,
+        220,
+        660
+      ]
+    },
+    {
+      "id": "fence_rail",
+      "parent": "fence",
+      "rect": [
+        360,
+        280,
+        1140,
+        100
+      ]
+    }
+  ]
+}

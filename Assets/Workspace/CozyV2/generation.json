@@ -1,0 +1,11 @@
+{
+  "tool": "built-in image_gen",
+  "generated": "2026-11-08",
+  "integrated": "2026-11-10",
+  "mode": "road/fence generate; farmhouse edit of CozyV1/house-v1.png",
+  "prompts": {
+    "env_road_dirt_spring_material_v02.png": "Use case: stylized-concept. ONE seamless square warm compacted dirt material texture for a cozy hand-painted chibi countryside farming game. Orthographic top-down, matte warm beige/ochre earth, subtle watercolor gouache grain, a few tiny softly rounded stones, gentle worn foot traffic variation, quiet and low contrast. All edges tile seamlessly. No road boundary, grass, lines, border, text, large rocks, dark harsh patches, photographic detail or pixel art. This texture will be clipped into thin connected paths in a game, do not draw a whole scene.",
+    "prop_fence_oak_horizontal_v02.png": "Use case: stylized-concept. ONE isolated reusable horizontal wooden farm fence panel for a cozy hand-painted chibi countryside farming game. Two warm weathered oak posts and two connecting rails, very slight organic imperfections, tiny soft wood grain and warm beveled highlights, no foliage or decorations. Camera gently overhead, front elevation readable. Panel centered, whole silhouette, generous truly transparent padding on all sides. Post feet at exactly the same ground level. Rails meet both posts without gaps. Aspect silhouette approximately 2.2 wide to 1 high. Soft watercolor gouache matching a cream cottage with terracotta roof, no black outline, no glow, no shadow outside sprite, no grass patch, no text, no frame. Single panel only, not a row or sheet.",
+    "building_farmhouse_door_open_v02.png": "Edit target supplied farmhouse game sprite. Change ONLY the front wooden door to be open inward, showing a dark warmly lit entrance. Keep exact canvas dimensions, composition, roof, walls, windows, flowers, barrel, steps, overall silhouette, viewpoint and transparent exterior unchanged. Do not move or scale anything. Keep entrance at the identical place and size. No interior scene or new objects outside doorway, no glow outside silhouette. This is the open-state frame paired with the original closed-state game sprite, alignment must remain fixed."
+  }
+}
