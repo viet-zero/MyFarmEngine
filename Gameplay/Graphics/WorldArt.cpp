@@ -76,7 +76,7 @@ namespace MyGame
     {
         for(auto& atlas:m_Terrain) atlas.Reset();
         m_Sprites.Reset();
-        m_Ground.Reset();m_Props.Reset();m_CozyReady=false;
+        m_Ground.Reset();m_Props.Reset();m_Details.Reset();m_CozyReady=false;
         m_Ready=false;
     }
     bool WorldArt::Load(const std::filesystem::path& root)
@@ -134,6 +134,7 @@ namespace MyGame
            !m_Ground.Find("grass") || !m_Ground.Find("water") || !m_Ground.Find("meadow") ||
            !m_Props.Find("tree") || !m_Props.Find("house"))
         {m_Ground.Reset();m_Props.Reset();return false;}
+        if(std::filesystem::is_regular_file(root/"details.csv")) m_Details.Load(root/"details");
         m_CozyReady=true;return true;
     }
     const ArtFrame* WorldArt::Actor(int direction,bool walking,int frame) const

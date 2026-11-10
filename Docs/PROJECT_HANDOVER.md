@@ -1,5 +1,7 @@
 # MyFarmEngine — Sổ tay chỉnh tay và bàn giao
 
+Mới nhất 2026-11-10: [phân bố/hiệu ứng và tên asset](WORLD_VISUAL_ALGORITHMS.md). WorldDistribution.cpp sinh Poisson có seed; CacheDecor lọc keepout/cache chunk. WorldPortals.cpp/Portals.csv xử lý cổng/cửa chung cho F và chuột, chống đóng lên actor. Save v2 lưu portal và vẫn đọc v1. asset_roles.json nối tên ảnh/region, không dùng tên file như script tự chạy. F9 + V/N đến điểm QA cổng/cửa. Chưa có interior mới.
+
 Bản chỉnh đường/rào/va chạm mới nhất: [COLLISION_VISUAL_ALIGNMENT.md](COLLISION_VISUAL_ALIGNMENT.md). F9 hiện collider thật; nhà farm hiện đặt chân (2848,2260), các lối vào được giữ thông.
 
 Cập nhật 2026-11-08. Repository duy nhất: D:/my_code/MyFarmEngine. Đây là prototype kỹ thuật có farming thật; chưa là game hoàn chỉnh. Mục lịch sử trong PROGRESS/ROADMAP không thay thế trạng thái mới nhất ở đầu tài liệu.

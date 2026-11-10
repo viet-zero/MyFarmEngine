@@ -116,7 +116,7 @@ namespace MyGame
             if(!cell || cell->blocked) return false;
         }
         const auto intersects=[&](const WorldObject& object){
-            return object.active && object.blocked && Intersects(low,h*2.0f,object.position,object.size);
+            return object.active && object.blocked && Intersects(low,h*2.0f,object.position,object.size) && !PortalPassage(object,low,high);
         };
         return std::none_of(m_Objects.begin(),m_Objects.end(),intersects) &&
                std::none_of(m_StaticColliders.begin(),m_StaticColliders.end(),intersects);
@@ -134,7 +134,8 @@ namespace MyGame
                                      static_cast<int>(std::floor(point.y/TileSize)));
             if(!cell || cell->blocked) return false;
             for(const auto& object:m_StaticColliders)
-                if(Intersects(point-glm::vec2{1,1},glm::vec2{2,2},object.position,object.size)) return false;
+                if(Intersects(point-glm::vec2{1,1},glm::vec2{2,2},object.position,object.size) &&
+                   !PortalPassage(object,point-glm::vec2{1,1},point+glm::vec2{1,1})) return false;
         }
         return true;
     }

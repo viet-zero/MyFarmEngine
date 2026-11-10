@@ -1,5 +1,19 @@
 # MyFarmEngine — Audit có kiểm chứng
 
+## Cổng/cửa, CozyV2 và phân bố có quy luật — 2026-11-10
+
+Đã tiếp tục từ 66c046b sau khởi động lại, giữ Original. Tích hợp 3 PNG đã tạo trước khi dừng vào Workspace/CozyV2: vật liệu đường đất, panel rào oak, nhà có cửa mở. asset_roles.json nối logical id/role/effect và region UV fence_post/fence_rail; StageCozy kiểm path/ID/rect/canvas, giữ nguồn nguyên hash.
+
+WorldDistribution.cpp triển khai Bridson Poisson disk với seed cố định. CacheDecor lọc full visible bounds + margin, đường/nước/collider, luống và cổng/cửa; mật độ theo zone và trường mảng lớn để có cụm/khoảng thoáng. Cache 24 chunk, chỉ render chunk thấy. Bản cuối có 314 stamps, spacing 117.308; cùng dữ liệu/build/seed tái tạo ổn định. Gió có trường pha theo vị trí, stretch quanh root cố định, không đổi model/collider. Đây là ground decoration; không xáo layout nhà/luống/AI.
+
+WorldPortals.cpp + Portals.csv dùng chung cho F/chuột: gate.town.01 và door.farm.home, quyền/cooldown/busy/UI ownership, tiến độ .25s. Chỉ mở collision khi pose hoàn tất; cổng giữ collider trụ/bản lề, cửa chỉ mở corridor rộng 80 và giữ phần tường kề. Từ chối đóng lên player/pet/NPC. Save v2 lưu trạng thái mở/đóng và đọc v1; cổng đã bị phá trong save cũ giữ vắng mặt, không tạo tương tác vô hình.
+
+Đã mở Release thật: F9/V đến cổng, F mở và B+click đóng; F9/N đến nhà, F mở và B+click đóng. Quan sát ảnh cửa mở/đóng giữ alignment trên nhà, thông báo DA MO/DA DONG đúng. Reset test về spawn, debug tắt; không ghi slot SQL cá nhân. SQL slot test 2 đã write/read payload v2 thành công. Unit/integration kiểm F/chuột, close occupancy, corridor/adjacent wall, v1/v2 và quyền; sampler kiểm min spacing/seed/domain.
+
+Debug source cuối 27/27 PASS (37.92s), Release 27/27 PASS (15.33s). CheckAssets 204 Original, 189 imported và 18 artwork cũ nguyên hash; CozyV1 5 PNG/CozyV2 3 PNG giữ source hash. Không benchmark FPS mới. Native review không thay acceptance toàn bộ artwork.
+
+Hướng dẫn thuật toán, nguồn tham khảo, tên ảnh và nơi chỉnh: WORLD_VISUAL_ALGORITHMS.md. Còn PARTIAL: đường/rào ở mọi zoom/mùa, alpha/fringe art, gesture nhân vật/âm thanh khi mở, và interior; chưa chuyển scene vào nhà. Tiếp theo ưu tiên gesture/audio cues → interior transition/save → art/biome mùa.
+
 ## Đường/rào và va chạm khớp footprint — 2026-11-08
 
 Đã thu collider town về chân tường 420×100 thay vùng baked cũ; bỏ vùng fountain vô hình. Cây còn thân 72×24, giữ foot center; gate 80×20 và ảnh giới hạn theo width, không méo. Rào theo panel 64 có Y-sort/culling riêng, rails đúng trục; chuyển rào ra khỏi đường và mở lối bắc rộng 96. Nhà farm footprint (2638,2160,420,100), chân (2848,2260), không che luống cũ hoặc cắt tuyến tiếp cận.

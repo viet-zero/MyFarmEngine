@@ -6,6 +6,7 @@
 
 namespace MyGame
 {
+    struct SavedPortal {std::string id;bool open=false;};
     struct FarmSave
     {
         glm::vec2 position{};
@@ -14,6 +15,7 @@ namespace MyGame
         Inventory bag;
         HomeStorage home;
         std::vector<InteractionTarget> targets;
+        std::vector<SavedPortal> portals;
     };
     std::string EncodeSave(const FarmSave& state);
     std::optional<FarmSave> DecodeSave(std::string_view payload);

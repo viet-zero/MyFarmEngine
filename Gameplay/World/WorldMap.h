@@ -5,6 +5,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <span>
+#include <cstdint>
 #include "Gameplay/Components/ColliderComponent.h"
 
 namespace MyGame
@@ -21,6 +23,17 @@ namespace MyGame
         glm::vec2 size;
         bool blocked=false;
         bool active=true;
+    };
+    struct DynamicCollider {glm::vec2 center;ColliderComponent collider;};
+    struct WorldPortal
+    {
+        std::string id,colliderId;
+        glm::vec2 position{},size{};
+        std::uint64_t ownerId=1;
+        bool door=false,open=false;
+        float progress=0,pickRise=60;
+        glm::vec2 InteractionPoint() const {return position+glm::vec2{size.x*0.5f,size.y+8};}
+        bool Passable() const {return open && progress>=0.999f;}
     };
     class WorldMap
     {
@@ -43,10 +56,18 @@ namespace MyGame
         glm::vec2 Spawn(Zone zone) const;
         const std::vector<WorldObject>& Objects() const {return m_Objects;}
         const std::vector<WorldObject>& StaticColliders() const {return m_StaticColliders;}
+        bool LoadPortals(const std::filesystem::path& csv);
+        const std::vector<WorldPortal>& Portals() const {return m_Portals;}
+        const WorldPortal* Portal(std::string_view id) const;
+        bool SetPortalOpen(std::string_view id,bool open,std::span<const DynamicCollider> occupants={},bool snap=false);
+        void ResetPortals();
+        void TickPortals(float deltaTime);
         bool SetObjectActive(std::string_view gameplayId,bool active);
         static bool Intersects(glm::vec2 a,glm::vec2 aSize,glm::vec2 b,glm::vec2 bSize);
     private:
         std::array<WorldCell,Width*Height> m_Cells{};
+        bool PortalPassage(const WorldObject& object,glm::vec2 low,glm::vec2 high) const;
+        std::vector<WorldPortal> m_Portals;
         std::vector<WorldObject> m_Objects;
         std::vector<WorldObject> m_StaticColliders;
     };

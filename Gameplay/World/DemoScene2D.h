@@ -64,6 +64,7 @@ namespace MyGame
         void Render(MyEngine::Canvas2D& canvas,int width,int height,float alpha=1.0f);
         void Shutdown();
         void Reset();
+        std::optional<WorldPortal> PortalState(std::string_view id) const;
         FarmSave CaptureSave() const;
         bool RestoreSave(const FarmSave& save);
     private:
@@ -74,8 +75,15 @@ namespace MyGame
         };
         std::optional<TileFocus> FocusedTile();
         std::optional<TileFocus> PointerTile(glm::vec2 world);
+        const WorldPortal* FocusedPortal(std::optional<glm::vec2> pointer=std::nullopt) const;
+        bool HandlePortal(const SceneInput& input);
+        std::string m_PortalMessage;
+        float m_PortalMessageTime=0;
         void IndexTargetTiles();
         void CacheTerrainArt();
+        void CacheDecor();
+        struct DecorStamp {glm::vec2 feet;float height,phase;};
+        std::array<std::vector<DecorStamp>,24> m_DecorChunks;
         void DrawWorldObject(MyEngine::Canvas2D& canvas,const WorldObject& object) const;
         struct FencePanel {glm::vec2 origin,size;};
         std::vector<FencePanel> m_FencePanels;

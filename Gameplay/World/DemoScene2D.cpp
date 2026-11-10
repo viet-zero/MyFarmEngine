@@ -1,4 +1,5 @@
 #include "DemoScene2D.h"
+#include "WorldDistribution.h"
 #include "Gameplay/Graphics/HudText.h"
 #include "Gameplay/Systems/CollisionSystem.h"
 #include "Input/Input.h"
@@ -9,6 +10,7 @@
 #include <cmath>
 #include <string>
 #include <iostream>
+#include <set>
 
 namespace
 {
@@ -47,6 +49,7 @@ namespace MyGame
             std::cerr<<"World objects: definitions missing or invalid; object fallback omitted\n";
         if(!m_World.LoadStaticColliders(dataRoot/"StaticColliders.csv"))
             std::cerr<<"World colliders: definitions missing or invalid; static fallback omitted\n";
+        if(!m_World.LoadPortals(dataRoot/"Portals.csv")) std::cerr<<"Portals missing/invalid: unavailable\n";
         if(!m_Trees.Load(dataRoot/"ForegroundTrees.csv",m_World))
             std::cerr<<"Foreground trees: definitions missing or invalid; orchard overlay omitted\n";
         if(!m_Visuals.Load(dataRoot/"VisualClips.csv"))
@@ -102,10 +105,12 @@ namespace MyGame
         if(!m_Scale.Load(dataRoot/"VisualScale.csv")) std::cerr<<"VisualScale missing/invalid: using defaults\n";
         if(m_WorldArt.LoadCozy(dataRoot.parent_path()/"Cozy")) std::cout<<"Cozy art v1 enabled\n";
         Reset();
+        CacheDecor();
         return m_Ready;
     }
     void DemoScene2D::Reset()
     {
+        m_World.ResetPortals();m_PortalMessage.clear();m_PortalMessageTime=0;
         m_GardenControl=false;m_HoverWorld.reset();m_HavePickCamera=false;
         m_Player = m_World.Spawn(Zone::Farm);
         m_Dog=m_Player+glm::vec2{-70,30};
@@ -213,6 +218,8 @@ namespace MyGame
         input.switchCharacter=MyEngine::Input::ConsumeKeyPress(GLFW_KEY_TAB);
         for(int key=GLFW_KEY_F4;key<=GLFW_KEY_F8;++key)
             if(MyEngine::Input::ConsumeKeyPress(key)) input.teleport=key-GLFW_KEY_F4+4;
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_V)) input.teleport=9;
+        if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_N)) input.teleport=10;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_Q)) input.zoom=-1;
         if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_E)) input.zoom=1;
         for(int i=0;i<4;++i) if(MyEngine::Input::ConsumeKeyPress(GLFW_KEY_1+i)) input.selectedItem=i;
@@ -247,9 +254,63 @@ namespace MyGame
         }
         m_Input.Capture(input);
     }
+    std::optional<WorldPortal> DemoScene2D::PortalState(std::string_view id) const
+    {
+        if(const auto* portal=m_World.Portal(id)) return *portal;
+        return std::nullopt;
+    }
+    const WorldPortal* DemoScene2D::FocusedPortal(std::optional<glm::vec2> pointer) const
+    {
+        const WorldPortal* best=nullptr;float nearest=InteractionSystem::Range;
+        for(const auto& portal:m_World.Portals())
+        {
+            if(std::any_of(m_World.Objects().begin(),m_World.Objects().end(),[&](const auto& object){
+                return object.gameplayId==portal.colliderId && !object.active;
+            })) continue; // A gate removed in an old save must not become an invisible interactive portal.
+            if(m_GardenControl)
+            {
+                if(!pointer) continue;
+                const float top=portal.position.y-portal.pickRise;
+                if(pointer->x>=portal.position.x && pointer->x<portal.position.x+portal.size.x &&
+                   pointer->y>=top && pointer->y<=portal.position.y+portal.size.y+16) return &portal;
+            }
+            else
+            {
+                const auto delta=portal.InteractionPoint()-m_Actor.position;
+                const float distance=glm::length(delta);
+                if(distance<=nearest && (distance<1 || glm::dot(delta/distance,m_Actor.facing)>=0.5f))
+                {best=&portal;nearest=distance;}
+            }
+        }
+        return best;
+    }
+    bool DemoScene2D::HandlePortal(const SceneInput& input)
+    {
+        if(m_GardenControl?!input.pointerWorld:!input.interact) return false;
+        const auto* portal=FocusedPortal(input.pointerWorld);
+        if(!portal) return false;
+        m_PortalMessageTime=1.2f;
+        if(m_Action.Pending() || m_Actor.busy){m_PortalMessage="DANG BAN";return true;}
+        if(m_Actor.cooldown>0){m_PortalMessage="CHO MOT CHUT";return true;}
+        if(portal->ownerId!=m_Actor.ownerId || (m_GardenControl &&
+           !m_Actor.home.Receives(m_Actor.ownerId,portal->InteractionPoint(),portal->InteractionPoint())))
+        {m_PortalMessage="KHONG CO QUYEN";return true;}
+        if(!m_GardenControl && !m_World.HasLineOfSight(m_Actor.position,portal->InteractionPoint()))
+        {m_PortalMessage="DUONG BI CHAN";return true;}
+        const bool open=!portal->open;
+        const std::array<DynamicCollider,3> bodies={{{m_Player,PlayerCollider},{m_Dog,DogCollider},{m_Npc,NpcCollider}}};
+        const std::span<const DynamicCollider> occupants(bodies.data(),m_Options.demoMode?3u:2u);
+        if(!m_World.SetPortalOpen(portal->id,open,occupants))
+        {m_PortalMessage="LOI DANG CO VAT";return true;}
+        m_Actor.cooldown=0.35f;
+        m_PortalMessage=open?"DA MO":"DA DONG";
+        return true;
+    }
     FarmSave DemoScene2D::CaptureSave() const
     {
-        return {m_Player,m_Actor.money,m_SelectedItem,m_Actor.hotbar[2],m_Actor.inventory,m_Actor.home,m_Targets};
+        FarmSave save{m_Player,m_Actor.money,m_SelectedItem,m_Actor.hotbar[2],m_Actor.inventory,m_Actor.home,m_Targets};
+        for(const auto& portal:m_World.Portals()) save.portals.push_back({portal.id,portal.open});
+        return save;
     }
 
     bool DemoScene2D::RestoreSave(const FarmSave& save)
@@ -289,6 +350,11 @@ namespace MyGame
             target.stock=it->stock;
         }
         auto restoredWorld=m_World;
+        restoredWorld.ResetPortals();
+        if(!save.portals.empty() && save.portals.size()!=restoredWorld.Portals().size()) return false;
+        std::set<std::string> portalIds;
+        for(const auto& portal:save.portals)
+            if(!portalIds.insert(portal.id).second || !restoredWorld.SetPortalOpen(portal.id,portal.open,{},true)) return false;
         for(const auto& target:restored)
             if(target.kind==TargetKind::Object) restoredWorld.SetObjectActive(target.id,target.active);
         if(!restoredWorld.CanOccupy(save.position,PlayerCollider)) return false;
@@ -389,6 +455,7 @@ namespace MyGame
             return;
         }
         if(m_Loading) return;
+        m_World.TickPortals(dt);m_PortalMessageTime=std::max(0.0f,m_PortalMessageTime-dt);
         m_HoverWorld=input.hoverWorld;
         if(input.toggleGardenControl && !m_Action.Pending() && !m_MarketOpen && !m_StorageOpen)
         {
@@ -441,7 +508,7 @@ namespace MyGame
         }
         m_Hotbar.Update(dt,input.toggleStorage || input.selectedItem>=0 || input.interact || input.cancel || input.pointerWorld.has_value() || m_GardenControl || glm::length(input.movement)>0);
         const bool developer=m_Options.demoMode || m_Options.debugOverlay;
-        const bool teleporting=developer && input.teleport>=4 && input.teleport<=8;
+        const bool teleporting=developer && input.teleport>=4 && input.teleport<=10;
         const bool hurtTriggered=developer && input.hurt;
         if((input.cancel && !m_StorageOpen) || hurtTriggered || (developer && input.switchCharacter) || teleporting) CancelInteraction();
         InteractionSystem::Tick(m_Actor,m_Targets,dt);
@@ -463,12 +530,13 @@ namespace MyGame
         m_Player=CollisionSystem::MoveAndSlide(m_World,m_Player,(m_GardenControl || m_Action.Pending())?glm::vec2{0,0}:input.movement,input.running?300.0f:180.0f,
                                                dt,PlayerCollider,playerObstacles);
         m_Moving=glm::length(m_Player-previous)>0.001f;
-        if(developer && input.teleport>=4 && input.teleport<=8)
+        if(developer && input.teleport>=4 && input.teleport<=10)
         {
             glm::vec2 offset{-70,30};
             if(input.teleport<=6) m_Player=m_World.Spawn(static_cast<Zone>(input.teleport-4));
             else if(input.teleport==7){m_Player={1990,1740};m_Facing=Facing::Up;}
-            else {m_Player={2140,1450};m_Facing=Facing::Left;offset={100,30};}
+            else if(input.teleport==8){m_Player={2140,1450};m_Facing=Facing::Left;offset={100,30};}
+            else {m_Player=input.teleport==9?glm::vec2{1900,2120}:glm::vec2{2788,2310};m_Facing=Facing::Up;m_PlayerLook=6;}
             m_Dog=m_Player+offset;m_Camera.SetPosition(m_Player);m_Moving=false;
         }
         m_Actor.position=m_Player;
@@ -494,7 +562,8 @@ namespace MyGame
         case Facing::Up:m_Actor.facing={0,-1};break;
         default:m_Actor.facing={0,1};break;
         }
-        if(m_GardenControl && input.pointerWorld && !storageInput && !hurtTriggered && !input.cancel)
+        const bool portalUsed=!storageInput && !hurtTriggered && !input.cancel && !teleporting && HandlePortal(input);
+        if(!portalUsed && m_GardenControl && input.pointerWorld && !storageInput && !hurtTriggered && !input.cancel)
         {
             const auto focus=PointerTile(*input.pointerWorld);
             m_LastAction=InteractionSystem::UseGarden(m_Actor,focus?focus->target:nullptr,m_SelectedItem,m_Events);
@@ -502,7 +571,7 @@ namespace MyGame
         }
         bool actionTriggered=developer && input.action && !m_Action.Pending();
         bool started=false;
-        if(!m_GardenControl && input.interact && !storageInput && !hurtTriggered && !input.cancel && !teleporting)
+        if(!portalUsed && !m_GardenControl && input.interact && !storageInput && !hurtTriggered && !input.cancel && !teleporting)
         {
             const auto focus=FocusedTile();
             auto* target=focus?focus->target:nullptr;
@@ -647,6 +716,43 @@ namespace MyGame
         if(sprite.texture) canvas.Sprite(*sprite.texture,p.origin.x,p.origin.y,p.size.x,p.size.y,sprite.uv);
         else canvas.Rectangle(p.origin.x,p.origin.y,p.size.x,p.size.y,{0.55f,0.32f,0.16f,1});
     }
+    void DemoScene2D::CacheDecor()
+    {
+        for(auto& chunk:m_DecorChunks) chunk.clear();
+        const auto* meadow=m_WorldArt.Ground().Find("meadow");
+        if(!meadow) return;
+        const float maxWidth=32.0f*meadow->bounds.width/meadow->bounds.height*1.025f;
+        const float spacing=std::max(112.0f,std::hypot(maxWidth,32.0f)+16.0f);
+        const auto points=PoissonDiskPoints(WorldMap::Size(),spacing,20261110u);
+        for(const auto feet:points)
+        {
+            const auto tile=TileAt(feet);if(!tile) continue;
+            const auto* cell=m_World.TryCell(tile->x,tile->y);
+            if(cell->terrain==Terrain::Path || cell->terrain==Terrain::Water) continue;
+            const auto h=VisualHash(static_cast<int>(feet.x),static_cast<int>(feet.y));
+            const float baseDensity=cell->zone==Zone::Farm?0.4f:cell->zone==Zone::Town?0.55f:0.85f;
+            const float patch=0.5f+0.25f*std::sin(feet.x*0.005f)+0.25f*std::cos(feet.y*0.004f);
+            const float probability=baseDensity*(0.45f+0.55f*patch);
+            if(static_cast<float>(h&65535u)/65535.0f>probability) continue;
+            const float height=18.0f+static_cast<float>((h>>8)%15);
+            const auto visible=PlaceSprite(meadow->bounds,feet,height,false,meadow->pivot);
+            if(!m_World.CanOccupy(visible.visibleOrigin+visible.visibleSize*0.5f,{visible.visibleSize*0.5f+glm::vec2{8,8}})) continue;
+            bool keepout=false;
+            for(const auto& target:m_Targets)
+                if(glm::length(target.position-feet)<80){keepout=true;break;}
+            for(const auto& portal:m_World.Portals())
+                if(glm::length(portal.InteractionPoint()-feet)<110) keepout=true;
+            // Keep a full cell clear around path edges, not just its centerline.
+            for(int y=tile->y-1;y<=tile->y+1;++y) for(int x=tile->x-1;x<=tile->x+1;++x)
+                if(const auto* neighbor=m_World.TryCell(x,y);neighbor && neighbor->terrain==Terrain::Path) keepout=true;
+            if(keepout) continue;
+            const int cx=tile->x/WorldMap::ChunkTiles,cy=tile->y/WorldMap::ChunkTiles;
+            m_DecorChunks[static_cast<std::size_t>(cy*6+cx)].push_back({feet,height,
+                static_cast<float>((h>>16)%628)/100.0f});
+        }
+        std::size_t count=0;for(const auto& chunk:m_DecorChunks) count+=chunk.size();
+        std::cout<<"Decor cache: seed=20261110 spacing="<<spacing<<" stamps="<<count<<'\n';
+    }
     void DemoScene2D::CacheTerrainArt()
     {
         constexpr std::array<glm::ivec2,8> offsets{{{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}}};
@@ -687,12 +793,19 @@ namespace MyGame
         else if(object.visualId.find("chest")!=std::string::npos) id="chest";
         else if(object.visualId.find("sign")!=std::string::npos) id="sign";
         else if(object.visualId.find("water")!=std::string::npos) return;
-        const auto& selectedAtlas=id=="tree" && m_WorldArt.CozyReady()?m_WorldArt.Props():atlas;
+        const auto& selectedAtlas=id=="tree" && m_WorldArt.CozyReady()?m_WorldArt.Props():
+            id=="fence" && m_WorldArt.Details().Find("fence")?m_WorldArt.Details():atlas;
         const auto* frame=selectedAtlas.Find(id);
         if(!frame) return;
         const auto feet=object.position+glm::vec2{object.size.x*0.5f,object.size.y};
         const float height=id=="tree"?m_Scale.tree:id=="fence"?std::min(m_Scale.gate,object.size.x*frame->bounds.referenceHeight/frame->bounds.width):std::clamp(object.size.y,32.0f,96.0f);
         const auto placement=PlaceSprite(frame->bounds,feet,height,false,frame->pivot);
+        if(const auto* portal=m_World.Portal(object.gameplayId))
+        {
+            const float scale=1.0f-0.82f*portal->progress;
+            canvas.Sprite(selectedAtlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x*scale,placement.size.y,frame->uv);
+            return;
+        }
         canvas.Sprite(selectedAtlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
     }
 
@@ -700,7 +813,31 @@ namespace MyGame
     {
         const bool horizontal=panel.size.x>panel.size.y;
         const float x=panel.origin.x,y=panel.origin.y;
-        const float rise=m_Scale.fence*0.55f;
+        const float rise=m_Scale.fence*(0.52f+0.04f*static_cast<float>(VisualHash(static_cast<int>(x),static_cast<int>(y))%11)/10.0f);
+        const auto& details=m_WorldArt.Details();
+        if(horizontal)
+            if(const auto* frame=details.Find("fence"))
+            {
+                const float height=std::min(rise,(panel.size.x+7)*frame->bounds.height/frame->bounds.width);
+                const auto feet=panel.origin+glm::vec2{panel.size.x*0.5f,panel.size.y};
+                const auto p=PlaceSprite(frame->bounds,feet,height,false,frame->pivot);
+                canvas.Sprite(details.Texture(),p.origin.x,p.origin.y,p.size.x,p.size.y,frame->uv);
+                return;
+            }
+        if(!horizontal)
+        {
+            const auto* post=details.Find("fence_post");const auto* rail=details.Find("fence_rail");
+            if(post && rail)
+            {
+                canvas.Sprite(details.Texture(),x+4,y-rise*0.65f,8,panel.size.y,rail->uv);
+                for(const auto foot:{glm::vec2{x+panel.size.x*0.5f,y},glm::vec2{x+panel.size.x*0.5f,y+panel.size.y}})
+                {
+                    const auto p=PlaceSprite(post->bounds,foot,rise,false,post->pivot);
+                    canvas.Sprite(details.Texture(),p.origin.x,p.origin.y,p.size.x,p.size.y,post->uv);
+                }
+                return;
+            }
+        }
         constexpr std::array<float,4> dark{0.35f,0.23f,0.12f,1},wood{0.61f,0.43f,0.24f,1},light{0.79f,0.62f,0.37f,1};
         if(horizontal)
         {
@@ -739,6 +876,12 @@ namespace MyGame
         const auto feet=object.position+glm::vec2{object.size.x*0.5f,object.size.y};
         const auto placement=PlaceSprite(frame->bounds,feet,m_Scale.house,false,frame->pivot);
         canvas.Sprite(selectedAtlas.Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,frame->uv);
+        if(object.gameplayId=="farm.home")
+            if(const auto* portal=m_World.Portal("door.farm.home"))
+                if(const auto* opened=m_WorldArt.Details().Find("house_open");opened && portal->progress>0)
+                    canvas.Sprite(m_WorldArt.Details().Texture(),placement.origin.x,placement.origin.y,placement.size.x,placement.size.y,
+                                  opened->uv,{1,1,1,portal->progress});
+
     }
 
     void DemoScene2D::DrawCrop(MyEngine::Canvas2D& canvas,const InteractionTarget& plot) const
@@ -832,6 +975,17 @@ namespace MyGame
                     if(horizontal) ribbon(wx,wy+8,64,48,true);
                     if(vertical || !horizontal) ribbon(wx+8,wy,48,64,false);
                 }
+                const auto& details=m_WorldArt.Details();
+                if(const auto* dirt=details.Find("road"))
+                    for(int y=range.top;y<range.bottom;++y) for(int x=range.left;x<range.right;++x)
+                    {
+                        if(!pathAt(x,y)) continue;
+                        const bool horizontal=pathAt(x-1,y)||pathAt(x+1,y),vertical=pathAt(x,y-1)||pathAt(x,y+1);
+                        auto uv=dirt->uv;uv[0]+=uv[2]*(x%4)/4;uv[1]+=uv[3]*(y%4)/4;uv[2]/=4;uv[3]/=4;
+                        const float wear=0.30f+static_cast<float>(VisualHash(x,y)%9)*0.01f;
+                        if(horizontal) canvas.Sprite(details.Texture(),x*64.0f,y*64.0f+12,64,40,uv,{1,0.96f,0.88f,wear});
+                        if(vertical || !horizontal) canvas.Sprite(details.Texture(),x*64.0f+12,y*64.0f,40,64,uv,{1,0.96f,0.88f,wear});
+                    }
                 // The source world defines one elliptical lake. Use the same center/radii;
                 // keep its tile collision model, with a soft visual shore instead of unrelated v4 art.
                 constexpr glm::vec2 lakeCenter{(WorldMap::LakeCenterX+0.5f)*WorldMap::TileSize,
@@ -856,20 +1010,19 @@ namespace MyGame
                     canvas.Rectangle(x*64.0f+20,y*64.0f+30+2*std::sin(phase),rippleWidth,1.5f,
                                      {0.92f,0.98f,1,0.13f+0.06f*std::sin(phase)});
                 }
-                // Stable sparse clumps make each region distinct; prepared plots remain clear.
+                // Cached blue-noise distribution with clearance rules; visit visible chunks only.
                 const auto* meadow=ground.Find("meadow");
-                for(int y=range.top;y<range.bottom;++y) for(int x=range.left;x<range.right;++x)
-                {
-                    const auto* cell=m_World.TryCell(x,y);
-                    const auto hash=static_cast<unsigned int>(x)*73856093u ^ static_cast<unsigned int>(y)*19349663u;
-                    const unsigned int density=cell->terrain==Terrain::Forest?7u:cell->zone==Zone::Farm?19u:13u;
-                    if(cell->terrain==Terrain::Water || cell->terrain==Terrain::Path || hash%density ||
-                       m_TargetTiles.contains(TileKey({x,y}))) continue;
-                    const float clumpHeight=18.0f+static_cast<float>((hash>>8)%15);
-                    const glm::vec2 feet{x*64.0f+16.0f+static_cast<float>((hash>>12)%32),y*64.0f+48};
-                    const auto place=PlaceSprite(meadow->bounds,feet,clumpHeight,false,meadow->pivot);
-                    canvas.Sprite(ground.Texture(),place.origin.x,place.origin.y,place.size.x,place.size.y,meadow->uv);
-                }
+                const auto chunks=m_World.VisibleChunks(renderCamera.Position(),renderCamera.ViewSize());
+                for(int cy=chunks.top;cy<chunks.bottom;++cy) for(int cx=chunks.left;cx<chunks.right;++cx)
+                    for(const auto& stamp:m_DecorChunks[static_cast<std::size_t>(cy*6+cx)])
+                    {
+                        const auto place=PlaceSprite(meadow->bounds,stamp.feet,stamp.height,false,meadow->pivot);
+                        if(!WorldMap::Intersects(place.origin,place.size,renderCamera.Position()-renderCamera.ViewSize()*0.5f,renderCamera.ViewSize())) continue;
+                        const float sway=1.0f+0.025f*std::sin(static_cast<float>(m_GameAge)*1.5f+stamp.feet.x*0.003f+stamp.feet.y*0.001f+stamp.phase*0.2f);
+                        // Stretch around the fixed root; animation never moves the anchor/collider.
+                        const float x=stamp.feet.x-(stamp.feet.x-place.origin.x)*sway;
+                        canvas.Sprite(ground.Texture(),x,place.origin.y,place.size.x*sway,place.size.y,meadow->uv);
+                    }
             }
         }
         else if(m_Map)
@@ -1227,6 +1380,17 @@ namespace MyGame
             const float left=static_cast<float>(width)-140;
             canvas.Rectangle(left,8,132,20,{0.95f,0.93f,0.82f,0.94f});
             HudText(canvas,std::string(seasons[static_cast<std::size_t>(m_ArtSeason)])+" - T MUA",left+5,13,1.3f);
+        }
+        if(!m_MarketOpen && !m_StorageOpen)
+        {
+            const auto* portal=FocusedPortal(m_HoverWorld);
+            if(portal || m_PortalMessageTime>0)
+            {
+                const std::string text=m_PortalMessageTime>0?m_PortalMessage:
+                    std::string(m_GardenControl?"CLICK ":"F ")+(portal->open?"DONG ":"MO ")+(portal->door?"CUA":"CONG");
+                canvas.Rectangle(width*0.5f-125,34,250,23,{0.96f,0.92f,0.78f,1});
+                HudText(canvas,text,width*0.5f-119,40,1.4f);
+            }
         }
         if(m_SaveMessageTime>0)
         {

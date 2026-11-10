@@ -92,7 +92,7 @@ namespace MyGame
         std::ostringstream out;
         out.imbue(std::locale::classic());
         out<<std::setprecision(std::numeric_limits<double>::max_digits10);
-        out<<"MYFARM 1 "<<state.position.x<<' '<<state.position.y<<' '<<state.money<<' '
+        out<<"MYFARM "<<(state.portals.empty()?1:2)<<' '<<state.position.x<<' '<<state.position.y<<' '<<state.money<<' '
            <<state.selectedSlot<<' '<<static_cast<unsigned int>(state.seed)<<' ';
         WriteInventory(out,state.bag);
         out<<state.home.enabled<<' '<<state.home.ownerId<<' '<<state.home.origin.x<<' '
@@ -104,6 +104,11 @@ namespace MyGame
                <<target.health<<' '<<target.tilled<<' '<<target.planted<<' '<<target.ready<<' '
                <<static_cast<unsigned int>(target.crop)<<' '<<target.age<<' '<<target.moisture<<' '
                <<target.revision<<' '<<target.stock<<' ';
+        if(!state.portals.empty())
+        {
+            out<<state.portals.size()<<' ';
+            for(const auto& portal:state.portals) out<<std::quoted(portal.id)<<' '<<portal.open<<' ';
+        }
         return out.str();
     }
 
@@ -117,7 +122,7 @@ namespace MyGame
         int version=0;
         unsigned int seed=0;
         if(!(in>>magic>>version>>save.position.x>>save.position.y>>save.money>>save.selectedSlot>>seed) ||
-           magic!="MYFARM" || version!=1 || !Finite(save.position) || save.money<0 ||
+           magic!="MYFARM" || (version!=1 && version!=2) || !Finite(save.position) || save.money<0 ||
            save.selectedSlot<0 || save.selectedSlot>=4) return std::nullopt;
         save.seed=static_cast<ItemId>(seed);
         if(!CropFromSeed(save.seed) || !ReadInventory(in,save.bag)) return std::nullopt;
@@ -152,6 +157,18 @@ namespace MyGame
                     target.moisture!=0 || (target.kind!=TargetKind::FruitTree && target.age!=0))
                 return std::nullopt;
             save.targets.push_back(std::move(target));
+        }
+        if(version==2)
+        {
+            int portalCount=0;std::unordered_set<std::string> portalIds;
+            if(!(in>>portalCount) || portalCount<1 || portalCount>64) return std::nullopt;
+            for(int i=0;i<portalCount;++i)
+            {
+                SavedPortal portal;
+                if(!(in>>std::quoted(portal.id)>>portal.open) || portal.id.empty() || portal.id.size()>128 ||
+                   !portalIds.insert(portal.id).second) return std::nullopt;
+                save.portals.push_back(std::move(portal));
+            }
         }
         in>>std::ws;
         if(!in.eof()) return std::nullopt;

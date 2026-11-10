@@ -40,6 +40,7 @@ namespace MyGame
         void Reset();
         bool LoadCozy(const std::filesystem::path& root);
         bool CozyReady() const {return m_CozyReady;}
+        const ArtAtlas& Details() const {return m_Details;}
         const ArtAtlas& Ground() const {return m_Ground;}
         const ArtAtlas& Props() const {return m_Props;}
         bool Ready() const {return m_Ready;}
@@ -48,7 +49,7 @@ namespace MyGame
         const ArtFrame* Actor(int direction,bool walking,int frame) const;
     private:
         std::array<ArtAtlas,4> m_Terrain;
-        ArtAtlas m_Sprites,m_Ground,m_Props;
+        ArtAtlas m_Sprites,m_Ground,m_Props,m_Details;
         bool m_CozyReady=false;
         bool m_Ready=false;
     };

@@ -39,7 +39,7 @@ add_library(MyFarmGameplayAnimation STATIC Gameplay/Graphics/VisualCatalog.cpp)
 target_link_libraries(MyFarmGameplayAnimation PUBLIC MyFarmEngineCore)
 add_library(MyFarmRenderOrder STATIC Gameplay/Graphics/RenderOrder.cpp)
 target_link_libraries(MyFarmRenderOrder PUBLIC MyFarmEngineCore)
-add_library(MyFarmWorld STATIC Gameplay/World/WorldMap.cpp Gameplay/World/ForegroundTrees.cpp Gameplay/Systems/CollisionSystem.cpp)
+add_library(MyFarmWorld STATIC Gameplay/World/WorldDistribution.cpp Gameplay/World/WorldPortals.cpp Gameplay/World/WorldMap.cpp Gameplay/World/ForegroundTrees.cpp Gameplay/Systems/CollisionSystem.cpp)
 target_link_libraries(MyFarmWorld PUBLIC MyFarmEngineCore)
 add_library(MyFarmGameplayLogic STATIC Gameplay/Save/Save.cpp Gameplay/Crops/Crop.cpp Gameplay/Inventory/Inventory.cpp Engine/Event/EventBus.cpp Gameplay/Effects/EffectPool.cpp Gameplay/Systems/InteractionSystem.cpp)
 target_link_libraries(MyFarmGameplayLogic PUBLIC MyFarmEngineCore)
@@ -90,6 +90,7 @@ add_custom_target(MyFarmRuntimeAssets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Objects.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Objects.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/ForegroundTrees.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/ForegroundTrees.csv"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/StaticColliders.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/StaticColliders.csv"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/Portals.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/Portals.csv"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay/Data/VisualScale.csv" "$<TARGET_FILE_DIR:MyFarmEngine>/Assets/Data/VisualScale.csv"
 )
 add_dependencies(MyFarmEngine MyFarmRuntimeAssets)

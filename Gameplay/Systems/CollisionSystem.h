@@ -4,11 +4,6 @@
 
 namespace MyGame
 {
-    struct DynamicCollider
-    {
-        glm::vec2 center;
-        ColliderComponent collider;
-    };
     class CollisionSystem
     {
     public:

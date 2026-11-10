@@ -2,6 +2,7 @@
 #include "Graphics/Camera2D.h"
 #include <iostream>
 #include <limits>
+#include "Gameplay/World/WorldDistribution.h"
 
 int main(int argc,char** argv)
 {
@@ -36,5 +37,16 @@ int main(int argc,char** argv)
           "visible chunk range escaped world");
     const auto corner=map.ChunkAt(chunks.right-1,chunks.bottom-1);
     check(corner.tiles.right==WorldMap::Width && corner.tiles.bottom==WorldMap::Height,"last chunk bounds");
+    const auto samples=PoissonDiskPoints({640,480},48,7),again=PoissonDiskPoints({640,480},48,7);
+    check(samples.size()>60 && samples.size()==again.size(),"Poisson distribution empty or unstable");
+    for(std::size_t i=0;i<samples.size();++i)
+    {
+        check(glm::length(samples[i]-again[i])<0.001f,"seed did not reproduce placement");
+        check(samples[i].x>=0 && samples[i].y>=0 && samples[i].x<640 && samples[i].y<480,"point outside domain");
+        for(std::size_t j=0;j<i;++j) check(glm::length(samples[i]-samples[j])>=47.999f,"minimum decorative spacing violated");
+    }
+    const auto different=PoissonDiskPoints({640,480},48,8);
+    check(!different.empty() && glm::length(samples.front()-different.front())>1,"different seed did not change layout");
+    check(PoissonDiskPoints({640,480},0,7).empty(),"invalid Poisson radius accepted");
     return failures?1:0;
 }

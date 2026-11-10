@@ -79,7 +79,7 @@ namespace MyGame
             m_Demo.SynchronizePresentation();
             // Preview UI owns these keys. Do not replay a tap after returning to gameplay.
             for(const int key:{GLFW_KEY_F,GLFW_KEY_C,GLFW_KEY_K,GLFW_KEY_M,GLFW_KEY_J,GLFW_KEY_L,GLFW_KEY_G,GLFW_KEY_T,GLFW_KEY_B,GLFW_KEY_SPACE,GLFW_KEY_H,GLFW_KEY_TAB,GLFW_KEY_R,
-                               GLFW_KEY_Q,GLFW_KEY_E,GLFW_KEY_F4,GLFW_KEY_F5,GLFW_KEY_F6,GLFW_KEY_F7,GLFW_KEY_F8,
+                               GLFW_KEY_Q,GLFW_KEY_E,GLFW_KEY_V,GLFW_KEY_N,GLFW_KEY_F4,GLFW_KEY_F5,GLFW_KEY_F6,GLFW_KEY_F7,GLFW_KEY_F8,
                                GLFW_KEY_1,GLFW_KEY_2,GLFW_KEY_3,GLFW_KEY_4})
                 MyEngine::Input::ConsumeKeyPress(key);
         }

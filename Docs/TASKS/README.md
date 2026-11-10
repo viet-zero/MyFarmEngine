@@ -1,5 +1,7 @@
 # Backlog triển khai
 
+Mới nhất: [GAMEPLAY13 — cổng/cửa và phân bố](GAMEPLAY13.md), 2026-11-10.
+
 Cập nhật 05/11/2026. Baseline và evidence ở [PROGRESS](../PROGRESS.md), dependencies ở [ROADMAP](../ROADMAP.md).
 
 | Task | Status | Phạm vi |

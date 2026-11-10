@@ -1,5 +1,7 @@
 # MyFarmEngine — World asset bible
 
+Cập nhật 2026-11-10: cổng/cửa dùng WorldPortal chung cho F/chuột, save v2 đọc v1; CozyV2 có manifest role/region, Poisson sampling + keepout + density field cache theo chunk và gió giữ anchor. Đã native review F mở, chuột đóng cả cổng/cửa. Xem [WORLD_VISUAL_ALGORITHMS.md](WORLD_VISUAL_ALGORITHMS.md) và PROGRESS. Chưa có nội thất hay art acceptance toàn game.
+
 ## Bộ CozyV1 — 2026-11-08
 
 5 PNG sinh mới, có prompt và hash trong Assets/Workspace/CozyV1; Original bất biến. Grass nhẹ, meadow clump, tree táo, farmhouse, lake water. StageCozyAssets.py tạo 2 atlas có padding 16 px, không resize source. Xuân dùng cỏ trải 8×8 cells, tint chuyển tiếp địa lý, clump thưa theo vùng, hồ ellipse cùng WorldMap center/radius và gợn theo simulation time. Tránh random tint mỗi cell gây checkerboard. V4 shore 47 mask vẫn dùng cho các palette/fallback; xuân mới dùng bờ mềm.

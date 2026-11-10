@@ -1,5 +1,7 @@
 # MyFarmEngine — Roadmap sau audit
 
+Cập nhật 2026-11-10: cổng/cửa dùng WorldPortal chung cho F/chuột, save v2 đọc v1; CozyV2 có manifest role/region, Poisson sampling + keepout + density field cache theo chunk và gió giữ anchor. Đã native review F mở, chuột đóng cả cổng/cửa. Xem [WORLD_VISUAL_ALGORITHMS.md](WORLD_VISUAL_ALGORITHMS.md) và PROGRESS. Chưa có nội thất hay art acceptance toàn game.
+
 Cập nhật 2026-11-08: đường/rào và collider chân nhà/thân cây đã chỉnh trong cảnh Cozy; Debug/Release 27/27. Xem [COLLISION_VISUAL_ALIGNMENT.md](COLLISION_VISUAL_ALIGNMENT.md). Art đường/rào vẫn prototype; tiếp theo polish artwork, cổng/cửa nhà và animation.
 
 ## Gate mới nhất — 2026-11-08

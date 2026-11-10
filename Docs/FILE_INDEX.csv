@@ -450,6 +450,12 @@ Assets/Workspace/CozyV1/meadow-v1.png,Assets,1388273,,False,See PROJECT_HANDOVER
 Assets/Workspace/CozyV1/source_hashes.json,Assets,438,7,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/CozyV1/tree-v1.png,Assets,1766642,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/CozyV1/water-v1.png,Assets,1888899,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Assets/Workspace/CozyV2/asset_roles.json,Assets,901,48,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Assets/Workspace/CozyV2/building_farmhouse_door_open_v02.png,Assets,1914026,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Assets/Workspace/CozyV2/env_road_dirt_spring_material_v02.png,Assets,2162245,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Assets/Workspace/CozyV2/generation.json,Assets,2211,11,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Assets/Workspace/CozyV2/prop_fence_oak_horizontal_v02.png,Assets,1297998,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Assets/Workspace/CozyV2/source_hashes.json,Assets,334,5,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/Library/SNHR_v11/Animals/animal_0013/sprite.png,Assets,10144,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/Library/SNHR_v11/Animals/animal_0014/sprite.png,Assets,7851,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/Library/SNHR_v11/Animals/animal_0015/sprite.png,Assets,8683,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -628,16 +634,16 @@ Assets/Workspace/Library/SNHR_v8/Items_Food/IMG_021/drink_item_04_01_trim.png,As
 Assets/Workspace/Library/SNHR_v8/Items_Food/IMG_021/drink_item_04_02_trim.png,Assets,57116,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/Library/SNHR_v8/Items_Food/IMG_021/drink_item_04_03_trim.png,Assets,49179,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Assets/Workspace/README.md,Assets,443,5,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-CMakeLists.txt,CMakeLists.txt,15529,252,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+CMakeLists.txt,CMakeLists.txt,15763,253,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 CMakePresets.json,CMakePresets.json,10366,190,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/ACTION_ANIMATION_EVENTS.md,Docs,10023,86,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/ANIMATION_SPEC.md,Docs,5585,45,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/ARCHITECTURE.md,Docs,8518,65,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/ARCHITECTURE.md,Docs,8923,67,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/ASSET_ANIMATION_VALIDATION.md,Docs,5868,55,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/CHARACTER_SCALE_STYLE_STANDARD.md,Docs,6365,50,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/COLLISION_VISUAL_ALIGNMENT.md,Docs,4007,35,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/FARMING_HOME_STORAGE.md,Docs,8001,66,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/FILE_INDEX.csv,Docs,89485,578,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/FILE_INDEX.csv,Docs,89476,579,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/FIXED_TIMESTEP.md,Docs,3670,32,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/GAMEPLAY11.md,Docs,7517,55,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/GiaiDoan1.md,Docs,12527,142,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -654,8 +660,8 @@ Docs/KeHoachOnline.md,Docs,3295,23,False,See PROJECT_HANDOVER.md; presence does 
 Docs/LIGHTING_SPEC.md,Docs,2285,24,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/LoTrinh.md,Docs,5233,50,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/P0-001_ARTWORK_PIVOT_AUDIT.md,Docs,12586,94,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/PROGRESS.md,Docs,36290,252,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/PROJECT_HANDOVER.md,Docs,14769,117,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/PROGRESS.md,Docs,38899,266,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/PROJECT_HANDOVER.md,Docs,15251,119,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/PhaseA/AssetInventory.csv,Docs,17973,191,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/PhaseA/Plan/HUONG_DAN_MO_RONG_GAMEPLAY.md,Docs,7030,105,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/PhaseA/Plan/PROMPT_CHO_CODEX_GAMEPLAY10.md,Docs,4950,74,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -664,7 +670,7 @@ Docs/PhaseA/SourceInventory.csv,Docs,5701,110,False,See PROJECT_HANDOVER.md; pre
 Docs/PhaseB/README.md,Docs,4346,59,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/PhaseC/HUONG_DAN_WORLD_MAP.md,Docs,122,3,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/PhaseD/README.md,Docs,1101,7,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/ROADMAP.md,Docs,7283,61,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/ROADMAP.md,Docs,7688,63,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/Reviews/P0-001/alpha-edges.png,Docs,221348,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/Reviews/P0-001/asset-decisions.csv,Docs,4847,33,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/Reviews/P0-001/canopy-proxies.png,Docs,3504590,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -687,6 +693,7 @@ Docs/Screenshots/phase2_zoom.png,Docs,144806,,False,See PROJECT_HANDOVER.md; pre
 Docs/Screenshots/stage_history.png,Docs,75118,,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/GAMEPLAY11.md,Docs,1329,12,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/GAMEPLAY12.md,Docs,1502,13,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/TASKS/GAMEPLAY13.md,Docs,1572,12,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/P0-001.md,Docs,1637,14,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/P0-002.md,Docs,2635,19,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/P1-001.md,Docs,1446,13,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -700,10 +707,11 @@ Docs/TASKS/P2-002C.md,Docs,1667,13,False,See PROJECT_HANDOVER.md; presence does 
 Docs/TASKS/P3-001.md,Docs,761,10,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/P4-001.md,Docs,814,10,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TASKS/P4-002.md,Docs,3062,25,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/TASKS/README.md,Docs,1751,22,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/TASKS/README.md,Docs,1841,24,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TYPED_INVENTORY.md,Docs,6378,55,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Docs/TichHopHinhAnh.md,Docs,6497,81,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Docs/WORLD_ASSET_BIBLE.md,Docs,6930,55,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/WORLD_ASSET_BIBLE.md,Docs,7335,57,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Docs/WORLD_VISUAL_ALGORITHMS.md,Docs,7339,50,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Engine/Animation/Animator.cpp,Engine,4038,102,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Engine/Animation/Animator.h,Engine,1914,67,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Engine/Core/Application.cpp,Engine,5099,154,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -769,6 +777,7 @@ Gameplay/Data/ForegroundTrees.csv,Gameplay,175,3,False,See PROJECT_HANDOVER.md; 
 Gameplay/Data/Items.json,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Data/NPC.json,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Data/Objects.csv,Gameplay,500,10,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/Data/Portals.csv,Gameplay,155,3,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Data/Recipes.json,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Data/StaticColliders.csv,Gameplay,290,9,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Data/VisualClips.csv,Gameplay,3620,63,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -792,8 +801,8 @@ Gameplay/Graphics/SpriteGeometry.cpp,Gameplay,4162,78,False,See PROJECT_HANDOVER
 Gameplay/Graphics/SpriteGeometry.h,Gameplay,1142,29,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Graphics/VisualCatalog.cpp,Gameplay,15375,285,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Graphics/VisualCatalog.h,Gameplay,2889,78,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/Graphics/WorldArt.cpp,Gameplay,6782,147,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/Graphics/WorldArt.h,Gameplay,1911,55,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/Graphics/WorldArt.cpp,Gameplay,6898,148,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/Graphics/WorldArt.h,Gameplay,1982,56,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Inventory/HomeStorage.h,Gameplay,1200,29,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Inventory/Inventory.cpp,Gameplay,3518,73,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Inventory/Inventory.h,Gameplay,1727,40,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -807,15 +816,15 @@ Gameplay/Player/Player.h,Gameplay,196,19,False,See PROJECT_HANDOVER.md; presence
 Gameplay/Player/SceneInput.h,Gameplay,2406,50,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Quest/Quest.cpp,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Quest/Quest.h,Gameplay,97,11,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/Save/Save.cpp,Gameplay,9757,208,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/Save/Save.h,Gameplay,929,33,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/Save/Save.cpp,Gameplay,10583,225,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/Save/Save.h,Gameplay,1031,35,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/States/GameState.h,Gameplay,272,15,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/States/GameplayState.cpp,Gameplay,7490,174,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/States/GameplayState.cpp,Gameplay,7512,174,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/States/GameplayState.h,Gameplay,1391,42,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Systems/AnimalSystem.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Systems/BuildingSystem.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Systems/CollisionSystem.cpp,Gameplay,2053,39,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/Systems/CollisionSystem.h,Gameplay,471,19,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/Systems/CollisionSystem.h,Gameplay,383,14,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/Systems/CraftingSystem.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Systems/CropSystem.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/Systems/DayNightSystem.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
@@ -834,8 +843,8 @@ Gameplay/Systems/Trade.h,Gameplay,3088,67,False,See PROJECT_HANDOVER.md; presenc
 Gameplay/Systems/WeatherSystem.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/World/Beach.cpp,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/World/Beach.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
-Gameplay/World/DemoScene2D.cpp,Gameplay,71995,1260,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/World/DemoScene2D.h,Gameplay,6889,156,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/DemoScene2D.cpp,Gameplay,82281,1424,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/DemoScene2D.h,Gameplay,7346,164,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Gameplay/World/Farm.cpp,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/World/Farm.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/World/ForegroundTrees.cpp,Gameplay,2712,52,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -849,8 +858,11 @@ Gameplay/World/Town.cpp,Gameplay,0,0,True,EMPTY: not evidence of an implemented 
 Gameplay/World/Town.h,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/World/World.cpp,Gameplay,0,0,True,EMPTY: not evidence of an implemented feature
 Gameplay/World/World.h,Gameplay,189,21,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/World/WorldMap.cpp,Gameplay,9104,179,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Gameplay/World/WorldMap.h,Gameplay,2218,53,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/WorldDistribution.cpp,Gameplay,2790,52,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/WorldDistribution.h,Gameplay,271,9,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/WorldMap.cpp,Gameplay,9406,180,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/WorldMap.h,Gameplay,3301,74,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Gameplay/World/WorldPortals.cpp,Gameplay,3701,63,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 HUONG_DAN_GIAI_DOAN_2.md,HUONG_DAN_GIAI_DOAN_2.md,112,3,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 HuongDan/BuildVaChay.md,HuongDan,1974,21,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 HuongDan/CollisionVaDoHoa.md,HuongDan,7759,52,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -868,7 +880,7 @@ Scripts/ImportChatAssets.ps1,Scripts,2619,55,False,See PROJECT_HANDOVER.md; pres
 Scripts/PrepareAssets.ps1,Scripts,6361,105,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Scripts/SetupLocalSave.ps1,Scripts,1453,36,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Scripts/StageCarrotReview.ps1,Scripts,1351,25,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Scripts/StageCozyAssets.py,Scripts,1263,29,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Scripts/StageCozyAssets.py,Scripts,3257,61,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Scripts/StageTerrainReview.ps1,Scripts,952,16,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Scripts/StageV4Assets.py,Scripts,5443,108,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 TIEN_DO.txt,TIEN_DO.txt,11255,183,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
@@ -878,25 +890,25 @@ Tests/AssetFallback.cmake,Tests,2998,44,False,See PROJECT_HANDOVER.md; presence 
 Tests/AssetTests.cpp,Tests,8882,135,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/CameraTests.cpp,Tests,3216,65,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/CanvasTests.cpp,Tests,9017,198,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Tests/CollisionTests.cpp,Tests,3807,58,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Tests/CollisionTests.cpp,Tests,5264,76,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/EffectTests.cpp,Tests,1698,30,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/FarmingTests.cpp,Tests,17280,235,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/FixedStepTests.cpp,Tests,4166,59,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/ForegroundTreeTests.cpp,Tests,1110,23,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/GameplayFixedRateTests.cpp,Tests,6786,98,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Tests/GameplayRuntimeTests.cpp,Tests,28883,442,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Tests/GameplayRuntimeTests.cpp,Tests,32903,491,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/InteractionTests.cpp,Tests,7464,103,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/InventoryTests.cpp,Tests,6824,90,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/LifecycleTests.cpp,Tests,7821,168,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/RenderOrderTests.cpp,Tests,1943,37,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Tests/SaveTests.cpp,Tests,1559,47,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Tests/SaveTests.cpp,Tests,2132,55,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/SpriteGeometryTests.cpp,Tests,4216,65,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/TimeTests.cpp,Tests,1138,36,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/VisualAssetValidationTests.cpp,Tests,8535,100,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/VisualAuditCli.cmake,Tests,567,8,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/VisualCatalogTests.cpp,Tests,8119,120,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 Tests/WindowsLaunchTests.ps1,Tests,2035,29,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
-Tests/WorldMapTests.cpp,Tests,2664,40,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
+Tests/WorldMapTests.cpp,Tests,3582,52,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 ThirdParty/glad/include/KHR/khrplatform.h,ThirdParty,11131,311,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 ThirdParty/glad/include/glad/gl.h,ThirdParty,214678,3637,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration
 ThirdParty/glad/src/glad.c,ThirdParty,114006,1620,False,See PROJECT_HANDOVER.md; presence does not imply runtime integration

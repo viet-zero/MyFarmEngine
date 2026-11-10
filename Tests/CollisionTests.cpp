@@ -54,5 +54,23 @@ int main(int argc,char** argv)
     check(!world.CanOccupy({2848,2210},body),"farm wall footprint missing");
     const auto approach=CollisionSystem::MoveAndSlide(world,{2848,2310},{0,-1},1000,0.1f,body);
     check(approach.y>=2272 && approach.y<2310,"player passed through house front wall");
+    check(world.LoadPortals(std::filesystem::path(argv[1]).parent_path()/"Portals.csv"),"portal definitions failed");
+    check(!world.CanOccupy({1900,2050},body),"closed gate allowed passage");
+    check(world.SetPortalOpen("gate.town.01",true),"gate open request failed");
+    check(!world.CanOccupy({1900,2050},body),"gate collision opened before animation completed");
+    for(int i=0;i<3;++i) world.TickPortals(0.1f);
+    check(world.CanOccupy({1900,2050},body),"open gate still blocked");
+    check(!world.CanOccupy({1875,2050},body),"open gate hinge/post lost collision");
+    const DynamicCollider inGate{{1900,2050},body};
+    check(!world.SetPortalOpen("gate.town.01",false,std::span{&inGate,1}) &&
+          world.Portal("gate.town.01")->open,"gate closed on an occupant");
+    check(world.SetPortalOpen("gate.town.01",false) && !world.CanOccupy({1900,2050},body),"gate failed to close");
+    check(world.SetPortalOpen("door.farm.home",true),"door open request failed");
+    for(int i=0;i<3;++i) world.TickPortals(0.1f);
+    check(world.CanOccupy({2788,2210},body),"door corridor did not open");
+    check(!world.CanOccupy({2700,2210},body),"opening door removed adjacent house wall");
+    const DynamicCollider inDoor{{2788,2210},body};
+    check(!world.SetPortalOpen("door.farm.home",false,std::span{&inDoor,1}),"door closed on an occupant");
+    check(world.SetPortalOpen("door.farm.home",false),"empty door did not close");
     return failures?1:0;
 }
